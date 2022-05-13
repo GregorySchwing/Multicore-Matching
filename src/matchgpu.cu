@@ -305,6 +305,7 @@ __global__ void gSelect(int *match, const int nrVertices, const uint random)
 	match[i] = ((h0 + h1 + h2 + h3) < dSelectBarrier ? 0 : 1);
 }
 
+// Finds head/tail by iterating through the list
 __global__ void gSelect(int *match, int *sense, int * fll, int * bll, const int nrVertices, const uint random)
 {
 	//Determine blue and red groups using MD5 hashing.
@@ -378,6 +379,136 @@ __global__ void gSelect(int *match, int *sense, int * fll, int * bll, const int 
 			tail = i;
 		} else {
 			//printf("ERROR: shouldn't ever reach here!\n");
+		}
+		// match heads and tails same match by using min as g.
+		// Hash color of set
+		g = min(tail, head);
+	}
+	//Start hashing.
+	uint h0 = 0x67452301, h1 = 0xefcdab89, h2 = 0x98badcfe, h3 = 0x10325476;
+	uint a = h0, b = h1, c = h2, d = h3, e, f;
+
+	for (int j = 0; j < 16; ++j)
+	{
+		f = (b & c) | ((~b) & d);
+
+		e = d;
+		d = c;
+		c = b;
+		b += LEFTROTATE(a + f + dMD5K[j] + g, dMD5R[j]);
+		a = e;
+
+		h0 += a;
+		h1 += b;
+		h2 += c;
+		h3 += d;
+
+		g *= random;
+	}
+	
+	uint color = ((h0 + h1 + h2 + h3) < dSelectBarrier ? 0 : 1);
+	match[i] = color;
+	// Singletons are made the right sense for their color to promote matching.
+	// Red(-) and Blue(+)
+	if (singleton){
+		sense[i] = color;
+	}
+	else
+	{
+		// Currently sense is rehashed every iteration
+		// Hash sense
+		uint g = max(tail, head);
+		bool mask = (g == i);
+
+		for (int j = 0; j < 16; ++j)
+		{
+			f = (b & c) | ((~b) & d);
+
+			e = d;
+			d = c;
+			c = b;
+			b += LEFTROTATE(a + f + dMD5K[j] + g, dMD5R[j]);
+			a = e;
+
+			h0 += a;
+			h1 += b;
+			h2 += c;
+			h3 += d;
+
+			g *= random;
+		}
+		// Notice how in each case i and j have opposite senses.
+		// Truth Table to Check //
+		//                   
+		//     a    b    a^b
+		//C1
+		//i // 0    0    0   
+		//j // 0    1    1 
+		//C3
+		//i // 0    1    1   
+		//j // 0    0    0  
+		//C3
+		//i // 1    0    1   
+		//j // 1    1    0 
+		//C4
+		//i // 1    1    0   
+		//j // 1    0    1  
+		bool a = (bool)((h0 + h1 + h2 + h3) < dSelectBarrier ? 0 : 1);
+		bool b = mask;
+		//bool XOR(bool a, bool b)
+		sense[i] = (a + b) % 2;
+	}
+	///if (threadIdx.x == 0)
+	//printf("vert %d, color %d, sense %d\n", i, color, sense[i]);
+}
+
+// Uses head/tail arrays
+__global__ void gSelect(int *match, int *sense, int * heads, int * tails, int * fll, int * bll, const int nrVertices, const uint random)
+{
+	//Determine blue and red groups using MD5 hashing.
+	//Based on the Wikipedia MD5 hashing pseudocode (http://en.wikipedia.org/wiki/MD5).
+	const int i = blockIdx.x*blockDim.x + threadIdx.x;
+	if (i >= nrVertices) return;
+
+	//printf("vert %d, made it past first ret\n", i);
+
+	// Is this vertex a head or a tail? Else decolor
+	bool isATail = fll[i] == i;
+	bool isAHead = bll[i] == i;
+	bool singleton = (isATail && isAHead);
+
+	//printf("vert %d, entered gSel\n", i);
+	if (!singleton)
+		if (isAHead)
+			printf("%d (%s head)\n", i, match[i] ? "Red" : "Blue");
+		else
+			printf("%d (%s tail)\n", i, match[i] ? "Red" : "Blue");
+
+	// Dont color internal vertices
+	if ( !isATail && !isAHead ) match[i] = 2;
+
+	//Can this vertex still be matched?
+	if (match[i] >= 2) return;
+
+	//printf("vert %d, made it to color stage\n", i);
+
+	uint tail; 
+	uint head;
+	uint g;
+	// This approach prevents needing a datastructure of size 2N, to hold heads/tails
+	if (singleton){
+		g = i;
+	} else {
+		if (isAHead){
+			printf("vert %d, isAHead\n", i);
+			head = i;
+			tail = tails[i];
+		} else if (isATail){
+			printf("vert %d, isATail\n", i);
+			head = heads[i];
+			tail = i;
+		} else {
+			printf("ERROR: shouldn't ever reach here!\n");
 		}
 		// match heads and tails same match by using min as g.
 		// Hash color of set
@@ -567,74 +698,25 @@ __global__ void gMatch(int *match, int *fll, int *bll, const int *requests, cons
 			if(isAsingleton){
 				// With these assumptions, blue matched vertices can always set
 				// next to matched partner
-				if(match[i] == 0)
+				if(match[i] == 0){
 					fll[i] = r;
 				// With these assumptions, red matched vertices can always set
 				// prev to matched partner
-				if(match[i] == 1)
+				} else if(match[i] == 1){
 					bll[i] = r;
+				}
 				match[i] = 4 + min(i, r);
 				return;
 			} else if(match[i] == 0 && isAHead && !isATail){
 			// The blue end always remains the head of the path, therefore:
 			// If a blue head matches, BT-BH<->R(H/T)-R(H/T)
 			// Reverse the blue LL to obtain : BH-BT<->R(H/T)-R(H/T)
-				printf("%d is a blue head, reverse ll\n", i);
-				int curr = i;
-				int next;
-				int prev;
-				// Find the end in the forward dir
-				// I know I'm not a singleton, so
-				// there must be at least one vertex
-				// to reverse.
-				do {
-					prev = bll[curr];
-					next = fll[curr];
-					printf("old next %d prev %d, vertex %d\n", next, prev, i);
-					bll[curr] = next;
-					fll[curr] = prev; 
-					curr = next;
-				} while(fll[curr] != curr);
-				// Reverse old tail to make it a head
-				prev = bll[curr];
-				next = fll[curr];
-				printf("old next %d prev %d, vertex %d\n", next, prev, i);
-				bll[curr] = next;
-				fll[curr] = prev; 
-				curr = next;
-				// Set myself to tail and curr to head
-				head = curr;
-				tail = i;
+				printf("%d is a blue head, reverse ll shouldve already happened!!!\n", i);
 			} else if(match[i] == 1 && isATail && !isAHead){
 			// The red end always remains the tail of the path, therefore:
 			// If a red tail matches, B(H/T)-B(H/T)<->RT-RH
 			// Reverse the red LL to obtain : BH-BT<->RH-RT
-				printf("%d is a red tail, reverse ll\n", i);
-				int curr = i;
-				int next;
-				int prev;
-				// Find the end in the forward dir
-				// I know I'm not a singleton, so
-				// there must be at least one vertex
-				// to reverse.
-				// Reverse all internal nodes, doesnt reverse the old head
-				do {
-					prev = bll[curr];
-					next = fll[curr];
-					printf("old next %d prev %d, vertex %d\n", next, prev, i);
-					bll[curr] = next;
-					fll[curr] = prev; 
-					curr = prev;
-				} while(bll[curr] != curr);
-				// Reverse old head
-				prev = bll[curr];
-				next = fll[curr];
-				printf("old next %d prev %d, vertex %d\n", next, prev, i);
-				bll[curr] = next;
-				fll[curr] = prev; 
-				// Set myself to head and curr to tail
-				head = i;
-				tail = curr;
+				printf("%d is a red tail, reverse ll shouldve already happened!!!\n", i);
 			} else if (isAHead && !isATail){
 				printf("vert %d, isAHead\n", i);
 	
@@ -700,6 +782,336 @@ __global__ void gMatch(int *match, int *fll, int *bll, const int *requests, cons
 		}
 	}
 }
+
+
+__global__ void gLength(int *match, int *requests, int *fll, int *bll, int *length, const int nrVertices){
+
+	const int i = blockIdx.x*blockDim.x + threadIdx.x;
+
+	if (i >= nrVertices) return;
+
+	const int r = requests[i];
+	// I'm a recently matched head, so I'll update length variable in head and tail
+	//if (r < nrVertices && 4 <= match[i] && bll[i] == i){
+	if (bll[i] == i){
+		printf("vert %d, isAHead\n", i);
+		int head, tail, pl;
+		int curr = i;
+		int next = fll[curr];
+		pl = 0;
+		// Find the end in the forward dir
+		// I know I'm not a singleton, so
+		// there must be at least one vertex
+		// to reverse.
+		while(next != curr) {
+			pl += 1;
+			curr = next;
+			next = fll[curr];
+		}
+		head = i;
+		tail = curr;
+		length[head] = pl;
+		length[tail] = pl;
+	}
+}
+
+__global__ void gReverseLL(int *match, int *heads, int *tails, int *fll, int *bll, const int *requests, const int nrVertices){
+
+	const int i = blockIdx.x*blockDim.x + threadIdx.x;
+
+	if (i >= nrVertices) return;
+
+	const int r = requests[i];
+
+	// Only true if a B+ is neighbors with a R- 
+	// The pairing might have not occurred because of competition.
+	if (r < nrVertices)
+	{
+		// This vertex has made a valid request.
+		// Match the vertices if the request was mutual.
+		// R+ paired with a B-  -> R+.R- or B+.B-
+		// R+.R- paired with a B+.B-  -> R+.x.x.R- or B+.x.x.B-
+		// Only change fwd and bwd ll of my path to prevent race during LL reversal
+		if (requests[r] == i){
+			// Is this vertex a head or a tail? Else decolor
+			bool isATail = fll[i] == i;
+			bool isAHead = bll[i] == i;
+			bool isAsingleton = (isATail && isAHead);
+			uint head;
+			uint tail; 
+			if(isAsingleton){
+				return;
+			} else if(match[i] == 0 && isAHead && !isATail){
+			// The blue end always remains the head of the path, therefore:
+			// If a blue head matches, BT-BH<->R(H/T)-R(H/T)
+			// Reverse the blue LL to obtain : BH-BT<->R(H/T)-R(H/T)
+				printf("%d is a blue head, reverse ll\n", i);
+				int curr = i;
+				int next;
+				int prev;
+				// Find the end in the forward dir
+				// I know I'm not a singleton, so
+				// there must be at least one vertex
+				// to reverse.
+				do {
+					prev = bll[curr];
+					next = fll[curr];
+					printf("old next %d prev %d, vertex %d\n", next, prev, i);
+					bll[curr] = next;
+					fll[curr] = prev; 
+					curr = next;
+				} while(fll[curr] != curr);
+				// Reverse old tail to make it a head
+				prev = bll[curr];
+				next = fll[curr];
+				printf("old next %d prev %d, vertex %d\n", next, prev, i);
+				bll[curr] = next;
+				fll[curr] = prev; 
+				curr = next;
+				// Set myself to tail and curr to head
+				head = curr;
+				tail = i;
+
+				heads[head] = head;
+				heads[tail] = head;
+
+				tails[head] = tail;
+				tails[tail] = tail;
+
+			} else if(match[i] == 1 && isATail && !isAHead){
+			// The red end always remains the tail of the path, therefore:
+			// If a red tail matches, B(H/T)-B(H/T)<->RT-RH
+			// Reverse the red LL to obtain : BH-BT<->RH-RT
+				printf("%d is a red tail, reverse ll\n", i);
+				int curr = i;
+				int next;
+				int prev;
+				// Find the end in the forward dir
+				// I know I'm not a singleton, so
+				// there must be at least one vertex
+				// to reverse.
+				// Reverse all internal nodes, doesnt reverse the old head
+				do {
+					prev = bll[curr];
+					next = fll[curr];
+					printf("old next %d prev %d, vertex %d\n", next, prev, i);
+					bll[curr] = next;
+					fll[curr] = prev; 
+					curr = prev;
+				} while(bll[curr] != curr);
+				// Reverse old head
+				prev = bll[curr];
+				next = fll[curr];
+				printf("old next %d prev %d, vertex %d\n", next, prev, i);
+				bll[curr] = next;
+				fll[curr] = prev; 
+				// Set myself to head and curr to tail
+				head = i;
+				tail = curr;
+
+				heads[head] = head;
+				heads[tail] = head;
+
+				tails[head] = tail;
+				tails[tail] = tail;
+
+			}
+		}
+	}
+}
+
+// Only reverse without worrying about recording heads/tails
+__global__ void gReverseLL(int *match, int *fll, int *bll, const int *requests, const int nrVertices){
+
+	const int i = blockIdx.x*blockDim.x + threadIdx.x;
+
+	if (i >= nrVertices) return;
+
+	const int r = requests[i];
+
+	// Only true if a B+ is neighbors with a R- 
+	// The pairing might have not occurred because of competition.
+	if (r < nrVertices)
+	{
+		// This vertex has made a valid request.
+		// Match the vertices if the request was mutual.
+		// R+ paired with a B-  -> R+.R- or B+.B-
+		// R+.R- paired with a B+.B-  -> R+.x.x.R- or B+.x.x.B-
+		// Only change fwd and bwd ll of my path to prevent race during LL reversal
+		if (requests[r] == i){
+			// Is this vertex a head or a tail? Else decolor
+			bool isATail = fll[i] == i;
+			bool isAHead = bll[i] == i;
+			bool isAsingleton = (isATail && isAHead);
+			uint head;
+			uint tail; 
+			if(isAsingleton){
+				return;
+			} else if(match[i] == 0 && isAHead && !isATail){
+			// The blue end always remains the head of the path, therefore:
+			// If a blue head matches, BT-BH<->R(H/T)-R(H/T)
+			// Reverse the blue LL to obtain : BH-BT<->R(H/T)-R(H/T)
+				printf("%d is a blue head, reverse ll\n", i);
+				int curr = i;
+				int next;
+				int prev;
+				// Find the end in the forward dir
+				// I know I'm not a singleton, so
+				// there must be at least one vertex
+				// to reverse.
+				do {
+					prev = bll[curr];
+					next = fll[curr];
+					printf("old next %d prev %d, vertex %d\n", next, prev, i);
+					bll[curr] = next;
+					fll[curr] = prev; 
+					curr = next;
+				} while(fll[curr] != curr);
+				// Reverse old tail to make it a head
+				prev = bll[curr];
+				next = fll[curr];
+				printf("old next %d prev %d, vertex %d\n", next, prev, i);
+				bll[curr] = next;
+				fll[curr] = prev; 
+				curr = next;
+				// Set myself to tail and curr to head
+				head = curr;
+				tail = i;
+
+				//heads[head] = head;
+				//heads[tail] = head;
+
+				//tails[head] = tail;
+				//tails[tail] = tail;
+
+			} else if(match[i] == 1 && isATail && !isAHead){
+			// The red end always remains the tail of the path, therefore:
+			// If a red tail matches, B(H/T)-B(H/T)<->RT-RH
+			// Reverse the red LL to obtain : BH-BT<->RH-RT
+				printf("%d is a red tail, reverse ll\n", i);
+				int curr = i;
+				int next;
+				int prev;
+				// Find the end in the forward dir
+				// I know I'm not a singleton, so
+				// there must be at least one vertex
+				// to reverse.
+				// Reverse all internal nodes, doesnt reverse the old head
+				do {
+					prev = bll[curr];
+					next = fll[curr];
+					printf("old next %d prev %d, vertex %d\n", next, prev, i);
+					bll[curr] = next;
+					fll[curr] = prev; 
+					curr = prev;
+				} while(bll[curr] != curr);
+				// Reverse old head
+				prev = bll[curr];
+				next = fll[curr];
+				printf("old next %d prev %d, vertex %d\n", next, prev, i);
+				bll[curr] = next;
+				fll[curr] = prev; 
+				// Set myself to head and curr to tail
+				head = i;
+				tail = curr;
+
+				//heads[head] = head;
+				//heads[tail] = head;
+
+				//tails[head] = tail;
+				//tails[tail] = tail;
+
+			}
+		}
+	}
+}
+
+
+/*
+__global__ void gMatch(int *match, int *heads, int *tails, int *fll, int *bll, const int *requests, const int nrVertices){
+
+	const int i = blockIdx.x*blockDim.x + threadIdx.x;
+
+	if (i >= nrVertices) return;
+
+	const int r = requests[i];
+
+	// Only unmatched vertices make requests.
+	// Need to reset this every coarsening iteration for head and tails?
+	if (r == nrVertices + 1)
+	{
+		// This is vertex Blue(+) without any Blue or Red neighbors
+		// Discard it and flip sense.
+		match[i] = 2;
+	}
+	// Only true if a B+ is neighbors with a R- 
+	// The pairing might have not occurred because of competition.
+	else if (r < nrVertices)
+	{
+		// This vertex has made a valid request.
+		// Match the vertices if the request was mutual.
+		// R+ paired with a B-  -> R+.R- or B+.B-
+		// R+.R- paired with a B+.B-  -> R+.x.x.R- or B+.x.x.B-
+		// Only change fwd and bwd ll of my path to prevent race during LL reversal
+		if (requests[r] == i){
+			// Is this vertex a head or a tail? Else decolor
+			bool isATail = fll[i] == i;
+			bool isAHead = bll[i] == i;
+			bool isAsingleton = (isATail && isAHead);
+			if (isAsingleton)
+			printf("SUCCESS MATCHING %d (%s singleton %s) w %d\n", i, match[i] ? "Red" : "Blue", isAsingleton ? "True" : "False", r);
+			else if (isAHead)
+			printf("SUCCESS MATCHING %d (%s head %s) w %d\n", i, match[i] ? "Red" : "Blue", isAHead ? "True" : "False", r);
+			else
+			printf("SUCCESS MATCHING %d (%s tail %s) w %d\n", i, match[i] ? "Red" : "Blue", isATail ? "True" : "False", r);
+			uint head;
+			uint tail; 
+			if(isAsingleton){
+				// With these assumptions, blue matched vertices can always set
+				// next to matched partner
+				if(match[i] == 0){
+					fll[i] = r;
+					tails[i] = tails[r];
+				}
+				// With these assumptions, red matched vertices can always set
+				// prev to matched partner
+				if(match[i] == 1){
+					bll[i] = r;
+					heads[i] = heads[r];
+				}
+				match[i] = 4 + min(heads[i], tails[i]);
+			} else if(isAHead){
+				bll[i] = r;
+				heads[i] = heads[r];
+
+				bool amIStillAHead = bll[i] == i;
+				bool amINowATail = fll[i] == i;
+				bool isMyTailStillATail = fll[tail] == tail;
+				printf("%d (%s head %s) after matching\n", i, match[i] ? "Red" : "Blue", amIStillAHead ? "True" : "False");
+				printf("%d (%s tail %s) after matching\n", i, match[i] ? "Red" : "Blue", amINowATail ? "True" : "False");
+
+				printf("%d's (%s tail %d) is still a tail(%s) w %d\n", i, match[i] ? "Red" : "Blue", tail, isMyTailStillATail ? "True" : "False");
+				match[tails[i]] = 4 + min(heads[i], tails[i]);
+			// With these assumptions, red matched vertices can always set
+			// prev to matched partner
+			} else {
+				fll[i] = r;
+				tails[i] = tails[r];
+
+				bool amIStillATail = fll[i] == i;
+				bool amINowAHead = fll[i] == i;
+
+				bool isMyHeadStillAHead = bll[head] == head;
+				printf("%d (%s head %s) after matching\n", i, match[i] ? "Red" : "Blue", amINowAHead ? "True" : "False");
+
+				printf("%d (%s tail %s) after matching\n", i, match[i] ? "Red" : "Blue", amIStillATail ? "True" : "False");
+				printf("%d's (%s head %d) is still a head(%s) w %d\n", i, match[i] ? "Red" : "Blue", head, isMyHeadStillAHead ? "True" : "False");
+				match[heads[i]] = 4 + min(heads[i], tails[i]);
+			}
+		}
+	}
+}
+*/
 
 /**
 Precondition: Graph is composed of colored heads and tails with 
@@ -841,6 +1253,71 @@ __global__ void grRequest(int *requests, const int *match, const int *sense, con
 		requests[i] = nrVertices;
 	}
 }
+
+
+//==== Random greedy matching kernels ====
+__global__ void grRequest(int *requests, const int *match, const int *sense, const int *length, const int *forwardlinkedlist, const int *backwardlinkedlist, const int nrVertices)
+{
+	//Let all blue (+) vertices make requests.
+	const int i = blockIdx.x*blockDim.x + threadIdx.x;
+
+	if (i >= nrVertices) return;
+	
+	const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
+
+	//Look at all blue (+) vertices and let them make requests.
+	if (match[i] == 0 && sense[i] == 0)
+	{
+		int noUnmatchedNeighborExists = 1;
+		// One of these must be myself and the other might be myself (singleton)
+		// Since I allow quick sense flipping, it is unclear whether head->me or tail->me
+		// All that is known is I am either head or tail and at most one one my neighbors
+		// can be in my matching.  Therefore, just check each neighbor against both directions.
+		const int nf = forwardlinkedlist[i];
+		const int nb = backwardlinkedlist[i];		
+		for (int j = indices.x; j < indices.y; ++j)
+		{
+			const int ni = tex1Dfetch(neighboursTexture, j);
+			// Prevents matching an already matched neighbor
+			// We would never successfully rematch
+			// but the "noUnmatchedNeighborExists" 
+			// flag will never be set for pairs
+			// without this continue statement.
+			// r+.-r-, b+.b-; there is a colored neighbor.
+			if (nf == ni || nb == ni) continue;
+			const int nm = match[ni];
+			//Do we have an unmatched neighbour?
+			// 0 : Blue; 1 : Red, 2 
+			// Blue or Red
+			if (nm < 4 && ((length[ni]+length[i]) < 3))
+			{
+				// Negative sense 
+				if (sense[ni] == 1){
+					//Is this neighbour red?
+					if (nm == 1)
+					{
+						//Propose to this red(-) neighbour.
+						requests[i] = ni;
+						//printf("I %d requested %d\n", i, ni);
+						return;
+					}
+				}
+				// Neighbor is : [red(+) or blue(-)]
+				noUnmatchedNeighborExists = 0;
+			}
+		}
+		// N   -> Neighbors : [red(+), blue(-)] -> recolor
+		// N+1 -> No unmatched neighbors -> decolor
+		requests[i] = nrVertices + noUnmatchedNeighborExists;
+	}
+	else
+	{
+		// If I'm red or blue (-)
+		//Clear request value.
+		requests[i] = nrVertices;
+	}
+}
+
 
 __global__ void grRespond(int *requests, const int *match, const int nrVertices)
 {
@@ -999,7 +1476,7 @@ __global__ void gwRespond(int *requests, const int *match, const int nrVertices)
 	}
 }
 
-void GraphMatchingGPURandom::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll) const
+void GraphMatchingGPURandom::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
 {
 	//Creates a greedy random matching on the GPU.
 	//Assumes the current matching is empty.
@@ -1098,7 +1575,7 @@ void GraphMatchingGPURandom::performMatching(vector<int> &match, cudaEvent_t &t1
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll) const
+void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
 {
 	//Creates a greedy random matching on the GPU.
 	//Assumes the current matching is empty.
@@ -1126,7 +1603,7 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 	// dtails - to quickly flip sense of strand
 	// dmatch - same as singleton implementation
 	// dsense - indicates directionality of strand
-	int *dforwardlinkedlist, *dbackwardlinkedlist, *dmatch, *drequests, *dsense;
+	int *dforwardlinkedlist, *dbackwardlinkedlist, *dmatch, *drequests, *dsense, *dlength, *dh, *dt;
 
 	if (cudaMalloc(&drequests, sizeof(int)*graph.nrVertices) != cudaSuccess ||  
 		cudaMalloc(&dmatch, sizeof(int)*graph.nrVertices) != cudaSuccess || 
@@ -1144,6 +1621,26 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 	thrust::sequence(dbll.begin(),dbll.end());
 	dbackwardlinkedlist = thrust::raw_pointer_cast(&dbll[0]);
 
+	thrust::device_vector<int>dlengthOfPath(graph.nrVertices);
+	thrust::fill(dlengthOfPath.begin(),dlengthOfPath.end(), 0);
+	dlength = thrust::raw_pointer_cast(&dlengthOfPath[0]);
+
+	bool useMaxLength = true;
+	/*
+	bool useMoreMemory = true;
+
+	if (useMoreMemory){
+
+
+		thrust::device_vector<int>dheads(graph.nrVertices);
+		thrust::sequence(dheads.begin(),dheads.end());
+		dh = thrust::raw_pointer_cast(&dheads[0]);
+
+		thrust::device_vector<int>dtails(graph.nrVertices);
+		thrust::sequence(dtails.begin(),dtails.end());
+		dt = thrust::raw_pointer_cast(&dtails[0]);
+	}
+	*/
 	//Perform matching.
 	int blocksPerGrid = (graph.nrVertices + threadsPerBlock - 1)/threadsPerBlock;
 	
@@ -1159,7 +1656,7 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 	cout << "0\t0\t0" << endl;
 #endif
 	int maxlength = 3;
-	for (int lengthOfPath = 0; lengthOfPath < maxlength; ++lengthOfPath){
+	for (int coarsenRounds = 0; coarsenRounds < maxlength; ++coarsenRounds){
 		// The inner loop methods generalize from singletons to linked lists of any length
 		// Therefore, all we need to do is reset the match repeat the inner loop.
 		// Each inner loop call adds at most one edge to a path.
@@ -1170,19 +1667,25 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 			cerr << "Unable to clear matching on device!" << endl;
 			throw exception();
 		}
-		printf("lengthOfPath round %d\n", lengthOfPath);
+		printf("coarsenRounds round %d\n", coarsenRounds);
 
 		for (int i = 0; i < NR_MATCH_ROUNDS; ++i)
 		{
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
 			printf("Match round %d\n", i);
+			//if (useMoreMemory){
+			//	gSelect<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dsense, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices, rand());
+			//}else{
 			gSelect<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices, rand());
+			//}
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
 			printf("gSelect done\n");
-			
-			grRequest<<<blocksPerGrid, threadsPerBlock>>>(drequests, dmatch, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
+			if (useMaxLength)
+				grRequest<<<blocksPerGrid, threadsPerBlock>>>(drequests, dmatch, dsense, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
+			else 
+				grRequest<<<blocksPerGrid, threadsPerBlock>>>(drequests, dmatch, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
 			printf("grRequest done\n");
@@ -1191,9 +1694,26 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
 			printf("grRespond done\n");
-
+			/*
+			if (useMoreMemory){
+				gReverseLL<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, 
+					drequests, graph.nrVertices);
+				gMatch<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, 
+					drequests, graph.nrVertices);
+			}else{
+			*/
+			gReverseLL<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dforwardlinkedlist, dbackwardlinkedlist, 
+														drequests, graph.nrVertices);
+			cudaDeviceSynchronize();
+			checkLastErrorCUDA(__FILE__, __LINE__);
 			gMatch<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dforwardlinkedlist, dbackwardlinkedlist, 
-														drequests, graph.nrVertices);	
+														drequests, graph.nrVertices);
+			cudaDeviceSynchronize();
+			checkLastErrorCUDA(__FILE__, __LINE__);
+			if (useMaxLength)
+				gLength<<<blocksPerGrid, threadsPerBlock>>>(dmatch, drequests, dforwardlinkedlist, dbackwardlinkedlist, 
+															dlength, graph.nrVertices);
+			//}
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);													
 			printf("gMatch done\n");
@@ -1204,7 +1724,7 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 			cudaMemcpy(&bll[0], dbackwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
 			writeGraphVizIntermediate(match, 
 							graph,
-							"iter_"+SSTR(lengthOfPath)+"_"+SSTR(i),  
+							"iter_"+SSTR(coarsenRounds)+"_"+SSTR(i),  
 							fll,
 							bll);
 			double weight = 0;
@@ -1260,7 +1780,7 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGPURandomMaximal::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll) const
+void GraphMatchingGPURandomMaximal::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
 {
 	//Creates a greedy random maximal matching on the GPU using atomic operations.
 	//Assumes the current matching is empty.
@@ -1351,7 +1871,7 @@ void GraphMatchingGPURandomMaximal::performMatching(vector<int> &match, cudaEven
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGPUWeighted::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll) const
+void GraphMatchingGPUWeighted::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
 {
 	//Creates a greedy weighted matching on the GPU.
 	//Assumes the current matching is empty.
@@ -1460,7 +1980,7 @@ void GraphMatchingGPUWeighted::performMatching(vector<int> &match, cudaEvent_t &
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGPUWeightedMaximal::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll) const
+void GraphMatchingGPUWeightedMaximal::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
 {
 	//Creates a greedy weighted matching on the GPU.
 	//Assumes the current matching is empty.
