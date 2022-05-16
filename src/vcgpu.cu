@@ -15,9 +15,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-void VCGPU::findCover(int *dforwardlinkedlist, int *dbackwardlinkedlist, int *dmatch, int *dlength, int *dheadlist, int *dheadbool)
+void VCGPU::findCover(int nrVertices, int threadsPerBlock, int *dforwardlinkedlist, int *dbackwardlinkedlist, int *dmatch, int *dlength, int *dheadlist, int *dheadbool)
 {
+	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
 
+	SetHeadBool<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, dbackwardlinkedlist, dheadbool);
 }
 
 void VCGPU::SortByHeadBool(int *dheadlist, int *dheadbool)
@@ -28,7 +30,6 @@ void VCGPU::SortByHeadBool(int *dheadlist, int *dheadbool)
 
 __global__ void SetHeadBool(int nrVertices,
 							int *dbackwardlinkedlist,
-                            int* dheadlist,
                             int* dheadbool){
 	//Determine blue and red groups using MD5 hashing.
 	//Based on the Wikipedia MD5 hashing pseudocode (http://en.wikipedia.org/wiki/MD5).

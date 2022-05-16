@@ -29,11 +29,11 @@ __global__ void SetHeadBool(int nrVertices,
 class VCGPU
 {
 	public:
-		VCGPU(const Graph &, const int &, const unsigned int &);
+		VCGPU();
 		~VCGPU();
 		
 
-		void findCover(int *dforwardlinkedlist, int *dbackwardlinkedlist, int *dmatch, int *dlength, int *dheadlist, int *dheadbool);
+		void findCover(int nrVertices, int threadsPerBlock, int *dforwardlinkedlist, int *dbackwardlinkedlist, int *dmatch, int *dlength, int *dheadlist, int *dheadbool);
 		void SortByHeadBool(int *dheadlist, int *dheadbool);
 
 };
