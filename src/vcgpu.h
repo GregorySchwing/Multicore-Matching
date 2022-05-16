@@ -34,7 +34,7 @@ class VCGPU
 		
 
 		void findCover(int nrVertices, int threadsPerBlock, int *dforwardlinkedlist, int *dbackwardlinkedlist, int *dmatch, int *dlength, int *dheadlist, int *dheadbool);
-		void SortByHeadBool((int nrVertices,
+		void SortByHeadBool(int nrVertices,
                                 int * dheadbool,
                                 int * dheadboolSorted,
                                 int * dheadlist,
