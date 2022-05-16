@@ -24,7 +24,6 @@ namespace mtc
 {
 __global__ void SetHeadBool(int nrVertices,
 							int *dbackwardlinkedlist,
-                            int* dheadlist,
                             int* dheadbool);
 class VCGPU
 {
