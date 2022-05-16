@@ -22,7 +22,7 @@ void VCGPU::findCover(int nrVertices, int threadsPerBlock, int *dforwardlinkedli
 	SetHeadBool<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, dbackwardlinkedlist, dheadbool);
 }
 
-void VCGPU::SortByHeadBool((int nrVertices,
+void VCGPU::SortByHeadBool(int nrVertices,
                                 int * dheadbool,
                                 int * dheadboolSorted,
                                 int * dheadlist,
