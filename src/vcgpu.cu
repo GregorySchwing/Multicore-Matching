@@ -14,28 +14,26 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef MATCH_VC_GPU_H
-#define MATCH_VC_GPU_H
 
-#include <vector>
-#include <cuda.h>
-
-namespace mtc
+void VCGPU::findCover(int *dforwardlinkedlist, int *dbackwardlinkedlist, int *dmatch, int *dlength, int *dheadlist, int *dheadbool)
 {
+
+}
+
+void VCGPU::SortByHeadBool(int *dheadlist, int *dheadbool)
+{
+
+}
+
+
 __global__ void SetHeadBool(int nrVertices,
 							int *dbackwardlinkedlist,
                             int* dheadlist,
-                            int* dheadbool);
-class VCGPU
-{
-	public:
-		VCGPU(const Graph &, const int &, const unsigned int &);
-		~VCGPU();
-		
+                            int* dheadbool){
+	//Determine blue and red groups using MD5 hashing.
+	//Based on the Wikipedia MD5 hashing pseudocode (http://en.wikipedia.org/wiki/MD5).
+	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+	if (i >= nrVertices) return;
 
-		void findCover(int *dforwardlinkedlist, int *dbackwardlinkedlist, int *dmatch, int *dlength, int *dheadlist, int *dheadbool);
-		void SortByHeadBool(int *dheadlist, int *dheadbool);
-
-};
-
-#endif
+    dheadbool[threadID] = dbackwardlinkedlist[threadID] == threadID;
+}
