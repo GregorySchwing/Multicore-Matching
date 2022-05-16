@@ -22,8 +22,34 @@ void VCGPU::findCover(int nrVertices, int threadsPerBlock, int *dforwardlinkedli
 	SetHeadBool<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, dbackwardlinkedlist, dheadbool);
 }
 
-void VCGPU::SortByHeadBool(int *dheadlist, int *dheadbool)
-{
+void VCGPU::SortByHeadBool((int nrVertices,
+                                int * dheadbool,
+                                int * dheadboolSorted,
+                                int * dheadlist,
+                                int * dheadlistSorted){
+    // Declare, allocate, and initialize device-accessible pointers for sorting data
+    // numberOfAtoms            e.g., 7
+    // mapParticleToCell        e.g., [8, 6, 7, 5, 3, 0, 9]
+    // mapParticleToCellSorted  e.g., [        ...        ]
+    // particleIndices          e.g., [0, 1, 2, 3, 4, 5, 6]
+    // particleIndicesSorted    e.g., [        ...        ]
+    // Determine temporary device storage requirements
+    int num_items = nrVertices;
+    int  *d_keys_in = dheadbool;
+    int  *d_keys_out = dheadboolSorted;       
+    int  *d_values_in = dheadlist;    
+    int  *d_values_out = dheadlistSorted;   
+    void     *d_temp_storage = NULL;
+    size_t   temp_storage_bytes = 0;
+    cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes,
+        d_keys_in, d_keys_out, d_values_in, d_values_out, num_items);
+    // Allocate temporary storage
+    cudaMalloc(&d_temp_storage, temp_storage_bytes);
+    // Run sorting operation
+    cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes,
+        d_keys_in, d_keys_out, d_values_in, d_values_out, num_items);
+    // mapParticleToCellSorted        <-- [0, 3, 5, 6, 7, 8, 9]
+    // particleIndicesSorted          <-- [5, 4, 3, 1, 2, 0, 6]
 
 }
 
