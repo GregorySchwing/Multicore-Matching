@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "vcgpu.h"
-#include "cub/cub.cuh"
+//#include "cub/cub.cuh"
 
 void VCGPU::findCover(int nrVertices, int threadsPerBlock, int *dforwardlinkedlist, int *dbackwardlinkedlist, int *dmatch, int *dlength, int *dheadlist, int *dheadbool)
 {
@@ -36,6 +36,7 @@ void VCGPU::SortByHeadBool(int nrVertices,
     // particleIndices          e.g., [0, 1, 2, 3, 4, 5, 6]
     // particleIndicesSorted    e.g., [        ...        ]
     // Determine temporary device storage requirements
+    /*
     int num_items = nrVertices;
     int  *d_keys_in = dheadbool;
     int  *d_keys_out = dheadboolSorted;       
@@ -52,7 +53,7 @@ void VCGPU::SortByHeadBool(int nrVertices,
         d_keys_in, d_keys_out, d_values_in, d_values_out, num_items);
     // mapParticleToCellSorted        <-- [0, 3, 5, 6, 7, 8, 9]
     // particleIndicesSorted          <-- [5, 4, 3, 1, 2, 0, 6]
-
+*/
 }
 
 
