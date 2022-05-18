@@ -63,7 +63,7 @@ __global__ void SetHeadBool(int nrVertices,
 	//Determine blue and red groups using MD5 hashing.
 	//Based on the Wikipedia MD5 hashing pseudocode (http://en.wikipedia.org/wiki/MD5).
 	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
-	if (i >= nrVertices) return;
+	if (threadID >= nrVertices) return;
 
     dheadbool[threadID] = dbackwardlinkedlist[threadID] == threadID;
 }
