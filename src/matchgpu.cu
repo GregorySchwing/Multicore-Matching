@@ -323,12 +323,14 @@ __global__ void gSelect(int *match, int *sense, int * fll, int * bll, const int 
 	bool singleton = (isATail && isAHead);
 
 	//printf("vert %d, entered gSel\n", i);
+
+	/*
 	if (!singleton)
 	if (isAHead)
 	printf("%d (%s head)\n", i, match[i] ? "Red" : "Blue");
 	else
 	printf("%d (%s tail)\n", i, match[i] ? "Red" : "Blue");
-	
+	*/
 
 
 	// Dont color internal vertices
@@ -347,7 +349,7 @@ __global__ void gSelect(int *match, int *sense, int * fll, int * bll, const int 
 		g = i;
 	} else {
 		if (isAHead){
-			printf("vert %d, isAHead\n", i);
+			//printf("vert %d, isAHead\n", i);
 
 			int curr = i;
 			int next = fll[curr];
@@ -358,12 +360,12 @@ __global__ void gSelect(int *match, int *sense, int * fll, int * bll, const int 
 			while(next != curr) {
 				curr = next;
 				next = fll[curr];
-				printf("curr %d, next %d, vert %d, looping head 2 tail\n", curr, next, i);
+				//printf("curr %d, next %d, vert %d, looping head 2 tail\n", curr, next, i);
 			}
 			head = i;
 			tail = curr;
 		} else if (isATail){
-			printf("vert %d, isATail\n", i);
+			//printf("vert %d, isATail\n", i);
 			int curr = i;
 			int prev = bll[curr];
 			// Find the end in the forward dir
@@ -373,7 +375,7 @@ __global__ void gSelect(int *match, int *sense, int * fll, int * bll, const int 
 			while(prev != curr) {
 				curr = prev;
 				prev = bll[curr];
-				printf("curr %d, prev %d, vert %d, looping tail 2 head\n", curr, prev, i);
+				//printf("curr %d, prev %d, vert %d, looping tail 2 head\n", curr, prev, i);
 			}
 			head = curr;
 			tail = i;
@@ -478,12 +480,13 @@ __global__ void gSelect(int *match, int *sense, int * heads, int * tails, int * 
 	bool singleton = (isATail && isAHead);
 
 	//printf("vert %d, entered gSel\n", i);
+	/*
 	if (!singleton)
 		if (isAHead)
 			printf("%d (%s head)\n", i, match[i] ? "Red" : "Blue");
 		else
 			printf("%d (%s tail)\n", i, match[i] ? "Red" : "Blue");
-
+	*/
 	// Dont color internal vertices
 	if ( !isATail && !isAHead ) match[i] = 2;
 
@@ -500,11 +503,11 @@ __global__ void gSelect(int *match, int *sense, int * heads, int * tails, int * 
 		g = i;
 	} else {
 		if (isAHead){
-			printf("vert %d, isAHead\n", i);
+			//printf("vert %d, isAHead\n", i);
 			head = i;
 			tail = tails[i];
 		} else if (isATail){
-			printf("vert %d, isATail\n", i);
+			//printf("vert %d, isATail\n", i);
 			head = heads[i];
 			tail = i;
 		} else {
@@ -687,12 +690,14 @@ __global__ void gMatch(int *match, int *fll, int *bll, const int *requests, cons
 			bool isATail = fll[i] == i;
 			bool isAHead = bll[i] == i;
 			bool isAsingleton = (isATail && isAHead);
+			/*
 			if (isAsingleton)
 			printf("SUCCESS MATCHING %d (%s singleton %s) w %d\n", i, match[i] ? "Red" : "Blue", isAsingleton ? "True" : "False", r);
 			else if (isAHead)
 			printf("SUCCESS MATCHING %d (%s head %s) w %d\n", i, match[i] ? "Red" : "Blue", isAHead ? "True" : "False", r);
 			else
 			printf("SUCCESS MATCHING %d (%s tail %s) w %d\n", i, match[i] ? "Red" : "Blue", isATail ? "True" : "False", r);
+			*/
 			uint head;
 			uint tail; 
 			if(isAsingleton){
@@ -718,7 +723,7 @@ __global__ void gMatch(int *match, int *fll, int *bll, const int *requests, cons
 			// Reverse the red LL to obtain : BH-BT<->RH-RT
 				printf("%d is a red tail, reverse ll shouldve already happened!!!\n", i);
 			} else if (isAHead && !isATail){
-				printf("vert %d, isAHead\n", i);
+				//printf("vert %d, isAHead\n", i);
 	
 				int curr = i;
 				int next = fll[curr];
@@ -729,12 +734,12 @@ __global__ void gMatch(int *match, int *fll, int *bll, const int *requests, cons
 				while(next != curr) {
 					curr = next;
 					next = fll[curr];
-					printf("curr %d, next %d, vert %d, looping head 2 tail\n", curr, next, i);
+					//printf("curr %d, next %d, vert %d, looping head 2 tail\n", curr, next, i);
 				}
 				head = i;
 				tail = curr;
 			} else if (!isAHead && isATail){
-				printf("vert %d, isATail\n", i);
+				//printf("vert %d, isATail\n", i);
 				int curr = i;
 				int prev = bll[curr];
 				// Find the end in the forward dir
@@ -744,7 +749,7 @@ __global__ void gMatch(int *match, int *fll, int *bll, const int *requests, cons
 				while(prev != curr) {
 					curr = prev;
 					prev = bll[curr];
-					printf("curr %d, prev %d, vert %d, looping tail 2 head\n", curr, prev, i);
+					//printf("curr %d, prev %d, vert %d, looping tail 2 head\n", curr, prev, i);
 				}
 				head = curr;
 				tail = i;
@@ -758,10 +763,10 @@ __global__ void gMatch(int *match, int *fll, int *bll, const int *requests, cons
 				bool amIStillAHead = bll[i] == i;
 				bool amINowATail = fll[i] == i;
 				bool isMyTailStillATail = fll[tail] == tail;
-				printf("%d (%s head %s) after matching\n", i, match[i] ? "Red" : "Blue", amIStillAHead ? "True" : "False");
-				printf("%d (%s tail %s) after matching\n", i, match[i] ? "Red" : "Blue", amINowATail ? "True" : "False");
+				//printf("%d (%s head %s) after matching\n", i, match[i] ? "Red" : "Blue", amIStillAHead ? "True" : "False");
+				//printf("%d (%s tail %s) after matching\n", i, match[i] ? "Red" : "Blue", amINowATail ? "True" : "False");
 
-				printf("%d's (%s tail %d) is still a tail(%s) w %d\n", i, match[i] ? "Red" : "Blue", tail, isMyTailStillATail ? "True" : "False");
+				//printf("%d's (%s tail %d) is still a tail(%s) w %d\n", i, match[i] ? "Red" : "Blue", tail, isMyTailStillATail ? "True" : "False");
 			// With these assumptions, red matched vertices can always set
 			// prev to matched partner
 			} if(i == tail){
@@ -770,10 +775,10 @@ __global__ void gMatch(int *match, int *fll, int *bll, const int *requests, cons
 				bool amINowAHead = fll[i] == i;
 
 				bool isMyHeadStillAHead = bll[head] == head;
-				printf("%d (%s head %s) after matching\n", i, match[i] ? "Red" : "Blue", amINowAHead ? "True" : "False");
+				//printf("%d (%s head %s) after matching\n", i, match[i] ? "Red" : "Blue", amINowAHead ? "True" : "False");
 
-				printf("%d (%s tail %s) after matching\n", i, match[i] ? "Red" : "Blue", amIStillATail ? "True" : "False");
-				printf("%d's (%s head %d) is still a head(%s) w %d\n", i, match[i] ? "Red" : "Blue", head, isMyHeadStillAHead ? "True" : "False");
+				//printf("%d (%s tail %s) after matching\n", i, match[i] ? "Red" : "Blue", amIStillATail ? "True" : "False");
+				//printf("%d's (%s head %d) is still a head(%s) w %d\n", i, match[i] ? "Red" : "Blue", head, isMyHeadStillAHead ? "True" : "False");
 
 
 			}
@@ -794,7 +799,7 @@ __global__ void gLength(int *match, int *requests, int *fll, int *bll, int *leng
 	// I'm a recently matched head, so I'll update length variable in head and tail
 	//if (r < nrVertices && 4 <= match[i] && bll[i] == i){
 	if (bll[i] == i){
-		printf("vert %d, isAHead\n", i);
+		//printf("vert %d, isAHead\n", i);
 		int head, tail, pl;
 		int curr = i;
 		int next = fll[curr];
@@ -845,7 +850,7 @@ __global__ void gReverseLL(int *match, int *heads, int *tails, int *fll, int *bl
 			// The blue end always remains the head of the path, therefore:
 			// If a blue head matches, BT-BH<->R(H/T)-R(H/T)
 			// Reverse the blue LL to obtain : BH-BT<->R(H/T)-R(H/T)
-				printf("%d is a blue head, reverse ll\n", i);
+				//printf("%d is a blue head, reverse ll\n", i);
 				int curr = i;
 				int next;
 				int prev;
@@ -856,7 +861,7 @@ __global__ void gReverseLL(int *match, int *heads, int *tails, int *fll, int *bl
 				do {
 					prev = bll[curr];
 					next = fll[curr];
-					printf("old next %d prev %d, vertex %d\n", next, prev, i);
+					//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 					bll[curr] = next;
 					fll[curr] = prev; 
 					curr = next;
@@ -864,7 +869,7 @@ __global__ void gReverseLL(int *match, int *heads, int *tails, int *fll, int *bl
 				// Reverse old tail to make it a head
 				prev = bll[curr];
 				next = fll[curr];
-				printf("old next %d prev %d, vertex %d\n", next, prev, i);
+				//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 				bll[curr] = next;
 				fll[curr] = prev; 
 				curr = next;
@@ -882,7 +887,7 @@ __global__ void gReverseLL(int *match, int *heads, int *tails, int *fll, int *bl
 			// The red end always remains the tail of the path, therefore:
 			// If a red tail matches, B(H/T)-B(H/T)<->RT-RH
 			// Reverse the red LL to obtain : BH-BT<->RH-RT
-				printf("%d is a red tail, reverse ll\n", i);
+				//printf("%d is a red tail, reverse ll\n", i);
 				int curr = i;
 				int next;
 				int prev;
@@ -894,7 +899,7 @@ __global__ void gReverseLL(int *match, int *heads, int *tails, int *fll, int *bl
 				do {
 					prev = bll[curr];
 					next = fll[curr];
-					printf("old next %d prev %d, vertex %d\n", next, prev, i);
+					//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 					bll[curr] = next;
 					fll[curr] = prev; 
 					curr = prev;
@@ -902,7 +907,7 @@ __global__ void gReverseLL(int *match, int *heads, int *tails, int *fll, int *bl
 				// Reverse old head
 				prev = bll[curr];
 				next = fll[curr];
-				printf("old next %d prev %d, vertex %d\n", next, prev, i);
+				//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 				bll[curr] = next;
 				fll[curr] = prev; 
 				// Set myself to head and curr to tail
@@ -951,7 +956,7 @@ __global__ void gReverseLL(int *match, int *fll, int *bll, const int *requests, 
 			// The blue end always remains the head of the path, therefore:
 			// If a blue head matches, BT-BH<->R(H/T)-R(H/T)
 			// Reverse the blue LL to obtain : BH-BT<->R(H/T)-R(H/T)
-				printf("%d is a blue head, reverse ll\n", i);
+				//printf("%d is a blue head, reverse ll\n", i);
 				int curr = i;
 				int next;
 				int prev;
@@ -962,7 +967,7 @@ __global__ void gReverseLL(int *match, int *fll, int *bll, const int *requests, 
 				do {
 					prev = bll[curr];
 					next = fll[curr];
-					printf("old next %d prev %d, vertex %d\n", next, prev, i);
+					//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 					bll[curr] = next;
 					fll[curr] = prev; 
 					curr = next;
@@ -970,7 +975,7 @@ __global__ void gReverseLL(int *match, int *fll, int *bll, const int *requests, 
 				// Reverse old tail to make it a head
 				prev = bll[curr];
 				next = fll[curr];
-				printf("old next %d prev %d, vertex %d\n", next, prev, i);
+				//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 				bll[curr] = next;
 				fll[curr] = prev; 
 				curr = next;
@@ -988,7 +993,7 @@ __global__ void gReverseLL(int *match, int *fll, int *bll, const int *requests, 
 			// The red end always remains the tail of the path, therefore:
 			// If a red tail matches, B(H/T)-B(H/T)<->RT-RH
 			// Reverse the red LL to obtain : BH-BT<->RH-RT
-				printf("%d is a red tail, reverse ll\n", i);
+				//printf("%d is a red tail, reverse ll\n", i);
 				int curr = i;
 				int next;
 				int prev;
@@ -1000,7 +1005,7 @@ __global__ void gReverseLL(int *match, int *fll, int *bll, const int *requests, 
 				do {
 					prev = bll[curr];
 					next = fll[curr];
-					printf("old next %d prev %d, vertex %d\n", next, prev, i);
+					//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 					bll[curr] = next;
 					fll[curr] = prev; 
 					curr = prev;
@@ -1008,7 +1013,7 @@ __global__ void gReverseLL(int *match, int *fll, int *bll, const int *requests, 
 				// Reverse old head
 				prev = bll[curr];
 				next = fll[curr];
-				printf("old next %d prev %d, vertex %d\n", next, prev, i);
+				//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 				bll[curr] = next;
 				fll[curr] = prev; 
 				// Set myself to head and curr to tail
