@@ -481,7 +481,7 @@ int main(int argc, char **argv)
 			
 			//Store data for all iterations.
 			vector<double> matchingSizes(nrTimeAvg, 0);
-			vector< vector<long> > matchingSizesGeneral;
+			vector< vector<double> > matchingSizesGeneral(maxLength, vector<double>(nrTimeAvg, 0));
 			vector<double> matchingWeights(nrTimeAvg, 0.0);
 			vector<double> totalTimes(nrTimeAvg, 0.0);
 			vector<double> matchTimes(nrTimeAvg, 0.0);
@@ -580,7 +580,8 @@ int main(int argc, char **argv)
 				// Since for max length 1, a vertex is either matched or not
 				// I need to generalize the length of this to max length "n".
 				matchingSizes[k] = matchingSize;
-				matchingSizesGeneral.push_back(matchingSizeGeneral);
+				for (int i = 0; i < matchingSizeGeneral.size(); ++i)
+					matchingSizesGeneral[i][k] = matchingSizeGeneral[i];
 				matchingWeights[k] = matchingWeight;
 				totalTimes[k] = time0;
 				matchTimes[k] = time1;
@@ -617,6 +618,12 @@ int main(int argc, char **argv)
 			cout << avg << " " << dev << " ";
 			gnuplotFile << avg << "\t" << dev << "\t";
 			
+			for (auto & size : matchingSizesGeneral){
+				//Output averages and standard deviations of matching size, weight, and time.
+				getStats(avg, dev, size);
+				cout << avg << " " << dev << " ";
+				gnuplotFile << avg << "\t" << dev << "\t";
+			}
 			getStats(avg, dev, matchingWeights);
 			cout << avg << " " << dev << " ";
 			gnuplotFile << avg << "\t" << dev << "\t";
