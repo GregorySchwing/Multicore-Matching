@@ -1783,7 +1783,7 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 	cudaFree(drequests);
 	cudaFree(dmatch);
 	cudaFree(dsense);
-	cudaFree(headindex);
+	cudaFree(dheadindex);
 	cudaUnbindTexture(neighboursTexture);
 	cudaUnbindTexture(neighbourRangesTexture);
 }
