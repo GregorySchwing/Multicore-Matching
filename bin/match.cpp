@@ -481,6 +481,7 @@ int main(int argc, char **argv)
 			
 			//Store data for all iterations.
 			vector<double> matchingSizes(nrTimeAvg, 0);
+			vector<vector<int>> matchingSizesGeneral;
 			vector<double> matchingWeights(nrTimeAvg, 0.0);
 			vector<double> totalTimes(nrTimeAvg, 0.0);
 			vector<double> matchTimes(nrTimeAvg, 0.0);
@@ -579,6 +580,7 @@ int main(int argc, char **argv)
 				// Since for max length 1, a vertex is either matched or not
 				// I need to generalize the length of this to max length "n".
 				matchingSizes[k] = matchingSize;
+				matchingSizesGeneral.push_back(matchingSizeGeneral);
 				matchingWeights[k] = matchingWeight;
 				totalTimes[k] = time0;
 				matchTimes[k] = time1;
