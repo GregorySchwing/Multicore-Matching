@@ -595,6 +595,14 @@ int main(int argc, char **argv)
 
 
 #ifndef MATCH_INTERMEDIATE_COUNT
+			cout << endl;
+			for (uint i = 0; i < matchingSizesGeneral.size(); ++i){
+				for (uint j = 0; j < matchingSizesGeneral[i].size(); ++j){
+					cout << matchingSizesGeneral[i][j] << "\t";
+				}
+				cout << endl;
+			}
+
 			double avg = 0.0, dev = 0.0;
 			
 			cout << *i << " ";
@@ -618,14 +626,6 @@ int main(int argc, char **argv)
 			gnuplotFile << avg << "\t" << dev << "\t";
 
 			for (uint i = 0; i < matchingSizesGeneral.size(); ++i){
-				for (uint j = 0; j < matchingSizesGeneral[i].size(); ++j){
-					cout << matchingSizesGeneral[i][j] << "\t";
-				}
-				cout << endl;
-			}
-
-			for (uint i = 0; i < matchingSizesGeneral.size(); ++i){
-
 				//Output averages and standard deviations of matching size, weight, and time.
 				getStats(avg, dev, matchingSizesGeneral[i]);
 				cout << avg << " " << dev << " ";
