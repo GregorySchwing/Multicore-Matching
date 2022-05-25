@@ -1769,7 +1769,8 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 	}
 
 	//Copy obtained matching on the device back to the host.
-	if (cudaMemcpy(&fll[0], dforwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost) != cudaSuccess ||
+	if (cudaMemcpy(&lengthOfPath[0], dlength, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost) != cudaSuccess ||
+		cudaMemcpy(&fll[0], dforwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost) != cudaSuccess ||
 		cudaMemcpy(&bll[0], dbackwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost) != cudaSuccess)
 	{
 		cerr << "Unable to retrieve data!" << endl;
