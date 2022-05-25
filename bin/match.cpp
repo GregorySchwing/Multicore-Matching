@@ -579,7 +579,7 @@ int main(int argc, char **argv)
 				// Since for max length 1, a vertex is either matched or not
 				// I need to generalize the length of this to max length "n".
 				matchingSizes[k] = matchingSize;
-				for (int i = 0; i < matchingSizesGeneral.size(); ++i)
+				for (uint i = 0; i < matchingSizesGeneral.size(); ++i)
 					matchingSizesGeneral[i][k] = matchingSizeGeneral[i];
 				matchingWeights[k] = matchingWeight;
 				totalTimes[k] = time0;
@@ -617,9 +617,9 @@ int main(int argc, char **argv)
 			cout << avg << " " << dev << " ";
 			gnuplotFile << avg << "\t" << dev << "\t";
 
-			for (int i = 0; i < matchingSizeGeneral.size(); ++i){
+			for (int i = 0; i < matchingSizesGeneral.size(); ++i){
 				//Output averages and standard deviations of matching size, weight, and time.
-				getStats(avg, dev, matchingSizeGeneral[i]);
+				getStats(avg, dev, matchingSizeGenerals[i]);
 				cout << avg << " " << dev << " ";
 				gnuplotFile << avg << "\t" << dev << "\t";
 			}
