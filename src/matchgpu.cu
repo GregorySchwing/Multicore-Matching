@@ -1743,7 +1743,6 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 	cudaEventRecord(t2, 0);
 	cudaEventSynchronize(t2);
 
-	VCGPU vc();
 
 #ifndef NDEBUG
 	cudaError_t error;
