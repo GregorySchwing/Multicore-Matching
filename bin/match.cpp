@@ -596,9 +596,9 @@ int main(int argc, char **argv)
 
 #ifndef MATCH_INTERMEDIATE_COUNT
 			cout << endl;
-			for (uint i = 0; i < matchingSizesGeneral.size(); ++i){
-				for (uint j = 0; j < matchingSizesGeneral[i].size(); ++j){
-					cout << matchingSizesGeneral[i][j] << "\t";
+			for (uint x = 0; x < matchingSizesGeneral.size(); ++x){
+				for (uint y = 0; y < matchingSizesGeneral[x].size(); ++y){
+					cout << matchingSizesGeneral[x][y] << "\t";
 				}
 				cout << endl;
 			}
