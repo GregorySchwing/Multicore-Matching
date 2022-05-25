@@ -617,9 +617,9 @@ int main(int argc, char **argv)
 			cout << avg << " " << dev << " ";
 			gnuplotFile << avg << "\t" << dev << "\t";
 
-			for (int i = 0; i < matchingSizesGeneral.size(); ++i){
+			for (uint i = 0; i < matchingSizesGeneral.size(); ++i){
 				//Output averages and standard deviations of matching size, weight, and time.
-				getStats(avg, dev, matchingSizeGenerals[i]);
+				getStats(avg, dev, matchingSizesGeneral[i]);
 				cout << avg << " " << dev << " ";
 				gnuplotFile << avg << "\t" << dev << "\t";
 			}
