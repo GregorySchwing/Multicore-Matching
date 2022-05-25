@@ -20,11 +20,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <cuda.h>
 
-namespace mtc
-{
 __global__ void SetHeadBool(int nrVertices,
 							int *dbackwardlinkedlist,
                             int* dheadbool);
+
+namespace mtc
+{
 class VCGPU
 {
 	public:
