@@ -617,13 +617,14 @@ int main(int argc, char **argv)
 			getStats(avg, dev, matchingSizes);
 			cout << avg << " " << dev << " ";
 			gnuplotFile << avg << "\t" << dev << "\t";
-			
-			for (auto & size : matchingSizesGeneral){
+
+			for (int i = 0; i < matchingSizeGeneral.size(); ++i)
 				//Output averages and standard deviations of matching size, weight, and time.
-				getStats(avg, dev, size);
+				getStats(avg, dev, matchingSizeGeneral[i]);
 				cout << avg << " " << dev << " ";
 				gnuplotFile << avg << "\t" << dev << "\t";
 			}
+			
 			getStats(avg, dev, matchingWeights);
 			cout << avg << " " << dev << " ";
 			gnuplotFile << avg << "\t" << dev << "\t";
