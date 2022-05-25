@@ -97,7 +97,7 @@ void GraphMatching::getWeight(double &_weight, long &_size, const vector<int> &m
 }
 
 
-void GraphMatching::getWeightGeneral(double &_weight, const vector<long> &matchSize, const vector<int> &match, const Graph &graph)
+void GraphMatching::getWeightGeneral(double &_weight, const vector<long> &_size, const vector<int> &match, const Graph &graph)
 {
 	assert((int)match.size() == graph.nrVertices);
 
