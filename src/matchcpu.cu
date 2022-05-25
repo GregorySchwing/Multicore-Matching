@@ -107,7 +107,7 @@ void GraphMatching::getWeightGeneral(double &_weight, vector<long> &_size, const
 
 	for (int i = 0; i < graph.nrVertices; ++i)
 	{
-		std::cout << i << " " << bll[i] << isHead(i, bll) << std::endl;
+		std::cout << i << " " << bll[i] << isHead(i, bll) << " " << lengthOfPath[i] << " " << std::endl;
 		if (isHead(i, bll))
 		{
 			length = lengthOfPath[i];
