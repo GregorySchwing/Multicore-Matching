@@ -17,6 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "vcgpu.h"
 //#include "cub/cub.cuh"
 
+using namespace mtc;
+
+
 void VCGPU::findCover(int nrVertices, int threadsPerBlock, int *dforwardlinkedlist, int *dbackwardlinkedlist, int *dmatch, int *dlength, int *dheadlist, int *dheadbool)
 {
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
