@@ -99,7 +99,8 @@ void GraphMatching::getWeight(double &_weight, long &_size, const vector<int> &m
 
 void GraphMatching::getWeightGeneral(double &_weight, vector<long> &_size, const vector<int> &bll, const vector<int> &lengthOfPath, const Graph &graph)
 {
-	assert((int)match.size() == graph.nrVertices);
+	assert((int)bll.size() == graph.nrVertices);
+	assert((int)lengthOfPath.size() == graph.nrVertices);
 
 	double weight = 0.0;
 	int length = 0;
