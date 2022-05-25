@@ -462,7 +462,7 @@ int main(int argc, char **argv)
 
 	nrTimeAvg = 1;
 #endif
-
+	int maxLength = 3;
 	std::vector<int> fll(graph.nrVertices);
 	std::vector<int> bll(graph.nrVertices);
 	std::vector<int> lengthOfPath(graph.nrVertices);
@@ -570,7 +570,6 @@ int main(int argc, char **argv)
 				//Determine matching weight and size.
 				double matchingWeight = 0.0;
 				long matchingSize = 0;
-				int maxLength = 3;
 				std::vector<long> matchingSizeGeneral(maxLength);
 				GraphMatching::getWeight(matchingWeight, matchingSize, match, graph2);
 				GraphMatching::getWeightGeneral(matchingWeight, matchingSizeGeneral, bll, lengthOfPath, graph2);
