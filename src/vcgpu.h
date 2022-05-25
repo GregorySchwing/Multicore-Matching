@@ -20,9 +20,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <cuda.h>
 
-__global__ void SetHeadBool(int nrVertices,
+__global__ void SetHeadIndex(int nrVertices,
 							int *dbackwardlinkedlist,
                             int* dheadbool);
+
+__global__ void ReducePathLengths(int nrVertices,
+							int *dbackwardlinkedlist,
+                            int* dlength,
+                            int* dreducedlength);
 
 namespace mtc
 {
@@ -38,14 +43,19 @@ class VCGPU
                         int *dbackwardlinkedlist, 
                         int *dmatch, 
                         int *dlength, 
-                        int *dheadlist, 
-                        int *dheadbool);		
+                        int *dheadindex);		
                         
         void SortByHeadBool(int nrVertices,
                                 int * dheadbool,
                                 int * dheadboolSorted,
                                 int * dheadlist,
                                 int * dheadlistSorted);
+
+        void GetLengthStatistics(int nrVertices, 
+                                int threadsPerBlock, 
+                                int *dbackwardlinkedlist, 
+                                int *dlength,
+                                int *dreducedlength);
 };
 
 };

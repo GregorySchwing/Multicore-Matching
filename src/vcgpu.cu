@@ -19,12 +19,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace mtc;
 
+void VCGPU::GetLengthStatistics(int nrVertices, int threadsPerBlock, int *dbackwardlinkedlist, int *dlength, int *dreducedlength)
+{
+	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
+	ReducePathLengths<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, dbackwardlinkedlist, dlength, dreducedlength);
+}
 
-void VCGPU::findCover(int nrVertices, int threadsPerBlock, int *dforwardlinkedlist, int *dbackwardlinkedlist, int *dmatch, int *dlength, int *dheadlist, int *dheadbool)
+void VCGPU::findCover(int nrVertices, int threadsPerBlock, int *dforwardlinkedlist, int *dbackwardlinkedlist, int *dmatch, int *dlength, int *headindex)
 {
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
 
-	SetHeadBool<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, dbackwardlinkedlist, dheadbool);
+	SetHeadIndex<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, dbackwardlinkedlist, headindex);
 }
 
 void VCGPU::SortByHeadBool(int nrVertices,
@@ -60,7 +65,7 @@ void VCGPU::SortByHeadBool(int nrVertices,
 }
 
 
-__global__ void SetHeadBool(int nrVertices,
+__global__ void SetHeadIndex(int nrVertices,
 							int *dbackwardlinkedlist,
                             int* dheadbool){
 	//Determine blue and red groups using MD5 hashing.
@@ -68,5 +73,5 @@ __global__ void SetHeadBool(int nrVertices,
 	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
 	if (threadID >= nrVertices) return;
 
-    dheadbool[threadID] = dbackwardlinkedlist[threadID] == threadID;
+    dheadbool[threadID] -= dbackwardlinkedlist[threadID] != threadID;
 }

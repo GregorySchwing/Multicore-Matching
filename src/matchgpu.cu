@@ -1608,11 +1608,12 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 	// dtails - to quickly flip sense of strand
 	// dmatch - same as singleton implementation
 	// dsense - indicates directionality of strand
-	int *dforwardlinkedlist, *dbackwardlinkedlist, *dmatch, *drequests, *dsense, *dlength, *dh, *dt, *dheadlist;
+	int *dforwardlinkedlist, *dbackwardlinkedlist, *dmatch, *drequests, *dsense, *dlength, *dh, *dt, *dheadindex;
 
 	if (cudaMalloc(&drequests, sizeof(int)*graph.nrVertices) != cudaSuccess ||  
 		cudaMalloc(&dmatch, sizeof(int)*graph.nrVertices) != cudaSuccess || 
 		cudaMalloc(&dlength, sizeof(int)*graph.nrVertices) != cudaSuccess || 
+		cudaMalloc(&dheadindex, sizeof(int)*graph.nrVertices) != cudaSuccess || 
 		cudaMalloc(&dsense, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
@@ -1626,11 +1627,6 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 	thrust::device_vector<int>dbll(graph.nrVertices);
 	thrust::sequence(dbll.begin(),dbll.end());
 	dbackwardlinkedlist = thrust::raw_pointer_cast(&dbll[0]);
-
-	// Avoid a sorting operation.
-	//thrust::device_vector<int>headList(graph.nrVertices);
-	//thrust::sequence(headList.begin(),headList.end());
-	//dheadlist = thrust::raw_pointer_cast(&headList[0]);
 
 	bool useMaxLength = true;
 	/*
@@ -1787,6 +1783,7 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 	cudaFree(drequests);
 	cudaFree(dmatch);
 	cudaFree(dsense);
+	cudaFree(headindex);
 	cudaUnbindTexture(neighboursTexture);
 	cudaUnbindTexture(neighbourRangesTexture);
 }
