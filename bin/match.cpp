@@ -481,7 +481,7 @@ int main(int argc, char **argv)
 			
 			//Store data for all iterations.
 			vector<double> matchingSizes(nrTimeAvg, 0);
-			vector<vector<long>> matchingSizesGeneral;
+			vector< vector<long> > matchingSizesGeneral;
 			vector<double> matchingWeights(nrTimeAvg, 0.0);
 			vector<double> totalTimes(nrTimeAvg, 0.0);
 			vector<double> matchTimes(nrTimeAvg, 0.0);
