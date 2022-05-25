@@ -39,6 +39,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../DotWriter/lib/DotWriter.h"
 #include "../DotWriter/lib/Enums.h"
 #include <sstream>
+#include "vcgpu.h"
+
+
 
 #define SSTR( x ) static_cast< std::ostringstream & >( \
         ( std::ostringstream() << std::dec << x ) ).str()
@@ -577,6 +580,9 @@ int main(int argc, char **argv)
 				matchTimes[k] = time1;
 
 				writeGraphViz(match, graph2, "iter_" + SSTR(k), fll, bll);
+			
+				VCGPU vc();
+
 			}
 
 			

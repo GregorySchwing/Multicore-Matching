@@ -27,7 +27,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include<thrust/device_vector.h>
 #include<thrust/sequence.h>
 #include <thrust/fill.h>
-#include "vcgpu.h"
 namespace mtc
 {
 
