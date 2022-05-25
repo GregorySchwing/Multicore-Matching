@@ -36,7 +36,7 @@ class GraphMatching
 		virtual ~GraphMatching();
 
 		static void getWeight(double &, long &, const std::vector<int> &, const Graph &);
-		static void getWeightGeneral(double &, long &, const std::vector<int> &, const Graph &);
+		static void getWeightGeneral(double &, const std::vector<long> &, const std::vector<int> &, const Graph &);
 		static bool testMatching(const std::vector<int> &, const Graph &);
 		
 		static inline int matchVal(const int &i, const int &j) {return 4 + (i < j ? i : j);};
