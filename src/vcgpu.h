@@ -20,25 +20,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <cuda.h>
 
-// For generalized MM heads & tails
-#include<thrust/device_vector.h>
-#include<thrust/sequence.h>
-#include <thrust/fill.h>
 namespace mtc
 {
-
+__global__ void SetHeadBool(int nrVertices,
+							int *dbackwardlinkedlist,
+                            int* dheadbool);
 class VCGPU
 {
 	public:
-		VCGPU(const Graph &, const int &, const unsigned int &);
-		virtual ~VCGPU();
+		VCGPU();
+		~VCGPU();
 		
-		virtual void performMatching(std::vector<int> &, cudaEvent_t &, cudaEvent_t &, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & lengthOfPath,std::vector<int> & heads, std::vector<int> & tails) const = 0;
-	protected:
-		const int threadsPerBlock;
-		const uint selectBarrier;
-		int2 *dneighbourRanges;
-		int *dneighbours;
+        void findCover(int nrVertices, 
+                        int threadsPerBlock, 
+                        int *dforwardlinkedlist, 
+                        int *dbackwardlinkedlist, 
+                        int *dmatch, 
+                        int *dlength, 
+                        int *dheadlist, 
+                        int *dheadbool);		
+                        
+        void SortByHeadBool(int nrVertices,
+                                int * dheadbool,
+                                int * dheadboolSorted,
+                                int * dheadlist,
+                                int * dheadlistSorted);
 };
 
 #endif
