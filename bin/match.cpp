@@ -481,7 +481,7 @@ int main(int argc, char **argv)
 			
 			//Store data for all iterations.
 			vector<double> matchingSizes(nrTimeAvg, 0);
-			vector< vector<double> > matchingSizesGeneral(maxLength, vector<double>(nrTimeAvg, 0));
+			vector< vector<double> > matchingSizesGeneral(maxLength+1, vector<double>(nrTimeAvg, 0));
 			vector<double> matchingWeights(nrTimeAvg, 0.0);
 			vector<double> totalTimes(nrTimeAvg, 0.0);
 			vector<double> matchTimes(nrTimeAvg, 0.0);
@@ -570,7 +570,7 @@ int main(int argc, char **argv)
 				//Determine matching weight and size.
 				double matchingWeight = 0.0;
 				long matchingSize = 0;
-				std::vector<long> matchingSizeGeneral(maxLength);
+				std::vector<long> matchingSizeGeneral(maxLength+1);
 				GraphMatching::getWeight(matchingWeight, matchingSize, match, graph2);
 				GraphMatching::getWeightGeneral(matchingWeight, matchingSizeGeneral, bll, lengthOfPath, graph2);
 				//Store benchmark data.
