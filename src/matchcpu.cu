@@ -96,6 +96,43 @@ void GraphMatching::getWeight(double &_weight, long &_size, const vector<int> &m
 	_size = size;
 }
 
+
+void GraphMatching::getWeightGeneral(double &_weight, long &_size, const vector<int> &match, const Graph &graph)
+{
+	assert((int)match.size() == graph.nrVertices);
+
+	double weight = 0.0;
+	long size = 0;
+
+	for (int i = 0; i < graph.nrVertices; ++i)
+	{
+		const int m = match[i];
+
+		if (isMatched(m))
+		{
+			//This vertex has been matched, find out which of its neighbours it has been matched to.
+			const int2 indices = graph.neighbourRanges[i];
+
+			for (int j = indices.x; j < indices.y; ++j)
+			{
+				const int k = graph.neighbours[j];
+
+				if (match[k] == m)
+				{
+					weight += (double)graph.neighbourWeights[j];
+					size += 1;
+					break;
+				}
+			}
+		}
+	}
+
+	//We counted the weights double.
+	_weight = weight/2.0;
+	_size = size;
+}
+
+
 class SortVerticesMatch
 {
 	public:
