@@ -129,7 +129,7 @@ void GraphMatching::getWeightGeneral(double &_weight, const vector<long> &_size,
 
 	//We counted the weights double.
 	_weight = weight/2.0;
-	_size = size;
+	_size[0] = size;
 }
 
 
