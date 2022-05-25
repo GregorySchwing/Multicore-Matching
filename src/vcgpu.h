@@ -47,4 +47,6 @@ class VCGPU
                                 int * dheadlistSorted);
 };
 
+};
+
 #endif
