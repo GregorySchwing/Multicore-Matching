@@ -36,12 +36,13 @@ class GraphMatching
 		virtual ~GraphMatching();
 
 		static void getWeight(double &, long &, const std::vector<int> &, const Graph &);
-		static void getWeightGeneral(double &, std::vector<long> &, const std::vector<int> &, const Graph &);
+		static void getWeightGeneral(double &, std::vector<long> &, const std::vector<int> &, const std::vector<int> &, const Graph &);
 		static bool testMatching(const std::vector<int> &, const Graph &);
 		
 		static inline int matchVal(const int &i, const int &j) {return 4 + (i < j ? i : j);};
 		static inline bool isMatched(const int &m) {return m >= 4;};
-	
+		static inline bool isHead(const int &m, const std::vector<int> & bll) {return bll[m] == m;};
+
 		std::vector<int> initialMatching() const;
 		virtual void performMatching(std::vector<int> &, cudaEvent_t &, cudaEvent_t &, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & lengthOfPath,std::vector<int> & heads, std::vector<int> & tails) const = 0;
 

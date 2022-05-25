@@ -97,39 +97,21 @@ void GraphMatching::getWeight(double &_weight, long &_size, const vector<int> &m
 }
 
 
-void GraphMatching::getWeightGeneral(double &_weight, vector<long> &_size, const vector<int> &match, const Graph &graph)
+void GraphMatching::getWeightGeneral(double &_weight, vector<long> &_size, const vector<int> &bll, const vector<int> &lengthOfPath, const Graph &graph)
 {
 	assert((int)match.size() == graph.nrVertices);
 
 	double weight = 0.0;
-	long size = 0;
+	int length = 0;
 
 	for (int i = 0; i < graph.nrVertices; ++i)
 	{
-		const int m = match[i];
-
-		if (isMatched(m))
+		if (isHead(i, bll))
 		{
-			//This vertex has been matched, find out which of its neighbours it has been matched to.
-			const int2 indices = graph.neighbourRanges[i];
-
-			for (int j = indices.x; j < indices.y; ++j)
-			{
-				const int k = graph.neighbours[j];
-
-				if (match[k] == m)
-				{
-					weight += (double)graph.neighbourWeights[j];
-					size += 1;
-					break;
-				}
-			}
+			length = lengthOfPath[i];
+			_size[length] += 1;
 		}
 	}
-
-	//We counted the weights double.
-	_weight = weight/2.0;
-	_size[0] = size;
 }
 
 
