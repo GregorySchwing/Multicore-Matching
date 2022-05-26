@@ -587,7 +587,7 @@ int main(int argc, char **argv)
 
 				//writeGraphViz(match, graph2, "iter_" + SSTR(k), fll, bll);
 			
-				VCGPU vc();
+				VCGPU vc(graph2, GPUNrThreadsPerBlock);
 
 			}
 

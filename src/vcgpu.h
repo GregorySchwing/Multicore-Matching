@@ -34,7 +34,7 @@ namespace mtc
 class VCGPU
 {
 	public:
-		VCGPU();
+		VCGPU(const Graph &, const int &_threadsPerBlock);
 		~VCGPU();
 		
         void findCover(int nrVertices, 
@@ -56,6 +56,15 @@ class VCGPU
                                 int *dbackwardlinkedlist, 
                                 int *dlength,
                                 int *dreducedlength);
+
+        // VC arrays
+        int *dedgestatus, *ddegrees;
+
+	protected:
+		const Graph &graph;
+        const int threadsPerBlock;
+		int2 *dneighbourRanges;
+		int *dneighbours;
 };
 
 };

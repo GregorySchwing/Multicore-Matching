@@ -19,6 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace mtc;
 
+VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock) :
+		threadsPerBlock(_threadsPerBlock),
+		GraphMatching(_graph)
+{}
+
 void VCGPU::GetLengthStatistics(int nrVertices, int threadsPerBlock, int *dbackwardlinkedlist, int *dlength, int *dreducedlength)
 {
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
