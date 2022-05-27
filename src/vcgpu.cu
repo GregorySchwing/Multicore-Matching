@@ -24,9 +24,21 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         threadsPerBlock(_threadsPerBlock),
         barrier(_barrier),
 		matcher(_graph, _threadsPerBlock, _barrier)
-{}
+{
+    if (cudaMalloc(&dedgestatus, sizeof(int)*graph.nrEdges) != cudaSuccess || 
+        cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
+	{
+		cerr << "Not enough memory on device!" << endl;
+		throw exception();
+	}
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dedgestatus),  1, size_t(graph.nrEdges));
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(ddegrees),  0, size_t(graph.nrVertices));
+}
 
-VCGPU::~VCGPU(){}
+VCGPU::~VCGPU(){
+    cudaFree(dedgestatus);
+    cudaFree(ddegrees);
+}
 
 void VCGPU::GetLengthStatistics(int nrVertices, int threadsPerBlock, int *dbackwardlinkedlist, int *dlength, int *dreducedlength)
 {

@@ -467,7 +467,7 @@ int main(int argc, char **argv)
 	std::vector<int> bll(graph.nrVertices);
 	std::vector<int> lengthOfPath(graph.nrVertices);
 	std::vector<int> degrees(graph.nrVertices);
-	std::vector<int> edgestatus(graph.nrVertices);
+	std::vector<int> edgestatus(graph.nrEdges);
 	//Perform all desired greedy matchings.
 	for (set<int>::const_iterator i = matchTypes.begin(); i != matchTypes.end(); ++i)
 	{
