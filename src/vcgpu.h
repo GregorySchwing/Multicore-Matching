@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cuda.h>
 #include "graph.h"
 #include "matchgpu.h"
+#include <exception>
 
 __global__ void SetHeadIndex(int nrVertices,
 							int *dbackwardlinkedlist,

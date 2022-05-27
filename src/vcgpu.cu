@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "vcgpu.h"
 //#include "cub/cub.cuh"
 
+using namespace std;
 using namespace mtc;
 
 VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier) :
