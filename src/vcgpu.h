@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <vector>
 #include <cuda.h>
+#include <cuda_runtime.h>
+#include <cuda_runtime_api.h>
 #include "graph.h"
 #include "matchgpu.h"
 #include <exception>

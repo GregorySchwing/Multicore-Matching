@@ -20,6 +20,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 using namespace mtc;
 
+//==== Kernel variables ====
+__device__ int dkeepMatching;
+
+texture<int2, cudaTextureType1D, cudaReadModeElementType> neighbourRangesTexture;
+texture<int, cudaTextureType1D, cudaReadModeElementType> neighboursTexture;
+texture<float, cudaTextureType1D, cudaReadModeElementType> weightsTexture;
+
 VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier) :
 		graph(_graph),
         threadsPerBlock(_threadsPerBlock),
