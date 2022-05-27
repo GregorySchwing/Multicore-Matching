@@ -23,10 +23,6 @@ using namespace mtc;
 //==== Kernel variables ====
 __device__ int dkeepMatching;
 
-texture<int2, cudaTextureType1D, cudaReadModeElementType> neighbourRangesTexture;
-texture<int, cudaTextureType1D, cudaReadModeElementType> neighboursTexture;
-texture<float, cudaTextureType1D, cudaReadModeElementType> weightsTexture;
-
 VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier) :
 		graph(_graph),
         threadsPerBlock(_threadsPerBlock),
@@ -41,6 +37,21 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 	}
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dedgestatus),  1, size_t(graph.nrEdges));
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(ddegrees),  0, size_t(graph.nrVertices));
+	//Setup textures.
+	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
+
+	neighbourRangesTexture.addressMode[0] = cudaAddressModeWrap;
+	neighbourRangesTexture.filterMode = cudaFilterModePoint;
+	neighbourRangesTexture.normalized = false;
+	cudaBindTexture(0, neighbourRangesTexture, (void *)dneighbourRanges, neighbourRangesTextureDesc, sizeof(int2)*graph.neighbourRanges.size());
+	
+	cudaChannelFormatDesc neighboursTextureDesc = cudaCreateChannelDesc<int>();
+
+	neighboursTexture.addressMode[0] = cudaAddressModeWrap;
+	neighboursTexture.filterMode = cudaFilterModePoint;
+	neighboursTexture.normalized = false;
+	cudaBindTexture(0, neighboursTexture, (void *)dneighbours, neighboursTextureDesc, sizeof(int)*graph.neighbours.size());
+
 }
 
 VCGPU::~VCGPU(){
