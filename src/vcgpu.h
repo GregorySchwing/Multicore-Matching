@@ -25,6 +25,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "matchgpu.h"
 #include <exception>
 
+__global__ void InitDegrees(const int nrVertices,
+                            int * ddegrees);
+
 __global__ void SetHeadIndex(int nrVertices,
 							int *dbackwardlinkedlist,
                             int* dheadbool);

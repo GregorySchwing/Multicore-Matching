@@ -56,11 +56,17 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 	neighboursTexture.normalized = false;
 	cudaBindTexture(0, neighboursTexture, (void *)dneighbours, neighboursTextureDesc, sizeof(int)*graph.neighbours.size());
 
+	//Perform matching.
+	int blocksPerGrid = (graph.nrVertices + threadsPerBlock - 1)/threadsPerBlock;
+    InitDegrees<<<blocksPerGrid, threadsPerBlock>>>(graph.nrVertices, ddegrees);
+
 }
 
 VCGPU::~VCGPU(){
     cudaFree(dedgestatus);
     cudaFree(ddegrees);
+	cudaUnbindTexture(neighboursTexture);
+	cudaUnbindTexture(neighbourRangesTexture);
 }
 
 void VCGPU::GetLengthStatistics(int nrVertices, int threadsPerBlock, int *dbackwardlinkedlist, int *dlength, int *dreducedlength)
@@ -184,4 +190,12 @@ __global__ void SetEdges(const int nrVertices,
                 dedgestatus[nj] ^= (foundChild & tmp);
         }
     }
+}
+
+__global__ void InitDegrees(const int nrVertices,
+                            int * ddegrees){
+	const int i = blockIdx.x*blockDim.x + threadIdx.x;
+	if (i >= nrVertices) return;
+    const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
+    ddegrees[i] = indices.y - indices.x;
 }
