@@ -58,8 +58,8 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 	cudaBindTexture(0, neighboursTexture, (void *)dneighbours, neighboursTextureDesc, sizeof(int)*graph.neighbours.size());
     */
 	//Perform matching.
-	int blocksPerGrid = (graph.nrVertices + threadsPerBlock - 1)/threadsPerBlock;
-    InitDegrees<<<blocksPerGrid, threadsPerBlock>>>(graph.nrVertices, ddegrees);
+	//int blocksPerGrid = (graph.nrVertices + threadsPerBlock - 1)/threadsPerBlock;
+    //InitDegrees<<<blocksPerGrid, threadsPerBlock>>>(graph.nrVertices, ddegrees);
  
 
 }
