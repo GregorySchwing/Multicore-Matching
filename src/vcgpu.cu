@@ -25,6 +25,8 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock) :
 		//GraphMatching(_graph)
 {}
 
+VCGPU::~VCGPU(){}
+
 void VCGPU::GetLengthStatistics(int nrVertices, int threadsPerBlock, int *dbackwardlinkedlist, int *dlength, int *dreducedlength)
 {
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
