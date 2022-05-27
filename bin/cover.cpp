@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+GNU General Public License for more deedgestatus.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
@@ -73,7 +73,7 @@ void writeGraphViz(std::vector<int> & match,
 		// skip singletons
 		if (fll[i] == i && bll[i] == i)
 			continue;
-		// Start from heads only
+		// Start from degrees only
 		if (bll[i] == i){
 			curr = i;
 			next = fll[curr];
@@ -466,8 +466,8 @@ int main(int argc, char **argv)
 	std::vector<int> fll(graph.nrVertices);
 	std::vector<int> bll(graph.nrVertices);
 	std::vector<int> lengthOfPath(graph.nrVertices);
-	std::vector<int> heads(graph.nrVertices);
-	std::vector<int> tails(graph.nrVertices);
+	std::vector<int> degrees(graph.nrVertices);
+	std::vector<int> edgestatus(graph.nrVertices);
 	//Perform all desired greedy matchings.
 	for (set<int>::const_iterator i = matchTypes.begin(); i != matchTypes.end(); ++i)
 	{
@@ -524,12 +524,13 @@ int main(int argc, char **argv)
 
 				try
 				{
-					GraphMatching *matcher = getMatcher(graph2, *i, GPUNrThreadsPerBlock, barrier);
+					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier);
+					//GraphMatching *matcher = getMatcher(graph2, *i, GPUNrThreadsPerBlock, barrier);
 					
-					match = matcher->initialMatching();
-					matcher->performMatching(match, t1, t2, fll, bll, lengthOfPath, heads, tails);
+					match = vc.matcher.initialMatching();
+					vc.matcher.performMatching(match, t1, t2, fll, bll, lengthOfPath, degrees, edgestatus);
 
-					delete matcher;
+					//delete matcher;
 				}
 				catch (exception &e)
 				{
