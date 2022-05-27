@@ -926,7 +926,7 @@ __global__ void gReverseLL(const int *degree, int *match, int *heads, int *tails
 }
 
 // Only reverse without worrying about recording heads/tails
-__global__ void gReverseLL(int *match, int *fll, int *bll, const int *requests, const int nrVertices){
+__global__ void gReverseLL(const int *degree, int *match, int *fll, int *bll, const int *requests, const int nrVertices){
 
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
 
