@@ -1325,11 +1325,11 @@ __global__ void grRequest(const int *degree, const int *edgestatus, int *request
 }
 
 
-__global__ void grRespond(const int * degree, int *requests, const int *match, const int nrVertices)
+__global__ void grRespond(int *requests, const int *match, const int nrVertices)
 {
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
 
-	if (i >= nrVertices || degree[i] == 0) return;
+	if (i >= nrVertices) return;
 	
 	const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
 
@@ -1356,11 +1356,11 @@ __global__ void grRespond(const int * degree, int *requests, const int *match, c
 }
 
 
-__global__ void grRespond(int *requests, const int *match, const int *sense, const int nrVertices)
+__global__ void grRespond(const int * degree, int *requests, const int *match, const int *sense, const int nrVertices)
 {
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
 
-	if (i >= nrVertices) return;
+	if (i >= nrVertices || degree[i] == 0) return;
 	
 	const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
 
