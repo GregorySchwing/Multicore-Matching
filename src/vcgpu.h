@@ -32,6 +32,10 @@ __global__ void ReducePathLengths(int nrVertices,
                             int* dlength,
                             int* dreducedlength);
 
+__global__ void SetEdges(const int nrVertices,
+                        int * dedgestatus,
+                        int * ddegrees);
+
 namespace mtc
 {
 class VCGPU
