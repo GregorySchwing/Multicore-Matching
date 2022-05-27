@@ -64,7 +64,8 @@ class VCGPU
 
 	protected:
 		const Graph &graph;
-        const int threadsPerBlock;
+        const int &threadsPerBlock;
+        const unsigned int &barrier;
 		int2 *dneighbourRanges;
 		int *dneighbours;
         GraphMatchingGeneralGPURandom matcher;
