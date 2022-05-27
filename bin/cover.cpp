@@ -529,7 +529,7 @@ int main(int argc, char **argv)
 					
 					match = vc.matcher.initialMatching();
 					//vc.matcher.performMatching(match, t1, t2, fll, bll, lengthOfPath, &degrees[0], &edgestatus[0]);
-					vc.matcher.performMatching(match, t1, t2, fll, bll, lengthOfPath, vc.matcher.ddegrees, vc.matcher.dedgestatus);
+					vc.matcher.performMatching(match, t1, t2, fll, bll, lengthOfPath, vc.ddegrees, vc.dedgestatus);
 
 					//delete matcher;
 				}
