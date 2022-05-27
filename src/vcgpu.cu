@@ -19,10 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace mtc;
 
-VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock) :
-		threadsPerBlock(_threadsPerBlock),
-		graph(_graph)
-		//GraphMatching(_graph)
+VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier) :
+		graph(_graph),
+        threadsPerBlock(_threadsPerBlock),
+        barrier(_barrier),
+		matcher(_graph, _threadsPerBlock, _barrier)
 {}
 
 VCGPU::~VCGPU(){}

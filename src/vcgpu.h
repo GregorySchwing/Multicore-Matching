@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <cuda.h>
 #include "graph.h"
+#include "matchgpu.h"
 
 __global__ void SetHeadIndex(int nrVertices,
 							int *dbackwardlinkedlist,
@@ -35,7 +36,7 @@ namespace mtc
 class VCGPU
 {
 	public:
-		VCGPU(const Graph &, const int &_threadsPerBlock);
+		VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier);
 		~VCGPU();
 		
         void findCover(int nrVertices, 
@@ -66,6 +67,7 @@ class VCGPU
         const int threadsPerBlock;
 		int2 *dneighbourRanges;
 		int *dneighbours;
+        GraphMatchingGeneralGPURandom matcher;
 };
 
 };
