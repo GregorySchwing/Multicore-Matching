@@ -21,7 +21,8 @@ using namespace mtc;
 
 VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock) :
 		threadsPerBlock(_threadsPerBlock),
-		GraphMatching(_graph)
+		graph(_graph)
+		//GraphMatching(_graph)
 {}
 
 void VCGPU::GetLengthStatistics(int nrVertices, int threadsPerBlock, int *dbackwardlinkedlist, int *dlength, int *dreducedlength)
