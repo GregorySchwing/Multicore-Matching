@@ -69,9 +69,7 @@ class VCGPU
         // VC arrays
         int *dedgestatus, *ddegrees;
         GraphMatchingGeneralGPURandom matcher;
-        texture<int2, cudaTextureType1D, cudaReadModeElementType> neighbourRangesTexture;
-        texture<int, cudaTextureType1D, cudaReadModeElementType> neighboursTexture;
-        texture<float, cudaTextureType1D, cudaReadModeElementType> weightsTexture;
+
 	protected:
 		const Graph &graph;
         const int &threadsPerBlock;
