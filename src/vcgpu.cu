@@ -143,7 +143,7 @@ __global__ void SetEdges(const int nrVertices,
     // 2) 1 out edge is traversed at a time, and then all the threads scan
     // all the edges leaving that vertex for the original vertex.
     // This is the more favorable data access pattern.
-    const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
+    indices = tex1Dfetch(neighbourRangesTexture, i);
     for (int j = indices.x; j < indices.y; ++j){
         const int ni = tex1Dfetch(neighboursTexture, j);    
         const int2 indices_neighbor = tex1Dfetch(neighbourRangesTexture, ni);
