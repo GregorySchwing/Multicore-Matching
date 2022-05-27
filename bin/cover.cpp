@@ -528,7 +528,7 @@ int main(int argc, char **argv)
 					//GraphMatching *matcher = getMatcher(graph2, *i, GPUNrThreadsPerBlock, barrier);
 					
 					match = vc.matcher.initialMatching();
-					vc.matcher.performMatching(match, t1, t2, fll, bll, lengthOfPath, degrees, edgestatus);
+					vc.matcher.performMatching(match, t1, t2, fll, bll, lengthOfPath, &degrees[0], &edgestatus[0]);
 
 					//delete matcher;
 				}
