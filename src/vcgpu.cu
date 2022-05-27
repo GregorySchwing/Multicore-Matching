@@ -83,3 +83,8 @@ __global__ void SetHeadIndex(int nrVertices,
 
     dheadbool[threadID] -= dbackwardlinkedlist[threadID] != threadID;
 }
+
+__global__ void ReducePathLengths(int nrVertices,
+							int *dbackwardlinkedlist,
+                            int* dlength,
+                            int* dreducedlength){}
