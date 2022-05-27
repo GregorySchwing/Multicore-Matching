@@ -61,6 +61,7 @@ class VCGPU
 
         // VC arrays
         int *dedgestatus, *ddegrees;
+        GraphMatchingGeneralGPURandom matcher;
 
 	protected:
 		const Graph &graph;
@@ -68,7 +69,6 @@ class VCGPU
         const unsigned int &barrier;
 		int2 *dneighbourRanges;
 		int *dneighbours;
-        GraphMatchingGeneralGPURandom matcher;
 };
 
 };
