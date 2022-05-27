@@ -77,8 +77,9 @@ class VCGPU
 		const Graph &graph;
         const int &threadsPerBlock;
         const unsigned int &barrier;
-		int2 *dneighbourRanges;
-		int *dneighbours;
+		//int2 *dneighbourRanges;
+		//int *dneighbours;
+        
 };
 
 };
