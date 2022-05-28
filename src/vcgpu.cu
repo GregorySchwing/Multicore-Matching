@@ -41,28 +41,6 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 	}
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dedgestatus),  1, size_t(graph.nrEdges));
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(ddegrees),  0, size_t(graph.nrVertices));
-	//Setup textures.
-    
-	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
-
-	neighbourRangesTexture.addressMode[0] = cudaAddressModeWrap;
-	neighbourRangesTexture.filterMode = cudaFilterModePoint;
-	neighbourRangesTexture.normalized = false;
-	cudaBindTexture(0, neighbourRangesTexture, (void *)matcher.dneighbourRanges, neighbourRangesTextureDesc, sizeof(int2)*graph.neighbourRanges.size());
-	
-	cudaChannelFormatDesc neighboursTextureDesc = cudaCreateChannelDesc<int>();
-
-	neighboursTexture.addressMode[0] = cudaAddressModeWrap;
-	neighboursTexture.filterMode = cudaFilterModePoint;
-	neighboursTexture.normalized = false;
-	cudaBindTexture(0, neighboursTexture, (void *)matcher.dneighbours, neighboursTextureDesc, sizeof(int)*graph.neighbours.size());
-    
-	//Perform matching.
-	int blocksPerGrid = (graph.nrVertices + threadsPerBlock - 1)/threadsPerBlock;
-    InitDegrees<<<blocksPerGrid, threadsPerBlock>>>(graph.nrVertices, ddegrees);
- 	cudaUnbindTexture(neighboursTexture);
-	cudaUnbindTexture(neighbourRangesTexture);
-
 }
 
 VCGPU::~VCGPU(){

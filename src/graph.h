@@ -52,6 +52,7 @@ class Graph
 
 	public:
 		int nrVertices, nrVertexWeights, nrEdges;
+		std::vector<int> degrees;
 		std::vector<int> vertexWeights;
 		std::vector<int2> neighbourRanges;
 		std::vector<int> neighbours;

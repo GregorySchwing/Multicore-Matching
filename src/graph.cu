@@ -50,6 +50,7 @@ Graph::Graph() :
 	nrVertices(0),
 	nrVertexWeights(0),
 	nrEdges(0),
+	degrees(),
 	neighbourRanges(),
 	vertexWeights(),
 	neighbours(),
@@ -77,6 +78,7 @@ void Graph::clear()
 	nrVertexWeights = 0;
 	nrEdges = 0;
 	neighbourRanges.clear();
+	degrees.clear();
 	vertexWeights.clear();
 	neighbours.clear();
 	neighbourWeights.clear();
@@ -295,11 +297,13 @@ istream &Graph::readMatrixMarket(istream &in)
 	neighbourWeights.assign(2*edges.size(), 1.0);
 	nrEdges = edges.size();
 
-	//First count the number of neighbours.
+	//First count the number of neighbours and store as degrees.
 	for (vector<Edge>::const_iterator e = edges.begin(); e != edges.end(); ++e)
 	{
 		neighbourRanges[e->x].y++;
 		neighbourRanges[e->y].y++;
+		degrees[e->x]++;
+		degrees[e->y]++;
 	}
 
 	//Sum counts to obtain neighbour offsets.
@@ -399,6 +403,7 @@ istream &Graph::readMETIS(istream &in)
 
 	//Resize graph arrays.
 	neighbourRanges.assign(nrVertices, make_int2(0, 0));
+	degrees.assign(nrVertices, 0);
 	neighbours.reserve(nrEdges);
 	neighbourWeights.reserve(nrEdges);
 	edges.reserve(nrEdges);
