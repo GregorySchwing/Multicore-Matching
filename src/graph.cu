@@ -223,6 +223,7 @@ istream &Graph::readMatrixMarket(istream &in)
 				nrVertexWeights = 0;
 				nrEdges = 0;
 				vertexWeights.clear();
+				degrees.assign(nrVertices, 0);
 				neighbourRanges.assign(nrVertices, make_int2(0, 0));
 				neighbours.clear();
 				neighbourWeights.clear();
