@@ -57,9 +57,7 @@ class VCGPU
         
         void numberCompletedPaths(int nrVertices, 
                                 int *dbackwardlinkedlist, 
-                                int *dlength, 
-                                int *dheadindex,
-                                int *dfullpathcount);		
+                                int *dlength);		
 		
         void findCover(int nrVertices, 
                         int threadsPerBlock, 

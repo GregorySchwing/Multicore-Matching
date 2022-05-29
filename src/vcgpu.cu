@@ -106,9 +106,7 @@ void VCGPU::SortByHeadBool(int nrVertices,
 
 void VCGPU::numberCompletedPaths(int nrVertices, 
                         int *dbackwardlinkedlist, 
-                        int *dlength, 
-                        int *dheadindex,
-                        int *dfullpathcount){
+                        int *dlength){
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     AtomicallyNumberEachCompletePath<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, 
                                                                         dbackwardlinkedlist, 
