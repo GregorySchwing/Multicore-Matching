@@ -48,6 +48,12 @@ class VCGPU
 	public:
 		VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier);
 		~VCGPU();
+        
+        void numberCompletedPaths(int nrVertices, 
+                                int *dbackwardlinkedlist, 
+                                int *dlength, 
+                                int *dheadindex,
+                                int *dfullpathcount));		
 		
         void findCover(int nrVertices, 
                         int threadsPerBlock, 
@@ -70,7 +76,7 @@ class VCGPU
                                 int *dreducedlength);
 
         // VC arrays
-        int *dedgestatus, *ddegrees;
+        int *dedgestatus, *ddegrees, *dheadindex, *dfullpathcount;
         GraphMatchingGeneralGPURandom matcher;
 
 	protected:

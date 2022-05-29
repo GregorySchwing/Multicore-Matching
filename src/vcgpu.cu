@@ -34,19 +34,27 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 		matcher(_graph, _threadsPerBlock, _barrier)
 {
     if (cudaMalloc(&dedgestatus, sizeof(int)*graph.nrEdges) != cudaSuccess || 
+		cudaMalloc(&dheadindex, sizeof(int)*graph.nrVertices) != cudaSuccess || 
+        cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
 		throw exception();
 	}
-    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dedgestatus),  1, size_t(graph.nrEdges));
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dedgestatus),  0, size_t(1));
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dfullpathcount),  1, size_t(graph.nrEdges));
+    // Only >= 0 are heads of full paths
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dheadindex),  -1, size_t(graph.nrEdges));
+    // Before implementing recursive backtracking, I can keep performing this memcpy to set degrees
+    // and the remove tentative vertices to check a cover.
     cudaMemcpy(ddegrees, &graph.degrees[0], sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
-    //cuMemsetD32(reinterpret_cast<CUdeviceptr>(ddegrees),  0, size_t(graph.nrVertices));
 }
 
 VCGPU::~VCGPU(){
     cudaFree(dedgestatus);
     cudaFree(ddegrees);
+	cudaFree(dheadindex);
+	cudaFree(dfullpathcount);
 	cudaUnbindTexture(neighboursTexture);
 	cudaUnbindTexture(neighbourRangesTexture);
 }
@@ -96,6 +104,34 @@ void VCGPU::SortByHeadBool(int nrVertices,
 */
 }
 
+void VCGPU::numberCompletedPaths(int nrVertices, 
+                        int *dbackwardlinkedlist, 
+                        int *dlength, 
+                        int *dheadindex,
+                        int *dfullpathcount){
+	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
+    AtomicallyNumberEachCompletePath<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, 
+                                                                        dbackwardlinkedlist, 
+                                                                        dlength,
+                                                                        headindex,
+                                                                        dfullpathcount);
+}
+
+// Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
+__global__ void AtomicallyNumberEachCompletePath(int nrVertices, 
+                                                int *dbackwardlinkedlist, 
+                                                int *dlength, 
+                                                int *dheadindex,
+                                                int *dfullpathcount){
+	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+	// If not a head to a path of length 4, return (leaving the headindex == -1)
+    if (threadID >= nrVertices || 
+        dlength[threadID] != 4 || 
+        dbackwardlinkedlist[threadID] != threadID) 
+            return;
+    // Counter is incremented and old value is used to number full paths.
+    dheadindex[threadID] = atomicAdd(&dfullpathcount[0], 1);
+}
 
 __global__ void SetHeadIndex(int nrVertices,
 							int *dbackwardlinkedlist,
