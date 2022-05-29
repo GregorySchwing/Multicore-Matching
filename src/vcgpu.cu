@@ -44,7 +44,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dedgestatus),  0, size_t(1));
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dfullpathcount),  1, size_t(graph.nrEdges));
     // Only >= 0 are heads of full paths
-    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dheadindex),  -1, size_t(graph.nrEdges));
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dheadindex),  -1, size_t(graph.nrVertices));
     // Before implementing recursive backtracking, I can keep performing this memcpy to set degrees
     // and the remove tentative vertices to check a cover.
     cudaMemcpy(ddegrees, &graph.degrees[0], sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
@@ -113,7 +113,7 @@ void VCGPU::numberCompletedPaths(int nrVertices,
     AtomicallyNumberEachCompletePath<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, 
                                                                         dbackwardlinkedlist, 
                                                                         dlength,
-                                                                        headindex,
+                                                                        dheadindex,
                                                                         dfullpathcount);
 }
 

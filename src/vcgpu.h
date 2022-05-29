@@ -41,6 +41,12 @@ __global__ void SetEdges(const int nrVertices,
                         int * dedgestatus,
                         int * ddegrees);
 
+__global__ void AtomicallyNumberEachCompletePath(int nrVertices, 
+                                                int *dbackwardlinkedlist, 
+                                                int *dlength, 
+                                                int *dheadindex,
+                                                int *dfullpathcount);
+
 namespace mtc
 {
 class VCGPU
@@ -53,7 +59,7 @@ class VCGPU
                                 int *dbackwardlinkedlist, 
                                 int *dlength, 
                                 int *dheadindex,
-                                int *dfullpathcount));		
+                                int *dfullpathcount);		
 		
         void findCover(int nrVertices, 
                         int threadsPerBlock, 
