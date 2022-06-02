@@ -97,7 +97,7 @@ void GraphMatching::getWeight(double &_weight, long &_size, const vector<int> &m
 }
 
 
-void GraphMatching::getWeightGeneral(double &_weight, vector<long> &_size, const vector<int> &bll, const vector<int> &lengthOfPath, const Graph &graph)
+void GraphMatching::getWeightGeneral(double &_weight, vector<long> &_size, const vector<int> &degrees, const vector<int> &bll, const vector<int> &lengthOfPath, const Graph &graph)
 {
 	assert((int)bll.size() == graph.nrVertices);
 	assert((int)lengthOfPath.size() == graph.nrVertices);
@@ -107,6 +107,8 @@ void GraphMatching::getWeightGeneral(double &_weight, vector<long> &_size, const
 
 	for (int i = 0; i < graph.nrVertices; ++i)
 	{
+		if(degrees[i]==0)
+			continue;
 		//std::cout << i << " " << bll[i] << isHead(i, bll) << " " << lengthOfPath[i] << " " << std::endl;
 		if (isHead(i, bll))
 		{

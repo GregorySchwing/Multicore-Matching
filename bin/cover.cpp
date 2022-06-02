@@ -574,7 +574,7 @@ int main(int argc, char **argv)
 				long matchingSize = 0;
 				std::vector<long> matchingSizeGeneral(maxLength+1);
 				GraphMatching::getWeight(matchingWeight, matchingSize, match, graph2);
-				GraphMatching::getWeightGeneral(matchingWeight, matchingSizeGeneral, bll, lengthOfPath, graph2);
+				GraphMatching::getWeightGeneral(matchingWeight, matchingSizeGeneral, graph.degrees, bll, lengthOfPath, graph2);
 				//Store benchmark data.
 				// currently wrong for general
 				// Currently matchingSizes is an array of size 1
