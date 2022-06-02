@@ -86,6 +86,9 @@ class VCGPU
 
         // VC arrays
         int *dedgestatus, *ddegrees, *dheadindex, *dfullpathcount, *dnumleaves, *dsearchtree;
+
+        int *dlength;
+
         GraphMatchingGeneralGPURandom matcher;
 
 	protected:

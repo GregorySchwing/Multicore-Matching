@@ -31,7 +31,7 @@ class GraphMatchingTBB : public GraphMatching
 		GraphMatchingTBB(const Graph &, const unsigned int &);
 		~GraphMatchingTBB();
 		
-		virtual void performMatching(std::vector<int> &, cudaEvent_t &, cudaEvent_t &, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & lengthOfPath,const int * degree, const int * edgestatus) const = 0;
+		virtual void performMatching(std::vector<int> &, cudaEvent_t &, cudaEvent_t &, std::vector<int> & fll, std::vector<int> & bll, int * dlength, const int * degree, const int * edgestatus) const = 0;
 
 	protected:
 		const uint selectBarrier;
@@ -44,7 +44,7 @@ class GraphMatchingTBBRandom : public GraphMatchingTBB
 		GraphMatchingTBBRandom(const Graph &, const unsigned int &);
 		~GraphMatchingTBBRandom();
 		
-		void performMatching(std::vector<int> &, cudaEvent_t &, cudaEvent_t &, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & lengthOfPath,const int * degree, const int * edgestatus) const;
+		void performMatching(std::vector<int> &, cudaEvent_t &, cudaEvent_t &, std::vector<int> & fll, std::vector<int> & bll, int * dlength, const int * degree, const int * edgestatus) const;
 };
 
 class GraphMatchingTBBWeighted : public GraphMatchingTBB
@@ -53,7 +53,7 @@ class GraphMatchingTBBWeighted : public GraphMatchingTBB
 		GraphMatchingTBBWeighted(const Graph &, const unsigned int &);
 		~GraphMatchingTBBWeighted();
 		
-		void performMatching(std::vector<int> &, cudaEvent_t &, cudaEvent_t &, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & lengthOfPath,const int * degree, const int * edgestatus) const;
+		void performMatching(std::vector<int> &, cudaEvent_t &, cudaEvent_t &, std::vector<int> & fll, std::vector<int> & bll, int * dlength, const int * degree, const int * edgestatus) const;
 };
 
 };

@@ -527,7 +527,8 @@ int main(int argc, char **argv)
 					GraphMatching *matcher = getMatcher(graph2, *i, GPUNrThreadsPerBlock, barrier);
 					
 					match = matcher->initialMatching();
-					matcher->performMatching(match, t1, t2, fll, bll, lengthOfPath, &degrees[0], &edgestatus[0]);
+					//broken for gpu, need to create device mem
+					matcher->performMatching(match, t1, t2, fll, bll, &lengthOfPath[0], &degrees[0], &edgestatus[0]);
 
 					delete matcher;
 				}
