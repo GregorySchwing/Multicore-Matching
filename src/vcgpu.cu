@@ -37,6 +37,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
     //cudaMalloc(&dedgestatus, sizeof(int)*graph.nrEdges) != cudaSuccess || 
     if (cudaMalloc(&dedgestatus, sizeof(int)*graph.neighbours.size()) != cudaSuccess || 
 		cudaMalloc(&dheadindex, sizeof(int)*graph.nrVertices) != cudaSuccess || 
+        cudaMalloc(&dsearchtree, sizeof(int)*graph.nrVertices) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
@@ -53,10 +54,11 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 }
 
 VCGPU::~VCGPU(){
-    cudaFree(dedgestatus);
     cudaFree(ddegrees);
 	cudaFree(dheadindex);
-	cudaFree(dfullpathcount);
+    cudaFree(dsearchtree);
+    cudaFree(dedgestatus);
+    cudaFree(dfullpathcount);
 	cudaUnbindTexture(neighboursTexture);
 	cudaUnbindTexture(neighbourRangesTexture);
 }
@@ -114,7 +116,8 @@ void VCGPU::numberCompletedPaths(int nrVertices,
                                                                         dbackwardlinkedlist, 
                                                                         dlength,
                                                                         dheadindex,
-                                                                        dfullpathcount);
+                                                                        dfullpathcount,
+                                                                        dsearchtree);
 }
 
 /*
@@ -134,7 +137,8 @@ __global__ void AtomicallyNumberEachCompletePath(int nrVertices,
                                                 int *dbackwardlinkedlist, 
                                                 int *dlength, 
                                                 int *dheadindex,
-                                                int *dfullpathcount){
+                                                int *dfullpathcount,
+                                                int* dsearchtree){
 	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
 	// If not a head to a path of length 4, return (leaving the headindex == -1)
     if (threadID >= nrVertices || 
@@ -143,6 +147,7 @@ __global__ void AtomicallyNumberEachCompletePath(int nrVertices,
             return;
     // Counter is incremented and old value is used to number full paths.
     dheadindex[threadID] = atomicAdd(&dfullpathcount[0], 1);
+    dsearchtree[dheadindex[threadID]] = threadID;
 }
 
 __global__ void SetHeadIndex(int nrVertices,

@@ -45,7 +45,8 @@ __global__ void AtomicallyNumberEachCompletePath(int nrVertices,
                                                 int *dbackwardlinkedlist, 
                                                 int *dlength, 
                                                 int *dheadindex,
-                                                int *dfullpathcount);
+                                                int *dfullpathcount,
+                                                int* dsearchtree);
 
 namespace mtc
 {
@@ -80,7 +81,7 @@ class VCGPU
                                 int *dreducedlength);
 
         // VC arrays
-        int *dedgestatus, *ddegrees, *dheadindex, *dfullpathcount;
+        int *dedgestatus, *ddegrees, *dheadindex, *dfullpathcount, *dsearchtree;
         GraphMatchingGeneralGPURandom matcher;
 
 	protected:
