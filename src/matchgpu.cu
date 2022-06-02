@@ -1266,7 +1266,10 @@ __global__ void grRequest(const int *degree, const int *edgestatus, int *request
 	//Let all blue (+) vertices make requests.
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
 
-	if (i >= nrVertices || degree[i] == 0) return;
+	if (i >= nrVertices)
+		return;
+	if(degree[i] == 0) 
+		return;
 	
 	const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
 
