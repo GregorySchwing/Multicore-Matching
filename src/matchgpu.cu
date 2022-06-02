@@ -1611,11 +1611,10 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 	// dtails - to quickly flip sense of strand
 	// dmatch - same as singleton implementation
 	// dsense - indicates directionality of strand
-	int *dforwardlinkedlist, *dbackwardlinkedlist, *dmatch, *drequests, *dsense, *dlength, *dh, *dt, *dheadindex;
+	int *dforwardlinkedlist, *dbackwardlinkedlist, *dmatch, *drequests, *dsense, *dh, *dt, *dheadindex;
 
 	if (cudaMalloc(&drequests, sizeof(int)*graph.nrVertices) != cudaSuccess ||  
 		cudaMalloc(&dmatch, sizeof(int)*graph.nrVertices) != cudaSuccess || 
-		cudaMalloc(&dlength, sizeof(int)*graph.nrVertices) != cudaSuccess || 
 		cudaMalloc(&dsense, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
@@ -1771,8 +1770,7 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 	}
 
 	//Copy obtained matching on the device back to the host.
-	if (cudaMemcpy(&lengthOfPath[0], dlength, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost) != cudaSuccess ||
-		cudaMemcpy(&fll[0], dforwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost) != cudaSuccess ||
+	if (cudaMemcpy(&fll[0], dforwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost) != cudaSuccess ||
 		cudaMemcpy(&bll[0], dbackwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost) != cudaSuccess)
 	{
 		cerr << "Unable to retrieve data!" << endl;
