@@ -115,6 +115,7 @@ void VCGPU::numberCompletedPaths(int nrVertices,
                                                                         dfullpathcount);
 }
 
+/*
 void VCGPU::coverAllCompletedPaths(int nrVertices, 
                         int *dbackwardlinkedlist, 
                         int *dlength){
@@ -125,7 +126,7 @@ void VCGPU::coverAllCompletedPaths(int nrVertices,
                                                                         dheadindex,
                                                                         dfullpathcount);
 }
-
+*/
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void AtomicallyNumberEachCompletePath(int nrVertices, 
                                                 int *dbackwardlinkedlist, 
