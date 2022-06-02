@@ -244,7 +244,7 @@ __global__ void ParallelCalculateOffsetsForNewlyActivateLeafNodesBreadthFirst(
 	//Determine blue and red groups using MD5 hashing.
 	//Based on the Wikipedia MD5 hashing pseudocode (http://en.wikipedia.org/wiki/MD5).
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
-	if (i >= nrVertices) return;    
+	if (i >= 1) return;    
     int leavesToProcess = dfullpathcount[0];
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Solved for leavesToProcess < closed form
