@@ -39,13 +39,15 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 		cudaMalloc(&dheadindex, sizeof(int)*graph.nrVertices) != cudaSuccess || 
         cudaMalloc(&dsearchtree, sizeof(int)*graph.nrVertices) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
+        cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
 		throw exception();
 	}
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dedgestatus),  1, size_t(graph.neighbours.size()));
-    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dfullpathcount),  1, size_t(1));
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dfullpathcount),  0, size_t(1));
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dnumleaves),  0, size_t(1));
     // Only >= 0 are heads of full paths
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dheadindex),  -1, size_t(graph.nrVertices));
     // Before implementing recursive backtracking, I can keep performing this memcpy to set degrees
@@ -59,6 +61,7 @@ VCGPU::~VCGPU(){
     cudaFree(dsearchtree);
     cudaFree(dedgestatus);
     cudaFree(dfullpathcount);
+    cudaFree(dnumleaves);
 	cudaUnbindTexture(neighboursTexture);
 	cudaUnbindTexture(neighbourRangesTexture);
 }
@@ -118,6 +121,9 @@ void VCGPU::numberCompletedPaths(int nrVertices,
                                                                         dheadindex,
                                                                         dfullpathcount,
                                                                         dsearchtree);
+    CalculateNumberOfLeafNodes<<<1, 1>>>(
+                                        dfullpathcount,
+                                        dnumleaves);
 }
 
 /*
@@ -239,8 +245,9 @@ __global__ void CalculateNumberOfLeaves(int *dfullpathcount){
 
 }
 
-__global__ void ParallelCalculateOffsetsForNewlyActivateLeafNodesBreadthFirst(
-                                        int * dfullpathcount){
+__global__ void CalculateNumberOfLeafNodes(
+                                        int * dfullpathcount
+                                        int * dnumleaves){
 	//Determine blue and red groups using MD5 hashing.
 	//Based on the Wikipedia MD5 hashing pseudocode (http://en.wikipedia.org/wiki/MD5).
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
@@ -277,7 +284,7 @@ __global__ void ParallelCalculateOffsetsForNewlyActivateLeafNodesBreadthFirst(
     int leavesFromIncompleteLvl = 3*removeFromComplete;
     // Total leaf nodes
     int totalNewActive = (leavesFromCompleteLvl - removeFromComplete) + leavesFromIncompleteLvl;
-
+    dnumleaves[0] = totalNewActive;
     printf("Leaves %d, completeLevel Depth %d\n",leavesToProcess, completeLevel);
     printf("Leaves %d, leavesFromCompleteLvl %d\n",leavesToProcess, leavesFromCompleteLvl);
     printf("Leaves %d, incompleteLevel Depth %d\n",leavesToProcess, incompleteLevel);
