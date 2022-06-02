@@ -48,6 +48,10 @@ __global__ void AtomicallyNumberEachCompletePath(int nrVertices,
                                                 int *dfullpathcount,
                                                 int* dsearchtree);
 
+__global__ void CalculateNumberOfLeafNodes(
+                                        int * dfullpathcount
+                                        int * dnumleaves);
+
 namespace mtc
 {
 class VCGPU

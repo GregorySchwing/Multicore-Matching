@@ -246,7 +246,7 @@ __global__ void CalculateNumberOfLeaves(int *dfullpathcount){
 }
 
 __global__ void CalculateNumberOfLeafNodes(
-                                        int * dfullpathcount
+                                        int * dfullpathcount,
                                         int * dnumleaves){
 	//Determine blue and red groups using MD5 hashing.
 	//Based on the Wikipedia MD5 hashing pseudocode (http://en.wikipedia.org/wiki/MD5).
