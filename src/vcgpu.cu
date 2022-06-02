@@ -36,6 +36,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
     // Wrong since numEdges < neighbors (up to double the num edges, in and out)
     //cudaMalloc(&dedgestatus, sizeof(int)*graph.nrEdges) != cudaSuccess || 
     if (cudaMalloc(&dedgestatus, sizeof(int)*graph.neighbours.size()) != cudaSuccess || 
+        cudaMalloc(&dlength, sizeof(int)*graph.nrVertices) != cudaSuccess || 
 		cudaMalloc(&dheadindex, sizeof(int)*graph.nrVertices) != cudaSuccess || 
         cudaMalloc(&dsearchtree, sizeof(int)*graph.nrVertices) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
@@ -58,6 +59,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 VCGPU::~VCGPU(){
     cudaFree(ddegrees);
 	cudaFree(dheadindex);
+	cudaFree(dlength);
     cudaFree(dsearchtree);
     cudaFree(dedgestatus);
     cudaFree(dfullpathcount);
