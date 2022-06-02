@@ -49,7 +49,7 @@ __global__ void AtomicallyNumberEachCompletePath(int nrVertices,
                                                 int* dsearchtree);
 
 __global__ void CalculateNumberOfLeafNodes(
-                                        int * dfullpathcount
+                                        int * dfullpathcount,
                                         int * dnumleaves);
 
 namespace mtc
