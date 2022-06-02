@@ -1266,10 +1266,7 @@ __global__ void grRequest(const int *degree, const int *edgestatus, int *request
 	//Let all blue (+) vertices make requests.
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
 
-	if (i >= nrVertices)
-		return;
-	if(degree[i] == 0) 
-		return;
+	if (i >= nrVertices || degree[i] == 0) return;
 	
 	const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
 
@@ -1293,7 +1290,9 @@ __global__ void grRequest(const int *degree, const int *edgestatus, int *request
 			// without this continue statement.
 			// r+.-r-, b+.b-; there is a colored neighbor.
 			// Also, skip edges which have been deactivated.
-			if (nf == ni || nb == ni || !edgestatus[j]) continue;
+//			if (nf == ni || nb == ni || !edgestatus[j]) continue;
+			if (nf == ni || nb == ni ) continue;
+
 			const int nm = match[ni];
 			//Do we have an unmatched neighbour?
 			// 0 : Blue; 1 : Red, 2 
