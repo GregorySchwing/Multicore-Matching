@@ -41,8 +41,8 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 		cerr << "Not enough memory on device!" << endl;
 		throw exception();
 	}
-    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dedgestatus),  0, size_t(1));
-    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dfullpathcount),  1, size_t(graph.nrEdges));
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dedgestatus),  0, size_t(graph.nrEdges));
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dfullpathcount),  1, size_t(1));
     // Only >= 0 are heads of full paths
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dheadindex),  -1, size_t(graph.nrVertices));
     // Before implementing recursive backtracking, I can keep performing this memcpy to set degrees

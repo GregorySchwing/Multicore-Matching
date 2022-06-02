@@ -1290,8 +1290,8 @@ __global__ void grRequest(const int *degree, const int *edgestatus, int *request
 			// without this continue statement.
 			// r+.-r-, b+.b-; there is a colored neighbor.
 			// Also, skip edges which have been deactivated.
-//			if (nf == ni || nb == ni || !edgestatus[j]) continue;
-			if (nf == ni || nb == ni ) continue;
+			if (nf == ni || nb == ni || !edgestatus[j]) continue;
+//			if (nf == ni || nb == ni ) continue;
 
 			const int nm = match[ni];
 			//Do we have an unmatched neighbour?
