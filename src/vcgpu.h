@@ -90,6 +90,8 @@ class VCGPU
         int *dedgestatus, *ddegrees, *dheadindex, *dfullpathcount, *dnumleaves, *dsearchtree;
 
         int *dlength, *dforwardlinkedlist, *dbackwardlinkedlist;
+        thrust::device_vector<int> dfll;
+        thrust::device_vector<int> dbll;
 
         GraphMatchingGeneralGPURandom matcher;
 

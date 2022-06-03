@@ -31,7 +31,9 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 		graph(_graph),
         threadsPerBlock(_threadsPerBlock),
         barrier(_barrier),
-		matcher(_graph, _threadsPerBlock, _barrier)
+		matcher(_graph, _threadsPerBlock, _barrier),
+        dfll(graph.nrVertices),
+        dbll(graph.nrVertices)
 {
     // Wrong since numEdges < neighbors (up to double the num edges, in and out)
     //cudaMalloc(&dedgestatus, sizeof(int)*graph.nrEdges) != cudaSuccess || 
@@ -55,11 +57,9 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
     // and the remove tentative vertices to check a cover.
     cudaMemcpy(ddegrees, &graph.degrees[0], sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
 
-    thrust::device_vector<int>dfll(graph.nrVertices);
 	thrust::sequence(dfll.begin(),dfll.end());
 	dforwardlinkedlist = thrust::raw_pointer_cast(&dfll[0]);
 	
-	thrust::device_vector<int>dbll(graph.nrVertices);
 	thrust::sequence(dbll.begin(),dbll.end());
 	dbackwardlinkedlist = thrust::raw_pointer_cast(&dbll[0]);
 }
