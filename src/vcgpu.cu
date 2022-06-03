@@ -54,6 +54,14 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
     // Before implementing recursive backtracking, I can keep performing this memcpy to set degrees
     // and the remove tentative vertices to check a cover.
     cudaMemcpy(ddegrees, &graph.degrees[0], sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
+
+    thrust::device_vector<int>dfll(graph.nrVertices);
+	thrust::sequence(dfll.begin(),dfll.end());
+	dforwardlinkedlist = thrust::raw_pointer_cast(&dfll[0]);
+	
+	thrust::device_vector<int>dbll(graph.nrVertices);
+	thrust::sequence(dbll.begin(),dbll.end());
+	dbackwardlinkedlist = thrust::raw_pointer_cast(&dbll[0]);
 }
 
 VCGPU::~VCGPU(){
