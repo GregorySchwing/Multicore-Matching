@@ -32,8 +32,8 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         threadsPerBlock(_threadsPerBlock),
         barrier(_barrier),
 		matcher(_graph, _threadsPerBlock, _barrier),
-        dfll(graph.nrVertices),
-        dbll(graph.nrVertices)
+        dfll(_graph.nrVertices),
+        dbll(_graph.nrVertices)
 {
     // Wrong since numEdges < neighbors (up to double the num edges, in and out)
     //cudaMalloc(&dedgestatus, sizeof(int)*graph.nrEdges) != cudaSuccess || 
