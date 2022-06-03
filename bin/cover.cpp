@@ -531,7 +531,7 @@ int main(int argc, char **argv)
 					//vc.matcher.performMatching(match, t1, t2, fll, bll, lengthOfPath, &degrees[0], &edgestatus[0]);
 					vc.matcher.performMatching(match, t1, t2, fll, bll, vc.dlength, vc.ddegrees, vc.dedgestatus);
 					// Need to pass device pointer to LOP
-					vc.numberCompletedPaths(graph.nrVertices, bll, vc.dlength);
+					vc.numberCompletedPaths(graph.nrVertices, vc.dbackwardlinkedlist, vc.dlength);
 
 					//delete matcher;
 				}
