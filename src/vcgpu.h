@@ -84,7 +84,7 @@ class VCGPU
                                 int *dlength,
                                 int *dreducedlength);
 
-        void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll);
+        void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
 
         // VC arrays
         int *dedgestatus, *ddegrees, *dheadindex, *dfullpathcount, *dnumleaves, *dsearchtree;
