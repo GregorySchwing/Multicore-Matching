@@ -533,7 +533,7 @@ int main(int argc, char **argv)
 					
 					// Need to pass device pointer to LOP
 					vc.numberCompletedPaths(graph.nrVertices, vc.dbackwardlinkedlist, vc.dlength);
-					vc.GetLinkedLists(graph.nrVertices, fll, bll);
+					vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);
 					//delete matcher;
 				}
 				catch (exception &e)
