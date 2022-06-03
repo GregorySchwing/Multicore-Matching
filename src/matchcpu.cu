@@ -797,7 +797,7 @@ GraphMatchingCPUWeightedEdge::~GraphMatchingCPUWeightedEdge()
 	
 }
 
-void GraphMatchingCPUWeightedEdge::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, int * dlength, const int * degree, const int * edgestatus) const
+void GraphMatchingCPUWeightedEdge::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree, const int * edgestatus) const
 {
 	//This is a greedy weighted matching algorithm.
 	//Instead of being vertex oriented, this is an edge oriented algorithm.
