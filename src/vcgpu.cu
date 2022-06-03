@@ -273,6 +273,7 @@ __global__ void CalculateNumberOfLeafNodes(
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
 	if (i >= 1) return;    
     int leavesToProcess = dfullpathcount[0];
+    printf("Number of full paths %d\n",leavesToProcess);
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Solved for leavesToProcess < closed form
     // start from level 1, hence add a level if LTP > 0, 1 complete level 
