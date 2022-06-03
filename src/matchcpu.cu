@@ -279,7 +279,7 @@ GraphMatchingCPURandom::~GraphMatchingCPURandom()
 	
 }
 
-void GraphMatchingCPURandom::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, int * dlength, const int * degree, const int * edgestatus) const
+void GraphMatchingCPURandom::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree, const int * edgestatus) const
 {
 	//This is a random greedy matching algorithm.
 	//Assumes that the order of the vertices has already been randomized.
@@ -336,7 +336,7 @@ GraphMatchingCPUMinDeg::~GraphMatchingCPUMinDeg()
 	
 }
 
-void GraphMatchingCPUMinDeg::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, int * dlength, const int * degree, const int * edgestatus) const
+void GraphMatchingCPUMinDeg::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree, const int * edgestatus) const
 {
 	//This is a two-sided dynamic minimum degree greedy matching algorithm.
 	//Assumes that no vertices have been matched yet.
@@ -482,7 +482,7 @@ class SortByDegree
 		const Graph &g;
 };
 
-void GraphMatchingCPUStatMinDeg::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, int * dlength, const int * degree, const int * edgestatus) const
+void GraphMatchingCPUStatMinDeg::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree, const int * edgestatus) const
 {
 	//This is a one-sided static minimum degree greedy matching algorithm.
 	
@@ -549,7 +549,7 @@ GraphMatchingCPUKarpSipser::~GraphMatchingCPUKarpSipser()
 	
 }
 
-void GraphMatchingCPUKarpSipser::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, int * dlength, const int * degree, const int * edgestatus) const
+void GraphMatchingCPUKarpSipser::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree, const int * edgestatus) const
 {
 	//This is the one-sided Karp-Sipser greedy matching algorithm.
 	//Assumes that the order of the vertices has already been randomized and that the given matching is empty.
@@ -715,7 +715,7 @@ GraphMatchingCPUWeighted::~GraphMatchingCPUWeighted()
 	
 }
 
-void GraphMatchingCPUWeighted::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, int * dlength, const int * degree, const int * edgestatus) const
+void GraphMatchingCPUWeighted::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree, const int * edgestatus) const
 {
 	//This is a greedy weighted matching algorithm.
 	//Assumes that the order of the vertices has already been randomized.
