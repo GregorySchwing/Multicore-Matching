@@ -168,7 +168,7 @@ __global__ void AtomicallyNumberEachCompletePath(int nrVertices,
 	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
 	// If not a head to a path of length 4, return (leaving the headindex == -1)
     if (threadID >= nrVertices || 
-        dlength[threadID] != 4 || 
+        dlength[threadID] != 3 || 
         dbackwardlinkedlist[threadID] != threadID) 
             return;
     // Counter is incremented and old value is used to number full paths.
