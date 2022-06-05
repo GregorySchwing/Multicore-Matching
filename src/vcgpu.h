@@ -52,6 +52,10 @@ __global__ void CalculateNumberOfLeafNodes(
                                         int * dfullpathcount,
                                         int * dnumleaves);
 
+__global__ void ParallelPopulateNewlyActivateLeafNodesBreadthFirstClean(
+                                        int * dfullpathcount);
+                                        
+
 namespace mtc
 {
 class VCGPU
