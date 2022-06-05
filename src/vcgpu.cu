@@ -144,6 +144,8 @@ void VCGPU::numberCompletedPaths(int nrVertices,
     CalculateNumberOfLeafNodes<<<1, 1>>>(
                                         dfullpathcount,
                                         dnumleaves);
+    ParallelPopulateNewlyActivateLeafNodesBreadthFirstClean<<<1, 1>>>(
+                                        dfullpathcount);
 }
 
 /*
@@ -314,120 +316,75 @@ __global__ void CalculateNumberOfLeafNodes(
     printf("Leaves %d, totalNewActive %d\n",leavesToProcess, totalNewActive);
 }
 
-//int leafValue = global_active_leaf_value[leafIndex];
+//int leafIndex = global_active_leaf_value[leafIndex];
 // Solve recurrence relation 
 // g(n) = 1/6*((2*C+3)*3^n - 3)
-// C depends on leafValue
+// C depends on leafIndex
 // where g(0) = left-most child of depth 1
 // where g(1) = left-most child of depth 2
 // where g(2) = left-most child of depth 3
 // ...
-//int arbitraryParameter = 3*(3*leafValue)+1);
+//int arbitraryParameter = 3*(3*leafIndex)+1);
 
+// currently a single root is expanded in gpu memory at a time. 
+// efforts were made in the FPT-kVC "done" branch to maintain multiple copies of the graph
+// and explore the search tree in parallel.
 __global__ void ParallelPopulateNewlyActivateLeafNodesBreadthFirstClean(
-                                        int * global_active_leaves,
-                                        int * global_newly_active_leaves,
-                                        int * global_active_leaves_count_current,
-                                        int * dfullpathcount,
-                                        int * global_newly_active_offset_ptr,
-                                        int * global_active_leaf_index,
-                                        int * global_active_leaf_parent_leaf_index,
-                                        int * global_active_leaf_parent_leaf_value,
-                                        int * global_edges_left_to_cover_count,
-                                        int * global_verts_remain_count){
+                                        int * dfullpathcount){
     int globalIndex = blockIdx.x * blockDim.x + threadIdx.x;
-    int leafValue;
+    int leafIndex;
     int arbitraryParameter;
     int leftMostLeafIndexOfFullLevel;
     int leftMostLeafIndexOfIncompleteLevel;
-    // Since number of leaves is not necessarily a power of 2
-    // Dont populate inactivated leaves.
-    if (globalIndex < global_active_leaves_count_current[0] 
-        && 0 < global_verts_remain_count[globalIndex]
-        && 0 < global_edges_left_to_cover_count[globalIndex]){
-        #ifndef NDEBUG
-        printf("globalIndex %d, ParallelPopulateNewlyActivateLeafNodesBreadthFirstClean\n",globalIndex);
-        printf("globalIndex %d, global_active_leaves_count_current %x\n",globalIndex, global_active_leaves_count_current[0]);
-        #endif
-        int leavesToProcess = dfullpathcount[globalIndex];
-        // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
-        // Solved for leavesToProcess < closed form
-        // start from level 1, hence add a level if LTP > 0, 1 complete level 
-        // Add 1 if LTP == 0 to prevent runtime error
-        // LTP = 2
-        // CL = 1
-        // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
-        int completeLevel = floor(logf(2*leavesToProcess + 1) / logf(3)) - (int)(leavesToProcess==0);
-        // If LTP == 0, we dont want to create any new leaves
-        // Therefore, we dont want to enter the for loops.
-        // The active leaf writes itself as it's parent before the for loops
-        // This is overwritten within the for loops if LTP > 0
-        // CLL = 3
-        int leavesFromCompleteLvl = powf(3.0, completeLevel) - (int)(leavesToProcess == 0);
-        // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
-        // Solved for closed form < leavesToProcess
-        // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
-        // IL = 1
-        int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3)) - (int)(leavesToProcess==0);
-        // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
-        // Add 1 when leavesToProcess isn't 0, so we start counting from level 1
-        // Also subtract the root, so we start counting from level 1
-        // TSC = 3
-        int treeSizeComplete = (1.0 - powf(3.0, completeLevel+(int)(leavesToProcess != 0)))/(1.0 - 3.0) - (int)(leavesToProcess != 0);
-        // How many internal leaves to skip in complete level
-        // RFC = 1
-        int removeFromComplete = ((3*leavesToProcess - treeSizeComplete) + 3 - 1) / 3;
-        // Leaves that are used in next level
-        int leavesFromIncompleteLvl = 3*removeFromComplete;
-        
-        leafValue = global_active_leaves[globalIndex];
-        arbitraryParameter = 3*((3*leafValue)+1);
-        // Closed form solution of recurrence relation shown in comment above method
-        // Subtract 1 because reasons
-        leftMostLeafIndexOfFullLevel = ((2*arbitraryParameter+3)*powf(3.0, completeLevel-1) - 3)/6;
-        leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
+    #ifndef NDEBUG
+    printf("globalIndex %d, ParallelPopulateNewlyActivateLeafNodesBreadthFirstClean\n",globalIndex);
+    printf("globalIndex %d, global_active_leaves_count_current %x\n",globalIndex, global_active_leaves_count_current[0]);
+    #endif
+    int leavesToProcess = dfullpathcount[globalIndex];
+    // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
+    // Solved for leavesToProcess < closed form
+    // start from level 1, hence add a level if LTP > 0, 1 complete level 
+    // Add 1 if LTP == 0 to prevent runtime error
+    // LTP = 2
+    // CL = 1
+    // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
+    int completeLevel = floor(logf(2*leavesToProcess + 1) / logf(3)) - (int)(leavesToProcess==0);
+    // If LTP == 0, we dont want to create any new leaves
+    // Therefore, we dont want to enter the for loops.
+    // The active leaf writes itself as it's parent before the for loops
+    // This is overwritten within the for loops if LTP > 0
+    // CLL = 3
+    int leavesFromCompleteLvl = powf(3.0, completeLevel) - (int)(leavesToProcess == 0);
+    // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
+    // Solved for closed form < leavesToProcess
+    // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
+    // IL = 1
+    int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3)) - (int)(leavesToProcess==0);
+    // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
+    // Add 1 when leavesToProcess isn't 0, so we start counting from level 1
+    // Also subtract the root, so we start counting from level 1
+    // TSC = 3
+    int treeSizeComplete = (1.0 - powf(3.0, completeLevel+(int)(leavesToProcess != 0)))/(1.0 - 3.0) - (int)(leavesToProcess != 0);
+    // How many internal leaves to skip in complete level
+    // RFC = 1
+    int removeFromComplete = ((3*leavesToProcess - treeSizeComplete) + 3 - 1) / 3;
+    // Leaves that are used in next level
+    int leavesFromIncompleteLvl = 3*removeFromComplete;
+    
+    // Test from root for now, this code can have an arbitrary root though
+    //leafIndex = global_active_leaves[globalIndex];
+    leafIndex = 0;
+    arbitraryParameter = 3*((3*leafIndex)+1);
+    // Closed form solution of recurrence relation shown in comment above method
+    // Subtract 1 because reasons
+    leftMostLeafIndexOfFullLevel = ((2*arbitraryParameter+3)*powf(3.0, completeLevel-1) - 3)/6;
+    leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
 
-        int newly_active_offset = global_newly_active_offset_ptr[globalIndex];
-        int index = 0;
-        // These values will be overwritten in the for loops, if leavesToProcess > 0
-        // Therefore initialize the values as if there were not any non-pendant paths
-        // found in the DFS.  This way we minimize the amount of conditionals.
-        global_newly_active_leaves[newly_active_offset + index] = leafValue;
-        global_active_leaf_parent_leaf_value[newly_active_offset + index] = leafValue;
-        global_active_leaf_parent_leaf_index[newly_active_offset + index] = globalIndex;
-
-        // If non-pendant paths were found, populate the search tree in the 
-        // complete level
-        for (int startingCLL = removeFromComplete; index < leavesFromCompleteLvl - removeFromComplete; ++index, ++startingCLL){
-            global_newly_active_leaves[newly_active_offset + index] = leftMostLeafIndexOfFullLevel + startingCLL;
-            global_active_leaf_parent_leaf_value[newly_active_offset + index] = leafValue;
-            global_active_leaf_parent_leaf_index[newly_active_offset + index] = globalIndex;
-            global_active_leaf_index[newly_active_offset + index] = newly_active_offset + index;
-        }
-
-        int totalNewActive = (leavesFromCompleteLvl - removeFromComplete) + leavesFromIncompleteLvl;
-        #ifndef NDEBUG
-        printf("globalIndex %d, ParallelPopulateNewlyActivateLeafNodesBreadthFirstClean\n",globalIndex);
-        printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, completeLevel);
-        printf("Leaves %d, leavesFromCompleteLvl %d\n",leavesToProcess, leavesFromCompleteLvl);
-        printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, incompleteLevel);
-        printf("Leaves %d, treeSizeComplete %d\n",leavesToProcess, treeSizeComplete);
-        printf("Leaves %d, totalNewActive %d\n",leavesToProcess, totalNewActive);
-        #endif
-        // If non-pendant paths were found, populate the search tree in the 
-        // incomplete level
-        for (int incompleteIndex = 0; index < totalNewActive; ++index, ++incompleteIndex){
-            //printf("global_newly_active_leaves[%d] = %d\n",newly_active_offset + index, leftMostLeafIndexOfIncompleteLevel + incompleteIndex);
-            global_newly_active_leaves[newly_active_offset + index] = leftMostLeafIndexOfIncompleteLevel + incompleteIndex;
-            global_active_leaf_parent_leaf_value[newly_active_offset + index] = leafValue;
-            global_active_leaf_parent_leaf_index[newly_active_offset + index] = globalIndex;
-            global_active_leaf_index[newly_active_offset + index] = newly_active_offset + index;
-
-        }
-        #ifndef NDEBUG
-        for (int testP = 0; testP < totalNewActive; ++testP){
-            printf("leafValue %d new active %d new active's parent %d\n",leafValue, global_newly_active_leaves[newly_active_offset + testP],global_active_leaf_parent_leaf_value[newly_active_offset + testP]);
-        }
-        #endif
-    }
+    int totalNewActive = (leavesFromCompleteLvl - removeFromComplete) + leavesFromIncompleteLvl;
+    printf("globalIndex %d, ParallelPopulateNewlyActivateLeafNodesBreadthFirstClean\n",globalIndex);
+    printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, completeLevel);
+    printf("Leaves %d, leavesFromCompleteLvl %d\n",leavesToProcess, leavesFromCompleteLvl);
+    printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, incompleteLevel);
+    printf("Leaves %d, treeSizeComplete %d\n",leavesToProcess, treeSizeComplete);
+    printf("Leaves %d, totalNewActive %d\n",leavesToProcess, totalNewActive);
 }
