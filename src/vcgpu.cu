@@ -101,12 +101,7 @@ void VCGPU::GetLengthStatistics(int nrVertices, int threadsPerBlock, int *dbackw
 	ReducePathLengths<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, dbackwardlinkedlist, dlength, dreducedlength);
 }
 
-void VCGPU::findCover(int nrVertices, int threadsPerBlock, int *dforwardlinkedlist, int *dbackwardlinkedlist, int *dmatch, int *dlength)
-{
-	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
 
-	SetHeadIndex<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, dbackwardlinkedlist, headindex);
-}
 
 void VCGPU::SortByHeadBool(int nrVertices,
                                 int * dheadbool,
@@ -195,16 +190,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     dsearchtree[3*myPathIndex + 3] = make_int2(second, fourth);
 }
 
-__global__ void SetHeadIndex(int nrVertices,
-							int *dbackwardlinkedlist,
-                            int* dheadbool){
-	//Determine blue and red groups using MD5 hashing.
-	//Based on the Wikipedia MD5 hashing pseudocode (http://en.wikipedia.org/wiki/MD5).
-	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
-	if (threadID >= nrVertices) return;
 
-    dheadbool[threadID] -= dbackwardlinkedlist[threadID] != threadID;
-}
 
 __global__ void ReducePathLengths(int nrVertices,
 							int *dbackwardlinkedlist,
