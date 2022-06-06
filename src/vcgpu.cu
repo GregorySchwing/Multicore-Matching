@@ -101,7 +101,7 @@ void VCGPU::GetLengthStatistics(int nrVertices, int threadsPerBlock, int *dbackw
 	ReducePathLengths<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, dbackwardlinkedlist, dlength, dreducedlength);
 }
 
-void VCGPU::findCover(int nrVertices, int threadsPerBlock, int *dforwardlinkedlist, int *dbackwardlinkedlist, int *dmatch, int *dlength, int *headindex)
+void VCGPU::findCover(int nrVertices, int threadsPerBlock, int *dforwardlinkedlist, int *dbackwardlinkedlist, int *dmatch, int *dlength)
 {
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
 
@@ -145,10 +145,11 @@ void VCGPU::numberCompletedPaths(int nrVertices,
                         int *dlength){
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     PopulateSearchTree<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, 
-                                                                        dbackwardlinkedlist, 
-                                                                        dlength,
-                                                                        dfullpathcount,
-                                                                        dsearchtree);
+                                                            dforwardlinkedlist,
+                                                            dbackwardlinkedlist, 
+                                                            dlength,
+                                                            dfullpathcount,
+                                                            dsearchtree);
     CalculateLeafOffsets<<<1, 1>>>(
                                     dfullpathcount,
                                     dnumleaves,
