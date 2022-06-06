@@ -518,10 +518,11 @@ int main(int argc, char **argv)
 				
 				cudaEventRecord(t0, 0);
 				cudaEventSynchronize(t0);
+				
+				VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 10);
 
 				try
 				{
-					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 10);
 					//GraphMatching *matcher = getMatcher(graph2, *i, GPUNrThreadsPerBlock, barrier);
 					
 					vc.matcher.initialMatching();
