@@ -53,7 +53,9 @@ __global__ void CalculateLeafOffsets(
                                         int * dfullpathcount,
                                         int * dnumleaves,
                                         int * active_leaf_offsets);
-                                        
+
+__host__ __device__ long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels);
+                             
 
 namespace mtc
 {
@@ -63,8 +65,6 @@ class VCGPU
 		VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier, const unsigned int &_k);
 		~VCGPU();
         
-        __host__ __device__ long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels);
-
         void numberCompletedPaths(int nrVertices, 
                                 int *dbackwardlinkedlist, 
                                 int *dlength);		
