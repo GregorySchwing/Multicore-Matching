@@ -226,8 +226,6 @@ GraphMatchingGPUWeightedMaximal::~GraphMatchingGPUWeightedMaximal()
 GraphMatchingGeneralGPURandom::GraphMatchingGeneralGPURandom(const Graph &_graph, const int &_nrThreads, const unsigned int &_selectBarrier) :
 		GraphMatchingGPU(_graph, _nrThreads, _selectBarrier)
 {
-	
-
 	if (cudaMalloc(&drequests, sizeof(int)*graph.nrVertices) != cudaSuccess ||  
 		cudaMalloc(&dmatch, sizeof(int)*graph.nrVertices) != cudaSuccess || 
 		cudaMalloc(&dsense, sizeof(int)*graph.nrVertices) != cudaSuccess)
@@ -239,7 +237,9 @@ GraphMatchingGeneralGPURandom::GraphMatchingGeneralGPURandom(const Graph &_graph
 
 GraphMatchingGeneralGPURandom::~GraphMatchingGeneralGPURandom()
 {
-
+	cudaFree(drequests);
+	cudaFree(dmatch);
+	cudaFree(dsense);
 }
 
 //==== Kernel variables ====
@@ -1620,31 +1620,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 	// dmatch - same as singleton implementation
 	// dsense - indicates directionality of strand
 
-	/*
-	thrust::device_vector<int>dfll(graph.nrVertices);
-	thrust::sequence(dfll.begin(),dfll.end());
-	dforwardlinkedlist = thrust::raw_pointer_cast(&dfll[0]);
-	
-	thrust::device_vector<int>dbll(graph.nrVertices);
-	thrust::sequence(dbll.begin(),dbll.end());
-	dbackwardlinkedlist = thrust::raw_pointer_cast(&dbll[0]);
-	*/
 	bool useMaxLength = true;
-	/*
-	bool useMoreMemory = true;
-
-	if (useMoreMemory){
-
-
-		thrust::device_vector<int>dheads(graph.nrVertices);
-		thrust::sequence(dheads.begin(),dheads.end());
-		dh = thrust::raw_pointer_cast(&dheads[0]);
-
-		thrust::device_vector<int>dtails(graph.nrVertices);
-		thrust::sequence(dtails.begin(),dtails.end());
-		dt = thrust::raw_pointer_cast(&dtails[0]);
-	}
-	*/
 	//Perform matching.
 	int blocksPerGrid = (graph.nrVertices + threadsPerBlock - 1)/threadsPerBlock;
 	
@@ -1774,9 +1750,6 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 	
 
 	//Free memory.
-	cudaFree(drequests);
-	cudaFree(dmatch);
-	cudaFree(dsense);
 	cudaUnbindTexture(neighboursTexture);
 	cudaUnbindTexture(neighbourRangesTexture);
 }
