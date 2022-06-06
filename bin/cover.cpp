@@ -524,10 +524,10 @@ int main(int argc, char **argv)
 				try
 				{
 					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 10);
+					vc.matcher.initialMatching(match);
 					//GraphMatching *matcher = getMatcher(graph2, *i, GPUNrThreadsPerBlock, barrier);
 					vc.FindCover();
 					/*
-					vc.matcher.initialMatching(match);
 					//vc.matcher.performMatching(match, t1, t2, fll, bll, lengthOfPath, &degrees[0], &edgestatus[0]);
 					vc.matcher.performMatching(&vc.matcher.match[0], t1, t2, vc.dforwardlinkedlist, vc.dbackwardlinkedlist, vc.dlength, vc.ddegrees, vc.dedgestatus);
 					// Need to pass device pointer to LOP
