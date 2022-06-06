@@ -158,6 +158,9 @@ void VCGPU::FindCover(){
 
 
 void VCGPU::SetEdgesOfLeaf(int leafIndex){
+    // Root of search tree is empty.
+    if (leafIndex == 0)
+        return;
 	int blocksPerGrid = ceil(logf(2*leafIndex + 1) / logf(3)) - (int)(leafIndex==0);
     SetEdges<<<blocksPerGrid, threadsPerBlock>>>(leafIndex,
                                                 dedgestatus,
