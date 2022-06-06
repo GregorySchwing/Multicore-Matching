@@ -74,7 +74,7 @@ class VCGPU
                                 int *dbackwardlinkedlist, 
                                 int *dlength,
                                 int *dreducedlength);
-
+        void MatchLeafIndex();
         void FindCover();
         void ReinitializeArrays();
 
