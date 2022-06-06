@@ -154,8 +154,10 @@ void VCGPU::FindCover(){
         ReinitializeArrays();
         matcher.performMatching(&matcher.match[0], t1, t2, dforwardlinkedlist, dbackwardlinkedlist, dlength, ddegrees, dedgestatus);
     	cudaEventElapsedTime(&time1, t1, t2);
-
-		matcher.copyMatchingBackToHost(match);
+        // Need to pass device pointer to LOP
+        numberCompletedPaths(graph.nrVertices, dbackwardlinkedlist, dlength);
+		
+        matcher.copyMatchingBackToHost(match);
 
         cudaEventRecord(t3, 0);
         cudaEventSynchronize(t3);
