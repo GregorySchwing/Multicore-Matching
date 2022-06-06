@@ -518,11 +518,12 @@ int main(int argc, char **argv)
 				
 				cudaEventRecord(t0, 0);
 				cudaEventSynchronize(t0);
-				
-				VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 10);
+
+				std::vector<int> match;
 
 				try
 				{
+					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 10);
 					//GraphMatching *matcher = getMatcher(graph2, *i, GPUNrThreadsPerBlock, barrier);
 					
 					vc.matcher.initialMatching();
@@ -588,7 +589,7 @@ int main(int argc, char **argv)
 				//Test matching if desired.
 				if (performTest)
 				{
-					if (!GraphMatching::testMatching(vc.matcher.match, graph2))
+					if (!GraphMatching::testMatching(match, graph2))
 					{
 						cerr << "Invalid matching!" << endl;
 						return -1;
@@ -599,7 +600,7 @@ int main(int argc, char **argv)
 				double matchingWeight = 0.0;
 				long matchingSize = 0;
 				std::vector<long> matchingSizeGeneral(maxLength+1);
-				GraphMatching::getWeight(matchingWeight, matchingSize, vc.matcher.match, graph2);
+				GraphMatching::getWeight(matchingWeight, matchingSize, match, graph2);
 				GraphMatching::getWeightGeneral(matchingWeight, matchingSizeGeneral, graph.degrees, bll, lengthOfPath, graph2);
 				//Store benchmark data.
 				// currently wrong for general
