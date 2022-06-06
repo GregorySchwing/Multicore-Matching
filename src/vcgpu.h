@@ -63,7 +63,7 @@ namespace mtc
 class VCGPU
 {
 	public:
-		VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier);
+		VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier, const unsigned int &_k);
 		~VCGPU();
         
         __host__ __device__ long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels);

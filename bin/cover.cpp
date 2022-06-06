@@ -524,7 +524,7 @@ int main(int argc, char **argv)
 
 				try
 				{
-					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier);
+					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 10);
 					//GraphMatching *matcher = getMatcher(graph2, *i, GPUNrThreadsPerBlock, barrier);
 					
 					match = vc.matcher.initialMatching();
