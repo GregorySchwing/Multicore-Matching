@@ -45,10 +45,10 @@ class GraphMatching
 
 		void initialMatching() const;
 		virtual void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree, const int * edgestatus) const = 0;
+		std::vector<int> match;
 
 	protected:
 		const Graph &graph;
-		vector<int> match;
 };
 
 class GraphMatchingCPURandom : public GraphMatching

@@ -129,7 +129,7 @@ void VCGPU::FindCover(){
         matcher.performMatching(&matcher.match[0], t1, t2, dforwardlinkedlist, dbackwardlinkedlist, dlength, ddegrees, dedgestatus);
     	cudaEventElapsedTime(&time1, t1, t2);
 
-		matcher.copyMatchingBackToHost(&matcher.match[0]);
+		matcher.copyMatchingBackToHost();
 
         cudaEventRecord(t3, 0);
         cudaEventSynchronize(t3);
