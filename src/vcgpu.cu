@@ -162,7 +162,6 @@ void VCGPU::MatchLeafIndex(){
     cudaEventRecord(t3, 0);
     cudaEventSynchronize(t3);
     //Measure the total elapsed time (including data transfer) and the calculation time.
-    float time0, time1;   
     cudaEventElapsedTime(&time0, t0, t3);
     cudaEventElapsedTime(&time1, t1, t2);
     //Destroy timers.
