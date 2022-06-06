@@ -143,7 +143,7 @@ void VCGPU::numberCompletedPaths(int nrVertices,
 void VCGPU::FindCover(){
     int leftMostLeafOfLevel = 0;
     int rightMostLeafOfLevel = 1;
-    for (int activeRoot = leftMostLeafOfLevel;  < rightMostLeafOfLevel; ++activeRoot){
+    for (int activeRoot = leftMostLeafOfLevel; activeRoot < rightMostLeafOfLevel; ++activeRoot){
         ReinitializeArrays();
     }
 }
