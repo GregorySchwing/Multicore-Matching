@@ -93,7 +93,7 @@ class VCGPU
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
 
         // VC arrays
-        int *dedgestatus, *ddegrees, *dheadindex, *dfullpathcount, *active_leaf_offsets, *dsearchtree;
+        int *dedgestatus, *ddegrees, *dheadindex, *dfullpathcount, *active_leaf_offsets, *dnumleaves, *dsearchtree;
 
         int *dlength, *dforwardlinkedlist, *dbackwardlinkedlist;
         thrust::device_vector<int> dfll;
