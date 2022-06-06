@@ -1743,7 +1743,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGeneralGPURandom::copyMatchingBackToHost(){
+void GraphMatchingGeneralGPURandom::copyMatchingBackToHost(std::vector<int> & match){
 	//Copy obtained matching on the device back to the host.
 	if (cudaMemcpy(&match[0], dmatch, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost) != cudaSuccess)
 	{
