@@ -519,18 +519,15 @@ int main(int argc, char **argv)
 				cudaEventRecord(t0, 0);
 				cudaEventSynchronize(t0);
 
-				//Generate matching of the desired type.
-				vector<int> match;
-
 				try
 				{
 					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 10);
 					//GraphMatching *matcher = getMatcher(graph2, *i, GPUNrThreadsPerBlock, barrier);
 					
-					match = vc.matcher.initialMatching();
+					vc.matcher.initialMatching();
 					//vc.matcher.performMatching(match, t1, t2, fll, bll, lengthOfPath, &degrees[0], &edgestatus[0]);
-					vc.matcher.performMatching(&match[0], t1, t2, vc.dforwardlinkedlist, vc.dbackwardlinkedlist, vc.dlength, vc.ddegrees, vc.dedgestatus);
-					vc.matcher.copyMatchingBackToHost(&match[0]);
+					vc.matcher.performMatching(&vc.matcher.match[0], t1, t2, vc.dforwardlinkedlist, vc.dbackwardlinkedlist, vc.dlength, vc.ddegrees, vc.dedgestatus);
+					vc.matcher.copyMatchingBackToHost();
 					// Need to pass device pointer to LOP
 					vc.numberCompletedPaths(graph.nrVertices, vc.dbackwardlinkedlist, vc.dlength);
 
@@ -590,7 +587,7 @@ int main(int argc, char **argv)
 				//Test matching if desired.
 				if (performTest)
 				{
-					if (!GraphMatching::testMatching(match, graph2))
+					if (!GraphMatching::testMatching(vc.matcher.match, graph2))
 					{
 						cerr << "Invalid matching!" << endl;
 						return -1;
@@ -601,7 +598,7 @@ int main(int argc, char **argv)
 				double matchingWeight = 0.0;
 				long matchingSize = 0;
 				std::vector<long> matchingSizeGeneral(maxLength+1);
-				GraphMatching::getWeight(matchingWeight, matchingSize, match, graph2);
+				GraphMatching::getWeight(matchingWeight, matchingSize, vc.matcher.match, graph2);
 				GraphMatching::getWeightGeneral(matchingWeight, matchingSizeGeneral, graph.degrees, bll, lengthOfPath, graph2);
 				//Store benchmark data.
 				// currently wrong for general

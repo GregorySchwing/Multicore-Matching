@@ -46,7 +46,7 @@ GraphMatching::~GraphMatching()
 	
 }
 
-vector<int> GraphMatching::initialMatching() const
+void GraphMatching::initialMatching() const
 {
 	/*
 	if (graph.empty())
@@ -55,10 +55,8 @@ vector<int> GraphMatching::initialMatching() const
 		throw exception();
 	}
 	*/
-
-	vector<int> match(graph.nrVertices, 0);
-
-	return match;
+	match.clear();
+	match.resize(graph.nrVertices);
 }
 
 void GraphMatching::getWeight(double &_weight, long &_size, const vector<int> &match, const Graph &graph)
