@@ -46,7 +46,7 @@ GraphMatching::~GraphMatching()
 	
 }
 
-void GraphMatching::initialMatching() const
+void GraphMatching::initialMatching()
 {
 	/*
 	if (graph.empty())

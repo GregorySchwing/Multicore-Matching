@@ -43,7 +43,7 @@ class GraphMatching
 		static inline bool isMatched(const int &m) {return m >= 4;};
 		static inline bool isHead(const int &m, const std::vector<int> & bll) {return bll[m] == m;};
 
-		void initialMatching() const;
+		void initialMatching();
 		virtual void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree, const int * edgestatus) const = 0;
 		std::vector<int> match;
 
