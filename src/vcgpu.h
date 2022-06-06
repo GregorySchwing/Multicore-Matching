@@ -68,20 +68,7 @@ class VCGPU
         void numberCompletedPaths(int nrVertices, 
                                 int *dbackwardlinkedlist, 
                                 int *dlength);		
-		
-        void findCover(int nrVertices, 
-                        int threadsPerBlock, 
-                        int *dforwardlinkedlist, 
-                        int *dbackwardlinkedlist, 
-                        int *dmatch, 
-                        int *dlength);		
-                        
-        void SortByHeadBool(int nrVertices,
-                                int * dheadbool,
-                                int * dheadboolSorted,
-                                int * dheadlist,
-                                int * dheadlistSorted);
-
+		                       
         void GetLengthStatistics(int nrVertices, 
                                 int threadsPerBlock, 
                                 int *dbackwardlinkedlist, 
