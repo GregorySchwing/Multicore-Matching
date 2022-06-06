@@ -27,20 +27,21 @@ texture<int2, cudaTextureType1D, cudaReadModeElementType> neighbourRangesTexture
 texture<int, cudaTextureType1D, cudaReadModeElementType> neighboursTexture;
 texture<float, cudaTextureType1D, cudaReadModeElementType> weightsTexture;
 
-VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier) :
+VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier, const unsigned int &_k) :
 		graph(_graph),
         threadsPerBlock(_threadsPerBlock),
         barrier(_barrier),
 		matcher(_graph, _threadsPerBlock, _barrier),
         dfll(_graph.nrVertices),
-        dbll(_graph.nrVertices)
+        dbll(_graph.nrVertices),
+        k(_k)
 {
+    sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(_k);
     // Wrong since numEdges < neighbors (up to double the num edges, in and out)
     //cudaMalloc(&dedgestatus, sizeof(int)*graph.nrEdges) != cudaSuccess || 
     if (cudaMalloc(&dedgestatus, sizeof(int)*graph.neighbours.size()) != cudaSuccess || 
         cudaMalloc(&dlength, sizeof(int)*graph.nrVertices) != cudaSuccess || 
-		cudaMalloc(&dheadindex, sizeof(int)*graph.nrVertices) != cudaSuccess || 
-        cudaMalloc(&dsearchtree, sizeof(int)*graph.nrVertices) != cudaSuccess || 
+        cudaMalloc(&dsearchtree, sizeof(int2)*sizeOfSearchTree) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&active_leaf_offsets, sizeof(int)*4) != cudaSuccess || 
@@ -53,7 +54,6 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dfullpathcount),  0, size_t(1));
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dnumleaves),  0, size_t(1));
     // Only >= 0 are heads of full paths
-    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dheadindex),  -1, size_t(graph.nrVertices));
     // Before implementing recursive backtracking, I can keep performing this memcpy to set degrees
     // and the remove tentative vertices to check a cover.
     cudaMemcpy(ddegrees, &graph.degrees[0], sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
@@ -67,7 +67,6 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 
 VCGPU::~VCGPU(){
     cudaFree(ddegrees);
-	cudaFree(dheadindex);
 	cudaFree(dlength);
     cudaFree(dsearchtree);
     cudaFree(dedgestatus);
@@ -76,6 +75,15 @@ VCGPU::~VCGPU(){
 	cudaUnbindTexture(neighboursTexture);
 	cudaUnbindTexture(neighbourRangesTexture);
 }
+
+__host__ __device__ long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels){
+    long long summand= 0;
+    // ceiling(vertexCount/2) loops
+    for (int i = 0; i < NumberOfLevels; ++i)
+        summand += pow (3.0, i);
+    return summand;
+}
+
 void VCGPU::GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length)
 {
 	//Copy obtained matching on the device back to the host.
@@ -136,16 +144,16 @@ void VCGPU::numberCompletedPaths(int nrVertices,
                         int *dbackwardlinkedlist, 
                         int *dlength){
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
-    AtomicallyNumberEachCompletePath<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, 
+    PopulateSearchTree<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, 
                                                                         dbackwardlinkedlist, 
                                                                         dlength,
-                                                                        dheadindex,
                                                                         dfullpathcount,
                                                                         dsearchtree);
     CalculateLeafOffsets<<<1, 1>>>(
                                     dfullpathcount,
                                     dnumleaves,
                                     active_leaf_offsets);
+
 }
 
 /*
@@ -153,7 +161,7 @@ void VCGPU::coverAllCompletedPaths(int nrVertices,
                         int *dbackwardlinkedlist, 
                         int *dlength){
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
-    AtomicallyNumberEachCompletePath<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, 
+    PopulateSearchTree<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, 
                                                                         dbackwardlinkedlist, 
                                                                         dlength,
                                                                         dheadindex,
@@ -161,12 +169,12 @@ void VCGPU::coverAllCompletedPaths(int nrVertices,
 }
 */
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
-__global__ void AtomicallyNumberEachCompletePath(int nrVertices, 
+__global__ void PopulateSearchTree(int nrVertices, 
+                                                int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
                                                 int *dlength, 
-                                                int *dheadindex,
                                                 int *dfullpathcount,
-                                                int* dsearchtree){
+                                                int2* dsearchtree){
 	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
 	// If not a head to a path of length 4, return (leaving the headindex == -1)
     if (threadID >= nrVertices || 
@@ -174,8 +182,16 @@ __global__ void AtomicallyNumberEachCompletePath(int nrVertices,
         dbackwardlinkedlist[threadID] != threadID) 
             return;
     // Counter is incremented and old value is used to number full paths.
-    dheadindex[threadID] = atomicAdd(&dfullpathcount[0], 1);
-    dsearchtree[dheadindex[threadID]] = threadID;
+    int myPathIndex = atomicAdd(&dfullpathcount[0], 1);
+
+    int first = dforwardlinkedlist[threadID];
+    int second = dforwardlinkedlist[first];
+    int third = dforwardlinkedlist[second];
+    int fourth = dforwardlinkedlist[third];
+
+    dsearchtree[3*myPathIndex + 1] = make_int2(first, third);
+    dsearchtree[3*myPathIndex + 2] = make_int2(second, third);
+    dsearchtree[3*myPathIndex + 3] = make_int2(second, fourth);
 }
 
 __global__ void SetHeadIndex(int nrVertices,

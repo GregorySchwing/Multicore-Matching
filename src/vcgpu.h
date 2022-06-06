@@ -41,12 +41,12 @@ __global__ void SetEdges(const int nrVertices,
                         int * dedgestatus,
                         int * ddegrees);
 
-__global__ void AtomicallyNumberEachCompletePath(int nrVertices, 
+__global__ void PopulateSearchTree(int nrVertices, 
+                                                int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
                                                 int *dlength, 
-                                                int *dheadindex,
                                                 int *dfullpathcount,
-                                                int* dsearchtree);
+                                                int2* dsearchtree);
 
 __global__ void CalculateNumberOfLeafNodes(
                                         int * dfullpathcount,
@@ -66,6 +66,8 @@ class VCGPU
 		VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier);
 		~VCGPU();
         
+        __host__ __device__ long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels);
+
         void numberCompletedPaths(int nrVertices, 
                                 int *dbackwardlinkedlist, 
                                 int *dlength);		
@@ -75,8 +77,7 @@ class VCGPU
                         int *dforwardlinkedlist, 
                         int *dbackwardlinkedlist, 
                         int *dmatch, 
-                        int *dlength, 
-                        int *dheadindex);		
+                        int *dlength);		
                         
         void SortByHeadBool(int nrVertices,
                                 int * dheadbool,
@@ -91,13 +92,21 @@ class VCGPU
                                 int *dreducedlength);
 
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
-
+        long long sizeOfSearchTree;
+        int k;
         // VC arrays
-        int *dedgestatus, *ddegrees, *dheadindex, *dfullpathcount, *active_leaf_offsets, *dnumleaves, *dsearchtree;
+        int *dedgestatus, *ddegrees, *dfullpathcount, *active_leaf_offsets, *dnumleaves;
+        int2 *dsearchtree;
 
         int *dlength, *dforwardlinkedlist, *dbackwardlinkedlist;
         thrust::device_vector<int> dfll;
         thrust::device_vector<int> dbll;
+
+        thrust::host_vector<int> recursive_leaf_offsets;
+        thrust::device_vector<int> d_recursive_leaf_offsets;
+
+        thrust::host_vector<int> recursive_leaf_counters;
+        thrust::device_vector<int> d_recursive_leaf_counters;
 
         GraphMatchingGeneralGPURandom matcher;
 
