@@ -28,9 +28,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 __global__ void InitDegrees(const int nrVertices,
                             int * ddegrees);
 
-__global__ void SetHeadIndex(int nrVertices,
-							int *dbackwardlinkedlist,
-                            int* dheadbool);
 
 __global__ void ReducePathLengths(int nrVertices,
 							int *dbackwardlinkedlist,
