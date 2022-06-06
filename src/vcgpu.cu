@@ -50,19 +50,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 		cerr << "Not enough memory on device!" << endl;
 		throw exception();
 	}
-    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dedgestatus),  1, size_t(graph.neighbours.size()));
-    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dfullpathcount),  0, size_t(1));
-    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dnumleaves),  0, size_t(1));
-    // Only >= 0 are heads of full paths
-    // Before implementing recursive backtracking, I can keep performing this memcpy to set degrees
-    // and the remove tentative vertices to check a cover.
-    cudaMemcpy(ddegrees, &graph.degrees[0], sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
-
-	thrust::sequence(dfll.begin(),dfll.end());
-	dforwardlinkedlist = thrust::raw_pointer_cast(&dfll[0]);
-	
-	thrust::sequence(dbll.begin(),dbll.end());
-	dbackwardlinkedlist = thrust::raw_pointer_cast(&dbll[0]);
+    ReinitializeArrays();
 }
 
 VCGPU::~VCGPU(){
@@ -152,18 +140,31 @@ void VCGPU::numberCompletedPaths(int nrVertices,
 
 }
 
-/*
-void VCGPU::coverAllCompletedPaths(int nrVertices, 
-                        int *dbackwardlinkedlist, 
-                        int *dlength){
-	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
-    PopulateSearchTree<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, 
-                                                                        dbackwardlinkedlist, 
-                                                                        dlength,
-                                                                        dheadindex,
-                                                                        dfullpathcount);
+void VCGPU::FindCover(){
+    int leftMostLeafOfLevel = 0;
+    int rightMostLeafOfLevel = 1;
+    for (int activeRoot = leftMostLeafOfLevel;  < rightMostLeafOfLevel; ++activeRoot){
+        ReinitializeArrays();
+    }
 }
-*/
+
+void VCGPU::ReinitializeArrays(){
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dedgestatus),  1, size_t(graph.neighbours.size()));
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dfullpathcount),  0, size_t(1));
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dnumleaves),  0, size_t(1));
+    // Only >= 0 are heads of full paths
+    // Before implementing recursive backtracking, I can keep performing this memcpy to set degrees
+    // and the remove tentative vertices to check a cover.
+    cudaMemcpy(ddegrees, &graph.degrees[0], sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
+
+	thrust::sequence(dfll.begin(),dfll.end());
+	dforwardlinkedlist = thrust::raw_pointer_cast(&dfll[0]);
+	
+	thrust::sequence(dbll.begin(),dbll.end());
+	dbackwardlinkedlist = thrust::raw_pointer_cast(&dbll[0]);
+}
+
+
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void PopulateSearchTree(int nrVertices, 
                                                 int *dforwardlinkedlist, 

@@ -88,6 +88,9 @@ class VCGPU
                                 int *dlength,
                                 int *dreducedlength);
 
+        void FindCover();
+        void ReinitializeArrays();
+
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
         long long sizeOfSearchTree;
         int k;
