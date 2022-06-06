@@ -63,7 +63,7 @@ vector<int> GraphMatching::initialMatching() const
 
 void GraphMatching::getWeight(double &_weight, long &_size, const vector<int> &match, const Graph &graph)
 {
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 
 	double weight = 0.0;
 	long size = 0;
@@ -284,7 +284,7 @@ void GraphMatchingCPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEv
 	//This is a random greedy matching algorithm.
 	//Assumes that the order of the vertices has already been randomized.
 	
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	cudaEventRecord(t1, 0);
 	cudaEventSynchronize(t1);
@@ -341,7 +341,7 @@ void GraphMatchingCPUMinDeg::performMatching(int *match, cudaEvent_t &t1, cudaEv
 	//This is a two-sided dynamic minimum degree greedy matching algorithm.
 	//Assumes that no vertices have been matched yet.
 	
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Allocate memory.
 	vector<multimap<int, int>::iterator> mapPtrs(graph.nrVertices);
@@ -486,7 +486,7 @@ void GraphMatchingCPUStatMinDeg::performMatching(int *match, cudaEvent_t &t1, cu
 {
 	//This is a one-sided static minimum degree greedy matching algorithm.
 	
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Create array for all vertex degrees.
 	vector<int> order(graph.nrVertices);
@@ -554,7 +554,7 @@ void GraphMatchingCPUKarpSipser::performMatching(int *match, cudaEvent_t &t1, cu
 	//This is the one-sided Karp-Sipser greedy matching algorithm.
 	//Assumes that the order of the vertices has already been randomized and that the given matching is empty.
 	
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Allocate memory.
 	vector<list<int>::iterator> listPtrs(graph.nrVertices);
@@ -720,7 +720,7 @@ void GraphMatchingCPUWeighted::performMatching(int *match, cudaEvent_t &t1, cuda
 	//This is a greedy weighted matching algorithm.
 	//Assumes that the order of the vertices has already been randomized.
 	
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	cudaEventRecord(t1, 0);
 	cudaEventSynchronize(t1);

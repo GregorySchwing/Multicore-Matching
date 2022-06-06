@@ -1489,7 +1489,7 @@ void GraphMatchingGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEv
 	//Creates a greedy random matching on the GPU.
 	//Assumes the current matching is empty.
 
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Setup textures.
 	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
@@ -1589,7 +1589,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 	//Assumes the current matching is empty.
 	std::cout << "GraphMatchingGeneralGPURandom" << std::endl;
 
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Setup textures.
 	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
@@ -1786,7 +1786,7 @@ void GraphMatchingGPURandomMaximal::performMatching(int *match, cudaEvent_t &t1,
 	//Creates a greedy random maximal matching on the GPU using atomic operations.
 	//Assumes the current matching is empty.
 
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Setup textures.
 	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
@@ -1877,7 +1877,7 @@ void GraphMatchingGPUWeighted::performMatching(int *match, cudaEvent_t &t1, cuda
 	//Creates a greedy weighted matching on the GPU.
 	//Assumes the current matching is empty.
 
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Setup textures.
 	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
@@ -1986,7 +1986,7 @@ void GraphMatchingGPUWeightedMaximal::performMatching(int *match, cudaEvent_t &t
 	//Creates a greedy weighted matching on the GPU.
 	//Assumes the current matching is empty.
 
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Setup textures.
 	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();

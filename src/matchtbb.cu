@@ -500,10 +500,10 @@ void GraphMatchingTBBRandom::performMatching(int *match, cudaEvent_t &t1, cudaEv
 	//This is a random greedy matching algorithm using Intel's Threading Building Blocks library.
 	//Assumes that the order of the vertices has already been randomized.
 	
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Clear matching.
-	match.assign(graph.nrVertices, 0);
+	std::fill_n(match, graph.nrVertices, 0);
 	
 	//Create requests array.
 	vector<int> requests(graph.nrVertices, 0);
@@ -569,10 +569,10 @@ void GraphMatchingTBBWeighted::performMatching(int *match, cudaEvent_t &t1, cuda
 	//This is a weighted greedy matching algorithm using Intel's Threading Building Blocks library.
 	//Assumes that the order of the vertices has already been randomized.
 	
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Clear matching.
-	match.assign(graph.nrVertices, 0);
+	std::fill_n(match, graph.nrVertices, 0);
 	
 	//Create requests array.
 	vector<int> requests(graph.nrVertices, 0);
