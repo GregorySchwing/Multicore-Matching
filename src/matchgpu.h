@@ -34,7 +34,7 @@ class GraphMatchingGPU : public GraphMatching
 {
 	public:
 		GraphMatchingGPU(const Graph &, const int &, const unsigned int &);
-		virtual void copyMatchingBackToHost();
+		void copyMatchingBackToHost(int * match);
 		virtual ~GraphMatchingGPU();
 		virtual void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const = 0;
 	protected:
