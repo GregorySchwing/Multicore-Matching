@@ -1484,7 +1484,7 @@ __global__ void gwRespond(int *requests, const int *match, const int nrVertices)
 	}
 }
 
-void GraphMatchingGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
+void GraphMatchingGPURandom::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
 {
 	//Creates a greedy random matching on the GPU.
 	//Assumes the current matching is empty.
@@ -1583,7 +1583,7 @@ void GraphMatchingGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEv
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
+void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
 {
 	//Creates a greedy random matching on the GPU.
 	//Assumes the current matching is empty.
@@ -1781,7 +1781,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGPURandomMaximal::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
+void GraphMatchingGPURandomMaximal::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
 {
 	//Creates a greedy random maximal matching on the GPU using atomic operations.
 	//Assumes the current matching is empty.
@@ -1872,7 +1872,7 @@ void GraphMatchingGPURandomMaximal::performMatching(int *match, cudaEvent_t &t1,
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGPUWeighted::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
+void GraphMatchingGPUWeighted::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
 {
 	//Creates a greedy weighted matching on the GPU.
 	//Assumes the current matching is empty.
@@ -1981,7 +1981,7 @@ void GraphMatchingGPUWeighted::performMatching(int *match, cudaEvent_t &t1, cuda
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGPUWeightedMaximal::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
+void GraphMatchingGPUWeightedMaximal::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
 {
 	//Creates a greedy weighted matching on the GPU.
 	//Assumes the current matching is empty.
