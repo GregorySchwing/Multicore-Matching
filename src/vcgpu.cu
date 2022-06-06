@@ -129,10 +129,7 @@ void VCGPU::numberCompletedPaths(int nrVertices,
 // searched from the bottom.
 
 void VCGPU::FindCover(){
-    //Initialise timers.
-    float time0, time1;
     std::vector<int> match;
-
     
     int leftMostLeafOfLevel = 0;
     int rightMostLeafOfLevel = 1;
@@ -148,6 +145,7 @@ void VCGPU::FindCover(){
 void VCGPU::MatchLeafIndex(){
     //Initialise timers.
     cudaEvent_t t0, t1, t2, t3;
+    float time0, time1;
 
     cudaEventCreate(&t0);
     cudaEventCreate(&t1);
