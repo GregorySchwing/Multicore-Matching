@@ -106,6 +106,28 @@ void VCGPU::numberCompletedPaths(int nrVertices,
 
 }
 
+// 2 Possibilities for recycling the paths of length 1&2
+// Depending on whether we want to perform parallel frontier splitting.
+
+// PFS (NO) - this is my first implementation.
+// 1) Continue matching from a leaf, after removing edges 
+// of included vertices and un-coloring the non-included vertices
+// This approach will prioritize DF growth of the search tree.
+// This allows us to only maintain 1 copy of the edge status in GPU mem.
+
+// PFS (YES) - can try this in second implementation.
+// 2) Evaluate each path for pendantness at each leaf node.
+// This requires storing the edge status of each leaf node
+// for any benefit to be seen.
+
+//  However, it is MUCH easier to just wipe away intermediate paths
+// And perform BFS at each leaf node, if we stick to BFS for as 
+// long as complete levels can be formed.
+
+// For DFS, we'd assume that every level beneath the last BFS has
+// started at its left most child, and will need to be recursively
+// searched from the bottom.
+
 void VCGPU::FindCover(){
     //Initialise timers.
     float time0, time1;
