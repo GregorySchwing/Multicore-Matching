@@ -46,7 +46,7 @@ GraphMatching::~GraphMatching()
 	
 }
 
-void GraphMatching::initialMatching()
+void GraphMatching::initialMatching(std::vector<int> & match)
 {
 	/*
 	if (graph.empty())
