@@ -135,14 +135,25 @@ void VCGPU::FindCover(){
     int rightMostLeafOfLevel = 1;
     for (int activeRoot = leftMostLeafOfLevel; activeRoot < rightMostLeafOfLevel; ++activeRoot){
         matcher.initialMatching(match);
-        MatchLeafIndex();
+        ReinitializeArrays();
+        SetEdgesOfLeaf(activeRoot);
+        Match();
         // Need to pass device pointer to LOP
         numberCompletedPaths(graph.nrVertices, dbackwardlinkedlist, dlength);
 		matcher.copyMatchingBackToHost(match);
     }
 }
 
-void VCGPU::MatchLeafIndex(){
+
+void VCGPU::SetEdgesOfLeaf(int leafIndex){
+	int blocksPerGrid = ceil(logf(2*leafIndex + 1) / logf(3)) - (int)(leafIndex==0);
+    SetEdges<<<blocksPerGrid, threadsPerBlock>>>(leafIndex,
+                                                dedgestatus,
+                                                ddegrees,
+                                                dsearchtree);
+}
+
+void VCGPU::Match(){
     //Initialise timers.
     cudaEvent_t t0, t1, t2, t3;
     float time0, time1;
@@ -155,7 +166,6 @@ void VCGPU::MatchLeafIndex(){
     cudaEventRecord(t0, 0);
     cudaEventSynchronize(t0);
 
-    ReinitializeArrays();
     matcher.performMatching(&matcher.match[0], t1, t2, dforwardlinkedlist, dbackwardlinkedlist, dlength, ddegrees, dedgestatus);
     
     cudaEventElapsedTime(&time1, t1, t2);
@@ -221,17 +231,28 @@ __global__ void ReducePathLengths(int nrVertices,
                             int* dlength,
                             int* dreducedlength){}
 
-__global__ void SetEdges(const int nrVertices,
+__global__ void SetEdges(const int leafIndex,
                         int * dedgestatus,
-                        int * ddegrees){
+                        int * ddegrees,
+                        int2 *dsearchtree){
 
 	//Determine blue and red groups using MD5 hashing.
 	//Based on the Wikipedia MD5 hashing pseudocode (http://en.wikipedia.org/wiki/MD5).
-	const int i = blockIdx.x*blockDim.x + threadIdx.x;
-	if (i >= nrVertices) return;
+	const int numberOfLevelsToAscend = blockIdx.x;
+    int i;
+    //if (threadIdx.x == 0){
+    int thisBlocksSearchTreeNode = leafIndex / pow (3.0, numberOfLevelsToAscend);
+    //}
+
+    int2 verticesInNode = dsearchtree[thisBlocksSearchTreeNode];
+    if (threadIdx.x < blockDim.x/2){
+        i = verticesInNode.x;
+    } else {
+        i = verticesInNode.y;
+    }
 
     const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
-    for (int j = indices.x; j < indices.y; ++j){
+    for (int j = indices.x + (threadIdx.x % blockDim.x/2); j < indices.y; j += blockDim.x/2){
         const int ni = tex1Dfetch(neighboursTexture, j);
         // Set out-edges
         ddegrees[ni] -= dedgestatus[ni];
@@ -255,7 +276,7 @@ __global__ void SetEdges(const int nrVertices,
     // all the edges leaving that vertex for the original vertex.
     // This is the more favorable data access pattern.
     const int2 indices_curr = tex1Dfetch(neighbourRangesTexture, i);
-    for (int j = indices_curr.x; j < indices_curr.y; ++j){
+    for (int j = indices_curr.x + (threadIdx.x % blockDim.x/2); j < indices_curr.y; j += blockDim.x/2){
         const int ni = tex1Dfetch(neighboursTexture, j);    
         const int2 indices_neighbor = tex1Dfetch(neighbourRangesTexture, ni);
           for (int j_n = indices_neighbor.x; j_n < indices_neighbor.y; ++j_n){

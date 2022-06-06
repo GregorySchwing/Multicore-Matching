@@ -36,7 +36,8 @@ __global__ void ReducePathLengths(int nrVertices,
 
 __global__ void SetEdges(const int nrVertices,
                         int * dedgestatus,
-                        int * ddegrees);
+                        int * ddegrees,
+                        int2 *dsearchtree);
 
 __global__ void PopulateSearchTree(int nrVertices, 
                                                 int *dforwardlinkedlist, 
@@ -74,7 +75,9 @@ class VCGPU
                                 int *dbackwardlinkedlist, 
                                 int *dlength,
                                 int *dreducedlength);
-        void MatchLeafIndex();
+
+        void SetEdgesOfLeaf(int leafIndex);
+        void Match();
         void FindCover();
         void ReinitializeArrays();
 
