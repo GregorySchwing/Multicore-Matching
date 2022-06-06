@@ -1738,20 +1738,18 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 													graph.nrVertices);
 	#endif
 
+	//Free memory.
+	cudaUnbindTexture(neighboursTexture);
+	cudaUnbindTexture(neighbourRangesTexture);
+}
+
+void GraphMatchingGPU::copyMatchingBackToHost(int * match){
 	//Copy obtained matching on the device back to the host.
 	if (cudaMemcpy(&match[0], dmatch, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost) != cudaSuccess)
 	{
 		cerr << "Unable to retrieve data!" << endl;
 		throw exception();
 	}
-
-
-
-	
-
-	//Free memory.
-	cudaUnbindTexture(neighboursTexture);
-	cudaUnbindTexture(neighbourRangesTexture);
 }
 
 void GraphMatchingGPURandomMaximal::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
