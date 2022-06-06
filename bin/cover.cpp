@@ -616,9 +616,7 @@ int main(int argc, char **argv)
 				matchTimes[k] = time1;
 
 				//writeGraphViz(match, graph2, "iter_" + SSTR(k), fll, bll);
-			
-				VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier);
-
+		
 			}
 
 			
