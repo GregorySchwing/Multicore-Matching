@@ -115,6 +115,9 @@ void VCGPU::FindCover(){
     int leftMostLeafOfLevel = 0;
     int rightMostLeafOfLevel = 1;
     for (int activeRoot = leftMostLeafOfLevel; activeRoot < rightMostLeafOfLevel; ++activeRoot){
+
+        matcher.initialMatching(match);
+
         //Initialise timers.
         cudaEvent_t t0, t1, t2, t3;
 
