@@ -43,6 +43,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         cudaMalloc(&dsearchtree, sizeof(int)*graph.nrVertices) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
+        cudaMalloc(&active_leaf_offsets, sizeof(int)*4) != cudaSuccess || 
         cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
@@ -141,11 +142,10 @@ void VCGPU::numberCompletedPaths(int nrVertices,
                                                                         dheadindex,
                                                                         dfullpathcount,
                                                                         dsearchtree);
-    CalculateNumberOfLeafNodes<<<1, 1>>>(
-                                        dfullpathcount,
-                                        dnumleaves);
-    ParallelPopulateNewlyActivateLeafNodesBreadthFirstClean<<<1, 1>>>(
-                                        dfullpathcount);
+    CalculateLeafOffsets<<<1, 1>>>(
+                                    dfullpathcount,
+                                    dnumleaves,
+                                    active_leaf_offsets);
 }
 
 /*
@@ -267,54 +267,6 @@ __global__ void CalculateNumberOfLeaves(int *dfullpathcount){
 
 }
 
-__global__ void CalculateNumberOfLeafNodes(
-                                        int * dfullpathcount,
-                                        int * dnumleaves){
-	//Determine blue and red groups using MD5 hashing.
-	//Based on the Wikipedia MD5 hashing pseudocode (http://en.wikipedia.org/wiki/MD5).
-	const int i = blockIdx.x*blockDim.x + threadIdx.x;
-	if (i >= 1) return;    
-    int leavesToProcess = dfullpathcount[0];
-    printf("Number of full paths %d\n",leavesToProcess);
-    // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
-    // Solved for leavesToProcess < closed form
-    // start from level 1, hence add a level if LTP > 0, 1 complete level 
-    // Add 1 if LTP == 0 to prevent runtime error
-    // LTP = 2
-    // CL = 1
-    // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
-    int completeLevel = floor(logf(2*leavesToProcess + 1) / logf(3)) - (int)(leavesToProcess==0);
-    // If LTP == 0, we dont want to create any new leaves
-    // Therefore, we dont want to enter the for loops.
-    // The active leaf writes itself as it's parent before the for loops
-    // This is overwritten within the for loops if LTP > 0
-    // CLL = 3
-    int leavesFromCompleteLvl = powf(3.0, completeLevel) - (int)(leavesToProcess == 0);
-    // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
-    // Solved for closed form < leavesToProcess
-    // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
-    // IL = 1
-    int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3)) - (int)(leavesToProcess==0);
-    // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
-    // Add 1 when leavesToProcess isn't 0, so we start counting from level 1
-    // Also subtract the root, so we start counting from level 1
-    // TSC = 3
-    int treeSizeComplete = (1.0 - powf(3.0, completeLevel+(int)(leavesToProcess != 0)))/(1.0 - 3.0) - (int)(leavesToProcess != 0);
-    // How many internal leaves to skip in complete level
-    // RFC = 1
-    int removeFromComplete = ((3*leavesToProcess - treeSizeComplete) + 3 - 1) / 3;
-    // Leaves that are used in next level
-    int leavesFromIncompleteLvl = 3*removeFromComplete;
-    // Total leaf nodes
-    int totalNewActive = (leavesFromCompleteLvl - removeFromComplete) + leavesFromIncompleteLvl;
-    dnumleaves[0] = totalNewActive;
-    printf("Leaves %d, completeLevel Depth %d\n",leavesToProcess, completeLevel);
-    printf("Leaves %d, leavesFromCompleteLvl %d\n",leavesToProcess, leavesFromCompleteLvl);
-    printf("Leaves %d, incompleteLevel Depth %d\n",leavesToProcess, incompleteLevel);
-    printf("Leaves %d, treeSizeComplete Leaves%d\n",leavesToProcess, treeSizeComplete);
-    printf("Leaves %d, removeFromComplete %d\n",leavesToProcess, removeFromComplete);
-    printf("Leaves %d, totalNewActive %d\n",leavesToProcess, totalNewActive);
-}
 
 //int leafIndex = global_active_leaf_value[leafIndex];
 // Solve recurrence relation 
@@ -329,15 +281,17 @@ __global__ void CalculateNumberOfLeafNodes(
 // currently a single root is expanded in gpu memory at a time. 
 // efforts were made in the FPT-kVC "done" branch to maintain multiple copies of the graph
 // and explore the search tree in parallel.
-__global__ void ParallelPopulateNewlyActivateLeafNodesBreadthFirstClean(
-                                        int * dfullpathcount){
+__global__ void CalculateLeafOffsets(
+                                        int * dfullpathcount,
+                                        int * dnumleaves,
+                                        int * active_leaf_offsets){
     int globalIndex = blockIdx.x * blockDim.x + threadIdx.x;
     int leafIndex;
     int arbitraryParameter;
     int leftMostLeafIndexOfFullLevel;
     int leftMostLeafIndexOfIncompleteLevel;
     #ifndef NDEBUG
-    printf("globalIndex %d, ParallelPopulateNewlyActivateLeafNodesBreadthFirstClean\n",globalIndex);
+    printf("globalIndex %d, CalculateLeafOffsets\n",globalIndex);
     printf("globalIndex %d, global_active_leaves_count_current %x\n",globalIndex, global_active_leaves_count_current[0]);
     #endif
     int leavesToProcess = dfullpathcount[globalIndex];
@@ -381,7 +335,7 @@ __global__ void ParallelPopulateNewlyActivateLeafNodesBreadthFirstClean(
     leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
 
     int totalNewActive = (leavesFromCompleteLvl - removeFromComplete) + leavesFromIncompleteLvl;
-    printf("globalIndex %d, ParallelPopulateNewlyActivateLeafNodesBreadthFirstClean\n",globalIndex);
+    printf("globalIndex %d, CalculateLeafOffsets\n",globalIndex);
     printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, completeLevel);
     printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, incompleteLevel);
     printf("Leaves %d, treeSizeComplete %d\n",leavesToProcess, treeSizeComplete);
@@ -390,4 +344,10 @@ __global__ void ParallelPopulateNewlyActivateLeafNodesBreadthFirstClean(
     printf("Leaves %d, leavesFromIncompleteLvl %d\n",leavesToProcess, leavesFromIncompleteLvl);
     printf("Leaves %d, leftMostLeafIndexOfFullLevel %d\n",leavesToProcess, leftMostLeafIndexOfFullLevel);
     printf("Leaves %d, leftMostLeafIndexOfIncompleteLevel %d\n",leavesToProcess, leftMostLeafIndexOfIncompleteLevel);
+    dnumleaves[0] = totalNewActive;
+    active_leaf_offsets[0] = leftMostLeafIndexOfFullLevel;
+    active_leaf_offsets[1] = leftMostLeafIndexOfFullLevel + leavesFromCompleteLvl;
+    active_leaf_offsets[2] = leftMostLeafIndexOfIncompleteLevel;
+    active_leaf_offsets[3] = leftMostLeafIndexOfIncompleteLevel + leavesFromIncompleteLvl;
+
 }

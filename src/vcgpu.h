@@ -52,8 +52,10 @@ __global__ void CalculateNumberOfLeafNodes(
                                         int * dfullpathcount,
                                         int * dnumleaves);
 
-__global__ void ParallelPopulateNewlyActivateLeafNodesBreadthFirstClean(
-                                        int * dfullpathcount);
+__global__ void CalculateLeafOffsets(
+                                        int * dfullpathcount,
+                                        int * dnumleaves,
+                                        int * active_leaf_offsets);
                                         
 
 namespace mtc
@@ -91,7 +93,7 @@ class VCGPU
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
 
         // VC arrays
-        int *dedgestatus, *ddegrees, *dheadindex, *dfullpathcount, *dnumleaves, *dsearchtree;
+        int *dedgestatus, *ddegrees, *dheadindex, *dfullpathcount, *active_leaf_offsets, *dsearchtree;
 
         int *dlength, *dforwardlinkedlist, *dbackwardlinkedlist;
         thrust::device_vector<int> dfll;
