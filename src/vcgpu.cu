@@ -151,6 +151,8 @@ void VCGPU::SetEdgesOfLeaf(int leafIndex){
                                                 dedgestatus,
                                                 ddegrees,
                                                 dsearchtree);
+    cudaDeviceSynchronize();
+    checkLastErrorCUDA(__FILE__, __LINE__);
 }
 
 void VCGPU::Match(){
