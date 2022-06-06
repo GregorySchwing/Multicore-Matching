@@ -137,43 +137,41 @@ void VCGPU::FindCover(){
     int leftMostLeafOfLevel = 0;
     int rightMostLeafOfLevel = 1;
     for (int activeRoot = leftMostLeafOfLevel; activeRoot < rightMostLeafOfLevel; ++activeRoot){
-
         matcher.initialMatching(match);
-
-        //Initialise timers.
-        cudaEvent_t t0, t1, t2, t3;
-
-        cudaEventCreate(&t0);
-        cudaEventCreate(&t1);
-        cudaEventCreate(&t2);
-        cudaEventCreate(&t3);
-        
-        cudaEventRecord(t0, 0);
-        cudaEventSynchronize(t0);
-
-        ReinitializeArrays();
-        matcher.performMatching(&matcher.match[0], t1, t2, dforwardlinkedlist, dbackwardlinkedlist, dlength, ddegrees, dedgestatus);
-    	cudaEventElapsedTime(&time1, t1, t2);
+        MatchLeafIndex();
         // Need to pass device pointer to LOP
         numberCompletedPaths(graph.nrVertices, dbackwardlinkedlist, dlength);
-		
-        matcher.copyMatchingBackToHost(match);
-
-        cudaEventRecord(t3, 0);
-        cudaEventSynchronize(t3);
-        
-        //Measure the total elapsed time (including data transfer) and the calculation time.
-        float time0, time1;
-        
-        cudaEventElapsedTime(&time0, t0, t3);
-        cudaEventElapsedTime(&time1, t1, t2);
-
-        //Destroy timers.
-        cudaEventDestroy(t3);
-        cudaEventDestroy(t2);
-        cudaEventDestroy(t1);
-        cudaEventDestroy(t0);
+		matcher.copyMatchingBackToHost(match);
     }
+}
+
+void VCGPU::MatchLeafIndex(){
+    //Initialise timers.
+    cudaEvent_t t0, t1, t2, t3;
+
+    cudaEventCreate(&t0);
+    cudaEventCreate(&t1);
+    cudaEventCreate(&t2);
+    cudaEventCreate(&t3);
+    
+    cudaEventRecord(t0, 0);
+    cudaEventSynchronize(t0);
+
+    ReinitializeArrays();
+    matcher.performMatching(&matcher.match[0], t1, t2, dforwardlinkedlist, dbackwardlinkedlist, dlength, ddegrees, dedgestatus);
+    
+    cudaEventElapsedTime(&time1, t1, t2);
+    cudaEventRecord(t3, 0);
+    cudaEventSynchronize(t3);
+    //Measure the total elapsed time (including data transfer) and the calculation time.
+    float time0, time1;   
+    cudaEventElapsedTime(&time0, t0, t3);
+    cudaEventElapsedTime(&time1, t1, t2);
+    //Destroy timers.
+    cudaEventDestroy(t3);
+    cudaEventDestroy(t2);
+    cudaEventDestroy(t1);
+    cudaEventDestroy(t0);
 }
 
 void VCGPU::ReinitializeArrays(){
