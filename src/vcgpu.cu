@@ -109,6 +109,7 @@ void VCGPU::numberCompletedPaths(int nrVertices,
 void VCGPU::FindCover(){
     //Initialise timers.
     float time0, time1;
+    std::vector<int> match;
 
     
     int leftMostLeafOfLevel = 0;
