@@ -61,7 +61,8 @@ class GraphMatchingGeneralGPURandom : public GraphMatchingGPU
 		~GraphMatchingGeneralGPURandom();
 		
 		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const;
-	
+
+		int *dmatch, *drequests, *dsense;
 };
 
 class GraphMatchingGPURandomMaximal : public GraphMatchingGPU

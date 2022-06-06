@@ -226,7 +226,15 @@ GraphMatchingGPUWeightedMaximal::~GraphMatchingGPUWeightedMaximal()
 GraphMatchingGeneralGPURandom::GraphMatchingGeneralGPURandom(const Graph &_graph, const int &_nrThreads, const unsigned int &_selectBarrier) :
 		GraphMatchingGPU(_graph, _nrThreads, _selectBarrier)
 {
+	
 
+	if (cudaMalloc(&drequests, sizeof(int)*graph.nrVertices) != cudaSuccess ||  
+		cudaMalloc(&dmatch, sizeof(int)*graph.nrVertices) != cudaSuccess || 
+		cudaMalloc(&dsense, sizeof(int)*graph.nrVertices) != cudaSuccess)
+	{
+		cerr << "Not enough memory on device!" << endl;
+		throw exception();
+	}
 }
 
 GraphMatchingGeneralGPURandom::~GraphMatchingGeneralGPURandom()
@@ -1611,15 +1619,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 	// dtails - to quickly flip sense of strand
 	// dmatch - same as singleton implementation
 	// dsense - indicates directionality of strand
-	int *dmatch, *drequests, *dsense, *dh, *dt, *dheadindex;
 
-	if (cudaMalloc(&drequests, sizeof(int)*graph.nrVertices) != cudaSuccess ||  
-		cudaMalloc(&dmatch, sizeof(int)*graph.nrVertices) != cudaSuccess || 
-		cudaMalloc(&dsense, sizeof(int)*graph.nrVertices) != cudaSuccess)
-	{
-		cerr << "Not enough memory on device!" << endl;
-		throw exception();
-	}
 	/*
 	thrust::device_vector<int>dfll(graph.nrVertices);
 	thrust::sequence(dfll.begin(),dfll.end());
