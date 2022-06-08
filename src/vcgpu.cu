@@ -243,7 +243,6 @@ __global__ void PopulateSearchTree(int nrVertices,
 
     int arbitraryParameter;
     int leftMostLeafIndexOfFullLevel;
-    int leftMostLeafIndexOfIncompleteLevel;
     int leavesToProcess = myPathIndex;
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Solved for leavesToProcess < closed form
@@ -252,7 +251,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     // LTP = 2
     // CL = 1
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
-    int completeLevel = floor(logf(2*leavesToProcess + 1) / logf(3));
+    int completeLevel = ceil(logf(2*leavesToProcess + 1) / logf(3));
     // If LTP == 0, we dont want to create any new leaves
     // Therefore, we dont want to enter the for loops.
     // The active leaf writes itself as it's parent before the for loops
