@@ -243,6 +243,7 @@ __global__ void PopulateSearchTree(int nrVertices,
 
     int arbitraryParameter;
     int leftMostLeafIndexOfFullLevel;
+
     int leavesToProcess = myPathIndex;
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Solved for leavesToProcess < closed form
@@ -258,23 +259,45 @@ __global__ void PopulateSearchTree(int nrVertices,
     // This is overwritten within the for loops if LTP > 0
     // CLL = 3
     int leavesFromCompleteLvl = powf(3.0, completeLevel) - (int)(leavesToProcess == 0);
+    // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
+    // Solved for closed form < leavesToProcess
+    // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
+    // IL = 1
+    int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3)) - (int)(leavesToProcess==0);
+    // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
+    // Add 1 when leavesToProcess isn't 0, so we start counting from level 1
+    // Also subtract the root, so we start counting from level 1
+    // TSC = 3
+    int treeSizeComplete = (1.0 - powf(3.0, completeLevel+(int)(leavesToProcess != 0)))/(1.0 - 3.0) - (int)(leavesToProcess != 0);
+    // How many internal leaves to skip in complete level
+    // RFC = 1
+    int removeFromComplete = ((3*leavesToProcess - treeSizeComplete) + 3 - 1) / 3;
+    // Leaves that are used in next level
+    int leavesFromIncompleteLvl = 3*removeFromComplete;
     
     // Test from root for now, this code can have an arbitrary root though
     //leafIndex = global_active_leaves[globalIndex];
+    leafIndex = 0;
     arbitraryParameter = 3*((3*leafIndex)+1);
     // Closed form solution of recurrence relation shown in comment above method
     // Subtract 1 because reasons
     leftMostLeafIndexOfFullLevel = ((2*arbitraryParameter+3)*powf(3.0, completeLevel-1) - 3)/6;
+    leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
 
-    printf("root %d, CalculateLeafOffsets\n",leafIndex);
+    int totalNewActive = (leavesFromCompleteLvl - removeFromComplete) + leavesFromIncompleteLvl;
+    printf("globalIndex %d, CalculateLeafOffsets\n",globalIndex);
     printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, completeLevel);
+    printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, incompleteLevel);
+    printf("Leaves %d, treeSizeComplete %d\n",leavesToProcess, treeSizeComplete);
+    printf("Leaves %d, totalNewActive %d\n",leavesToProcess, totalNewActive);
     printf("Leaves %d, leavesFromCompleteLvl %d\n",leavesToProcess, leavesFromCompleteLvl);
+    printf("Leaves %d, leavesFromIncompleteLvl %d\n",leavesToProcess, leavesFromIncompleteLvl);
     printf("Leaves %d, leftMostLeafIndexOfFullLevel %d\n",leavesToProcess, leftMostLeafIndexOfFullLevel);
-
+    printf("Leaves %d, leftMostLeafIndexOfIncompleteLevel %d\n",leavesToProcess, leftMostLeafIndexOfIncompleteLevel);
     // Test from root for now, this code can have an arbitrary root though
-    dsearchtree[3*myPathIndex + 1] = make_int2(first, third);
-    dsearchtree[3*myPathIndex + 2] = make_int2(second, third);
-    dsearchtree[3*myPathIndex + 3] = make_int2(second, fourth);
+    dsearchtree[leftMostLeafIndexOfFullLevel + 3*myPathIndex + 1] = make_int2(first, third);
+    dsearchtree[leftMostLeafIndexOfFullLevel + 3*myPathIndex + 2] = make_int2(second, third);
+    dsearchtree[leftMostLeafIndexOfFullLevel + 3*myPathIndex + 3] = make_int2(second, fourth);
 }
 
 
