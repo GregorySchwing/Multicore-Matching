@@ -252,7 +252,8 @@ __global__ void PopulateSearchTree(int nrVertices,
     // CL = 1
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
     int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3)) - (int)(leavesToProcess==0);
-    int leavesFromIncompleteLevelLvl = powf(3.0, incompleteLevel) - (int)(leavesToProcess == 0);   
+    int leavesFromIncompleteLevelLvl = powf(3.0, incompleteLevel) - (int)(leavesToProcess == 0); 
+    int treeSizeComplete = (1.0 - powf(3.0, incompleteLevel+(int)(leavesToProcess != 0)))/(1.0 - 3.0) - (int)(leavesToProcess != 0);  
     // Test from root for now, this code can have an arbitrary root though
     //leafIndex = global_active_leaves[globalIndex];
 //    leafIndex = 0;
@@ -264,6 +265,8 @@ __global__ void PopulateSearchTree(int nrVertices,
     printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, incompleteLevel);
     printf("Leaves %d, leavesFromIncompleteLvl %d\n",leavesToProcess, leavesFromIncompleteLevelLvl);
     printf("Leaves %d, leftMostLeafIndexOfIncompleteLevel %d\n",leavesToProcess, leftMostLeafIndexOfIncompleteLevel);
+    printf("Leaves %d, treeSizeComplete %d\n",leavesToProcess, treeSizeComplete);
+
     // Test from root for now, this code can have an arbitrary root though
     dsearchtree[leftMostLeafIndexOfIncompleteLevel + 3*myPathIndex + 1] = make_int2(first, third);
     dsearchtree[leftMostLeafIndexOfIncompleteLevel + 3*myPathIndex + 2] = make_int2(second, third);
