@@ -234,7 +234,7 @@ __global__ void PopulateSearchTree(int nrVertices,
         dbackwardlinkedlist[threadID] != threadID) 
             return;
     // Counter is incremented and old value is used to number full paths.
-    int myPathIndex = atomicAdd(&dfullpathcount[0], 1) + 1;
+    int myPathIndex = atomicAdd(&dfullpathcount[0], 1);
 
     int first = dforwardlinkedlist[threadID];
     int second = dforwardlinkedlist[first];
@@ -243,7 +243,6 @@ __global__ void PopulateSearchTree(int nrVertices,
 
     int arbitraryParameter;
     int leftMostLeafIndexOfFullLevel;
-    int leftMostLeafIndexOfIncompleteLevel;
     int leavesToProcess = myPathIndex;
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Solved for leavesToProcess < closed form
@@ -252,13 +251,13 @@ __global__ void PopulateSearchTree(int nrVertices,
     // LTP = 2
     // CL = 1
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
-    int completeLevel = floor(logf(2*leavesToProcess + 1) / logf(3)) - (int)(leavesToProcess==0);
+    int completeLevel = ceil(logf(2*leavesToProcess + 1) / logf(3));
     // If LTP == 0, we dont want to create any new leaves
     // Therefore, we dont want to enter the for loops.
     // The active leaf writes itself as it's parent before the for loops
     // This is overwritten within the for loops if LTP > 0
     // CLL = 3
-    int leavesFromCompleteLvl = powf(3.0, completeLevel) - (int)(leavesToProcess == 0);
+    int leavesFromCompleteLvl = powf(3.0, completeLevel);
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Solved for closed form < leavesToProcess
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
@@ -271,11 +270,8 @@ __global__ void PopulateSearchTree(int nrVertices,
     // Closed form solution of recurrence relation shown in comment above method
     // Subtract 1 because reasons
     leftMostLeafIndexOfFullLevel = ((2*arbitraryParameter+3)*powf(3.0, completeLevel-1) - 3)/6;
-
-    int totalNewActive = (leavesFromCompleteLvl - removeFromComplete) + leavesFromIncompleteLvl;
     printf("root %d, CalculateLeafOffsets\n",leafIndex);
     printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, completeLevel);
-    printf("Leaves %d, totalNewActive %d\n",leavesToProcess, totalNewActive);
     printf("Leaves %d, leavesFromCompleteLvl %d\n",leavesToProcess, leavesFromCompleteLvl);
     printf("Leaves %d, leftMostLeafIndexOfFullLevel %d\n",leavesToProcess, leftMostLeafIndexOfFullLevel);
 
