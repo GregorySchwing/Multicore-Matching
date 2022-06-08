@@ -265,6 +265,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
     printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
     printf("Global level left offset (GLLO) %d\n", leftMostLeafIndexOfIncompleteLevel);
+    printf("internalLeafIndex %d\n", internalLeafIndex);
     printf("Displacement frok GLLO %d %d %d \n", levelOffset,
                                                 levelOffset + 1,
                                                 levelOffset + 2);
