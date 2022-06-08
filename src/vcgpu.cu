@@ -243,7 +243,6 @@ __global__ void PopulateSearchTree(int nrVertices,
 
     int arbitraryParameter;
     int leftMostLeafIndexOfFullLevel;
-    int leftMostLeafIndexOfIncompleteLevel;
     int leavesToProcess = myPathIndex;
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Solved for leavesToProcess < closed form
@@ -269,7 +268,6 @@ __global__ void PopulateSearchTree(int nrVertices,
 
     printf("root %d, CalculateLeafOffsets\n",leafIndex);
     printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, completeLevel);
-    printf("Leaves %d, treeSizeComplete %d\n",leavesToProcess, treeSizeComplete);
     printf("Leaves %d, leavesFromCompleteLvl %d\n",leavesToProcess, leavesFromCompleteLvl);
     printf("Leaves %d, leftMostLeafIndexOfFullLevel %d\n",leavesToProcess, leftMostLeafIndexOfFullLevel);
 
