@@ -233,6 +233,7 @@ __global__ void PopulateSearchTree(int nrVertices,
         dlength[threadID] != 3 || 
         dbackwardlinkedlist[threadID] != threadID) 
             return;
+
     int first = dforwardlinkedlist[threadID];
     int second = dforwardlinkedlist[first];
     int third = dforwardlinkedlist[second];
@@ -259,7 +260,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     // Subtract 1 because reasons
     int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
     int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
-    int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex
+    int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
     printf("Level Depth %d\n", incompleteLevel);
     printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
     printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
