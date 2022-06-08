@@ -242,7 +242,6 @@ __global__ void PopulateSearchTree(int nrVertices,
     int fourth = dforwardlinkedlist[third];
 
     int arbitraryParameter;
-    int leftMostLeafIndexOfFullLevel;
 
     int leavesToProcess = myPathIndex;
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
