@@ -286,7 +286,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
 
     int totalNewActive = (leavesFromCompleteLvl - removeFromComplete) + leavesFromIncompleteLvl;
-    printf("globalIndex %d, CalculateLeafOffsets\n",globalIndex);
+    printf("root %d, CalculateLeafOffsets\n",leafIndex);
     printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, completeLevel);
     printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, incompleteLevel);
     printf("Leaves %d, treeSizeComplete %d\n",leavesToProcess, treeSizeComplete);
@@ -295,8 +295,6 @@ __global__ void PopulateSearchTree(int nrVertices,
     printf("Leaves %d, leavesFromIncompleteLvl %d\n",leavesToProcess, leavesFromIncompleteLvl);
     printf("Leaves %d, leftMostLeafIndexOfFullLevel %d\n",leavesToProcess, leftMostLeafIndexOfFullLevel);
     printf("Leaves %d, leftMostLeafIndexOfIncompleteLevel %d\n",leavesToProcess, leftMostLeafIndexOfIncompleteLevel);
-    dnumleaves[0] = totalNewActive;
-
 
     // Test from root for now, this code can have an arbitrary root though
     dsearchtree[3*myPathIndex + 1] = make_int2(first, third);
@@ -473,11 +471,11 @@ __global__ void CalculateLeafOffsets(
     printf("Leaves %d, leftMostLeafIndexOfFullLevel %d\n",leavesToProcess, leftMostLeafIndexOfFullLevel);
     printf("Leaves %d, leftMostLeafIndexOfIncompleteLevel %d\n",leavesToProcess, leftMostLeafIndexOfIncompleteLevel);
     dnumleaves[0] = totalNewActive;
+    /*
     active_leaf_offsets[0] = make_int4( leftMostLeafIndexOfFullLevel,
                                         leftMostLeafIndexOfFullLevel + leavesFromCompleteLvl,
                                         leftMostLeafIndexOfIncompleteLevel,
                                         leftMostLeafIndexOfIncompleteLevel + leavesFromIncompleteLvl);
-                                       /* 
     active_leaf_offsets[0] = leftMostLeafIndexOfFullLevel;
     active_leaf_offsets[1] = leftMostLeafIndexOfFullLevel + leavesFromCompleteLvl;
     active_leaf_offsets[2] = leftMostLeafIndexOfIncompleteLevel;
