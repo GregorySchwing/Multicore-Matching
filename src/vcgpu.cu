@@ -234,7 +234,7 @@ __global__ void PopulateSearchTree(int nrVertices,
         dbackwardlinkedlist[threadID] != threadID) 
             return;
     // Counter is incremented and old value is used to number full paths.
-    int myPathIndex = atomicAdd(&dfullpathcount[0], 1);
+    int myPathIndex = atomicAdd(&dfullpathcount[0], 1) + 1;
 
     int first = dforwardlinkedlist[threadID];
     int second = dforwardlinkedlist[first];
