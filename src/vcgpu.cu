@@ -276,7 +276,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     
     // Test from root for now, this code can have an arbitrary root though
     //leafIndex = global_active_leaves[globalIndex];
-    leafIndex = 0;
+//    leafIndex = 0;
     arbitraryParameter = 3*((3*leafIndex)+1);
     // Closed form solution of recurrence relation shown in comment above method
     // Subtract 1 because reasons
