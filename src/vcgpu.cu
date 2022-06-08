@@ -253,7 +253,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
     int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3)) - (int)(leavesToProcess==0);
     int leavesFromIncompleteLevelLvl = powf(3.0, incompleteLevel) - (int)(leavesToProcess == 0); 
-    int treeSizeComplete = (1.0 - powf(3.0, incompleteLevel+(int)(leavesToProcess != 0)))/(1.0 - 3.0) - (int)(leavesToProcess != 0);  
+    int treeSizeComplete = (1.0 - powf(3.0, (incompleteLevel-1)+(int)(leavesToProcess != 0)))/(1.0 - 3.0) - (int)(leavesToProcess != 0);  
     // Test from root for now, this code can have an arbitrary root though
     //leafIndex = global_active_leaves[globalIndex];
 //    leafIndex = 0;
