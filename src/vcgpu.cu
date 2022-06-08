@@ -262,12 +262,12 @@ __global__ void PopulateSearchTree(int nrVertices,
     int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
 
     printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, incompleteLevel);
-    printf("Leaves %d, leavesFromIncompleteLvl %d\n",leavesToProcess, leavesFromIncompleteLvl);
+    printf("Leaves %d, leavesFromIncompleteLvl %d\n",leavesToProcess, leavesFromIncompleteLevelLvl);
     printf("Leaves %d, leftMostLeafIndexOfIncompleteLevel %d\n",leavesToProcess, leftMostLeafIndexOfIncompleteLevel);
     // Test from root for now, this code can have an arbitrary root though
-    dsearchtree[leftMostLeafIndexOfFullLevel + 3*myPathIndex + 1] = make_int2(first, third);
-    dsearchtree[leftMostLeafIndexOfFullLevel + 3*myPathIndex + 2] = make_int2(second, third);
-    dsearchtree[leftMostLeafIndexOfFullLevel + 3*myPathIndex + 3] = make_int2(second, fourth);
+    dsearchtree[leftMostLeafIndexOfIncompleteLevel + 3*myPathIndex + 1] = make_int2(first, third);
+    dsearchtree[leftMostLeafIndexOfIncompleteLevel + 3*myPathIndex + 2] = make_int2(second, third);
+    dsearchtree[leftMostLeafIndexOfIncompleteLevel + 3*myPathIndex + 3] = make_int2(second, fourth);
 }
 
 
