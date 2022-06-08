@@ -252,7 +252,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
 
     int leavesFromIncompleteLevelLvl = powf(3.0, incompleteLevel); 
-    int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, (incompleteLevel-1)))/(1.0 - 3.0) - (int)(leavesToProcess != 0);  
+    int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, (incompleteLevel-1)))/(1.0 - 3.0);  
     // Test from root for now, this code can have an arbitrary root though
     //leafIndex = global_active_leaves[globalIndex];
 //    leafIndex = 0;
