@@ -239,8 +239,6 @@ __global__ void PopulateSearchTree(int nrVertices,
     int third = dforwardlinkedlist[second];
     int fourth = dforwardlinkedlist[third];
 
-    int arbitraryParameter;
-
     int leavesToProcess = atomicAdd(&dfullpathcount[0], 1) + 1;
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Solved for leavesToProcess < closed form
@@ -250,15 +248,16 @@ __global__ void PopulateSearchTree(int nrVertices,
     // CL = 1
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
     int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3)) - (int)(leavesToProcess==0);
-    int leavesFromIncompleteLevelLvl = powf(3.0, incompleteLevel) - (int)(leavesToProcess == 0); 
-    int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, (incompleteLevel-1)+(int)(leavesToProcess != 0)))/(1.0 - 3.0) - (int)(leavesToProcess != 0);  
+    int arbitraryParameter = 3*((3*leafIndex)+1);
+    int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
+
+    int leavesFromIncompleteLevelLvl = powf(3.0, incompleteLevel); 
+    int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, (incompleteLevel-1)))/(1.0 - 3.0) - (int)(leavesToProcess != 0);  
     // Test from root for now, this code can have an arbitrary root though
     //leafIndex = global_active_leaves[globalIndex];
 //    leafIndex = 0;
-    arbitraryParameter = 3*((3*leafIndex)+1);
     // Closed form solution of recurrence relation shown in comment above method
     // Subtract 1 because reasons
-    int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
     int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
     int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
     printf("Level Depth %d\n", incompleteLevel);
