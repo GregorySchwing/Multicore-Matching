@@ -56,7 +56,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         cudaMalloc(&dsearchtree, sizeof(int2)*sizeOfSearchTree) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
-        cudaMalloc(&active_leaf_offsets, sizeof(int)*4) != cudaSuccess || 
+        cudaMalloc(&active_leaf_offsets, sizeof(int4)*sizeOfSearchTree) != cudaSuccess || 
         cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
@@ -349,7 +349,7 @@ __global__ void CalculateNumberOfLeaves(int *dfullpathcount){
 __global__ void CalculateLeafOffsets(
                                         int * dfullpathcount,
                                         int * dnumleaves,
-                                        int * active_leaf_offsets){
+                                        int4 * active_leaf_offsets){
     int globalIndex = blockIdx.x * blockDim.x + threadIdx.x;
     int leafIndex;
     int arbitraryParameter;
@@ -410,9 +410,15 @@ __global__ void CalculateLeafOffsets(
     printf("Leaves %d, leftMostLeafIndexOfFullLevel %d\n",leavesToProcess, leftMostLeafIndexOfFullLevel);
     printf("Leaves %d, leftMostLeafIndexOfIncompleteLevel %d\n",leavesToProcess, leftMostLeafIndexOfIncompleteLevel);
     dnumleaves[0] = totalNewActive;
+    active_leaf_offsets[0] = make_int4( leftMostLeafIndexOfFullLevel,
+                                        leftMostLeafIndexOfFullLevel + leavesFromCompleteLvl,
+                                        leftMostLeafIndexOfIncompleteLevel,
+                                        leftMostLeafIndexOfIncompleteLevel + leavesFromIncompleteLvl);
+                                       /* 
     active_leaf_offsets[0] = leftMostLeafIndexOfFullLevel;
     active_leaf_offsets[1] = leftMostLeafIndexOfFullLevel + leavesFromCompleteLvl;
     active_leaf_offsets[2] = leftMostLeafIndexOfIncompleteLevel;
     active_leaf_offsets[3] = leftMostLeafIndexOfIncompleteLevel + leavesFromIncompleteLvl;
+                                        */
 
 }

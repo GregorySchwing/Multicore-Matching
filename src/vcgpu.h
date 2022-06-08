@@ -53,7 +53,7 @@ __global__ void CalculateNumberOfLeafNodes(
 __global__ void CalculateLeafOffsets(
                                         int * dfullpathcount,
                                         int * dnumleaves,
-                                        int * active_leaf_offsets);
+                                        int4 * active_leaf_offsets);
 
 __host__ __device__ long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels);
                              
@@ -85,8 +85,9 @@ class VCGPU
         long long sizeOfSearchTree;
         int k;
         // VC arrays
-        int *dedgestatus, *ddegrees, *dfullpathcount, *active_leaf_offsets, *dnumleaves;
+        int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves;
         int2 *dsearchtree;
+        int4 *active_leaf_offsets;
 
         int *dlength, *dforwardlinkedlist, *dbackwardlinkedlist;
         thrust::device_vector<int> dfll;
