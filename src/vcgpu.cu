@@ -233,9 +233,6 @@ __global__ void PopulateSearchTree(int nrVertices,
         dlength[threadID] != 3 || 
         dbackwardlinkedlist[threadID] != threadID) 
             return;
-    // Counter is incremented and old value is used to number full paths.
-    int myPathIndex 
-
     int first = dforwardlinkedlist[threadID];
     int second = dforwardlinkedlist[first];
     int third = dforwardlinkedlist[second];
