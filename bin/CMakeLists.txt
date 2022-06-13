@@ -35,6 +35,8 @@ target_compile_options(cover PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
                        --relocatable-device-code=true
                        >)
 #target_compile_options(cover PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-gencode arch=compute_37,code=sm_37>)
+target_link_libraries(cover ncurses)
+
 target_link_libraries(cover ${CUDA_LIBRARY} cuda)
 target_link_libraries(cover ${TBB_LIBRARY})
 target_link_libraries(cover ${Boost_LIBRARIES})
