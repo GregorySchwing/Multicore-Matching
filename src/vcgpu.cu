@@ -67,6 +67,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 		cerr << "Not enough memory on device!" << endl;
 		throw exception();
 	}
+    edgestatus = new * int[graph.neighbours.size()];
     ReinitializeArrays();
 }
 
@@ -163,7 +164,8 @@ void VCGPU::FindCover(int root){
     Match();
     //matcher.copyMatchingBackToHost(match);
     // Need to pass device pointer to LOP
-    int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength);  
+    int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength); 
+    PrintData (); 
     char temp;
     cin >> temp;
     while(newLeaves.x < newLeaves.y){
@@ -190,6 +192,27 @@ void VCGPU::SetEdgesOfLeaf(int leafIndex){
     checkLastErrorCUDA(__FILE__, __LINE__);
 }
 
+void VCGPU::PrintData (){
+    printf("Row Offs\n");
+    for (int i = 0; i < graph.nrVertices+1; ++i){
+        printf("%d %d, ",graph.neighbourRanges[i].x, graph.neighbourRanges[i].y);
+    }
+    printf("\n");
+    printf("Cols\n");
+    for (int i = 0; i < graph.nrEdges; ++i){
+        printf("%d ",graph.neighbours[i]);
+    }
+    printf("\n");
+    printf("Vals\n");
+    for (int i = 0; i < graph.nrEdges; ++i){
+        printf("%d ",edgestatus[i]);
+    }
+    printf("\n");
+    printf("Degrees\n");
+    for (int i = 0; i < graph.nrVertices+1; ++i){
+        printf("%d ", graph.degrees[i]);
+    }
+}
 void VCGPU::Match(){
     //Initialise timers.
     cudaEvent_t t0, t1, t2, t3;

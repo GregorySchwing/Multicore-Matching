@@ -80,11 +80,12 @@ class VCGPU
         void Match();
         void FindCover(int root);
         void ReinitializeArrays();
-
+        void PrintData ();
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
         long long sizeOfSearchTree;
         int k;
         int fullpathcount;
+        int *edgestatus;
         // VC arrays
         int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves;
         int2 *dsearchtree;
