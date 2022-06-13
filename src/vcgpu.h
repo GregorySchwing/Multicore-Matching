@@ -54,6 +54,11 @@ __global__ void CalculateNumberOfLeafNodes(
 int4 CalculateLeafOffsets(  int leafIndex,
                             int fullpathcount);
 
+__global__ void CalculateDegrees(
+                        int nrVertices,
+                        int * dedgestatus,
+                        int * ddegrees);
+
 __host__ __device__ long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels);
                              
 

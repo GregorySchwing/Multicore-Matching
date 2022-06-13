@@ -212,6 +212,10 @@ void VCGPU::SetEdgesOfLeaf(int leafIndex){
                                                 dedgestatus,
                                                 ddegrees,
                                                 dsearchtree);
+	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
+    CalculateDegrees<<<blocksPerGrid, threadsPerBlock>>>(
+                                                dedgestatus,
+                                                ddegrees);
     cudaDeviceSynchronize();
     checkLastErrorCUDA(__FILE__, __LINE__);
 }
@@ -374,7 +378,7 @@ __global__ void SetEdges(const int leafIndex,
         i = verticesInNode.y;
     int2 indices = tex1Dfetch(neighbourRangesTexture, i);
     if (threadIdx.x == 0){
-        printf("Setting vertex %d\n", verticesInNode.x);
+        printf("Setting vertex %d\n", i);
         printf("Turning off edges between %d and %d in col array\n",indices.x,indices.y);
     }
     for (int j = indices.x + threadIdx.x; j < indices.y; j += blockDim.x){
@@ -420,8 +424,23 @@ __global__ void SetEdges(const int leafIndex,
                 // pendant edge processing step.
                 dedgestatus[j_n] ^= (foundChild & tmp);
         }
+    } 
+}
+
+__global__ void CalculateDegrees(
+                        int nrVertices,
+                        int * dedgestatus,
+                        int * ddegrees){
+
+	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+	// If not a head to a path of length 4, return (leaving the headindex == -1)
+    if (threadID >= nrVertices ) return;
+    int sum = 0;
+    int2 indices = tex1Dfetch(neighbourRangesTexture, threadID);
+    for (int j = indices.x; j < indices.y; ++j){
+        sum += dedgestatus[j];
     }
-    
+    ddegrees[threadID] = sum;
 }
 
 __global__ void InitDegrees(const int nrVertices,
