@@ -456,7 +456,7 @@ int4 CalculateLeafOffsets(              int leafIndex,
     //CL    -     -    o o o 
     //IL  o o o o o o
     return make_int4( leftMostLeafIndexOfIncompleteLevel,
-                        leftMostLeafIndexOfIncompleteLevel + leavesFromIncompleteLvl
+                        leftMostLeafIndexOfIncompleteLevel + leavesFromIncompleteLvl,
                         leftMostLeafIndexOfFullLevel,
                         leftMostLeafIndexOfFullLevel + leavesFromCompleteLvl);
 
