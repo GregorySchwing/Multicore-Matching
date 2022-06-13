@@ -106,7 +106,7 @@ VCGPU::~VCGPU(){
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-__host__ __device__ long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels){
+long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels){
     long long summand= 0;
     // ceiling(vertexCount/2) loops
     for (int i = 0; i <= NumberOfLevels; ++i){
@@ -141,8 +141,8 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     PopulateSearchTree<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
                                                             sizeOfSearchTree, 
-                                                            dfinishedLeavesPerLevel,
                                                             leafIndex,
+                                                            dfinishedLeavesPerLevel,
                                                             dforwardlinkedlist,
                                                             dbackwardlinkedlist, 
                                                             dlength,

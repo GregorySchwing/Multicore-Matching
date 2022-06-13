@@ -61,7 +61,7 @@ __global__ void CalculateDegrees(
                         int * dedgestatus,
                         int * ddegrees);
 
-__host__ __device__ long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels);
+long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels);
                              
 
 namespace mtc
