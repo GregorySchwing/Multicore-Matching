@@ -28,6 +28,8 @@ using namespace mtc;
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <iostream>
+
 int kbhit(void)
 {
   struct termios oldt, newt;
@@ -192,8 +194,9 @@ void VCGPU::FindCover(int root){
     Match();
     //matcher.copyMatchingBackToHost(match);
     // Need to pass device pointer to LOP
-    int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength);
-    kbhit();
+    int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength);  
+    char temp;
+    cin >> temp;
     while(newLeaves.x < newLeaves.y){
         FindCover(newLeaves.x);
         ++newLeaves.x;
