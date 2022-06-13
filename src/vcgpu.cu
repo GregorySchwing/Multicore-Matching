@@ -64,7 +64,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         cudaMalloc(&dsearchtree, sizeof(int2)*sizeOfSearchTree) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
-        cudaMalloc(&dfinishedLeavesPerLevel, sizeof(int)*depthOfSearchTree) != cudaSuccess || 
+        cudaMalloc(&dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree) != cudaSuccess || 
         //cudaMalloc(&active_frontier_status, sizeof(int)*depthOfSearchTree) != cudaSuccess || 
         cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
@@ -313,7 +313,7 @@ void VCGPU::ReinitializeArrays(){
 __global__ void PopulateSearchTree(int nrVertices, 
                                     int depthOfSearchTree,
                                                 int leafIndex,
-                                                int * dfinishedLeavesPerLevel,
+                                                float * dfinishedLeavesPerLevel,
                                                 int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
                                                 int *dlength, 
