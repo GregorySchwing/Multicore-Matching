@@ -213,7 +213,7 @@ void VCGPU::SetEdgesOfLeaf(int leafIndex){
                                                 ddegrees,
                                                 dsearchtree);
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
-    CalculateDegrees<<<blocksPerGrid, threadsPerBlock>>>(
+    CalculateDegrees<<<blocksPerGrid, threadsPerBlock>>>(graph.nrVertices,
                                                 dedgestatus,
                                                 ddegrees);
     cudaDeviceSynchronize();
