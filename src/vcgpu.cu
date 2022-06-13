@@ -68,6 +68,9 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 		throw exception();
 	}
     edgestatus = new int[graph.neighbours.size()];
+    newdegrees = new int[graph.nrVertices];
+
+    newdegrees
     ReinitializeArrays();
 	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
 
@@ -88,6 +91,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 
 VCGPU::~VCGPU(){
     delete edgestatus;
+    delete newdegrees;
     cudaFree(ddegrees);
 	cudaFree(dlength);
     cudaFree(dsearchtree);
@@ -182,6 +186,7 @@ void VCGPU::FindCover(int root){
     // Need to pass device pointer to LOP
     int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength); 
     cudaMemcpy(edgestatus, dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
+    cudaMemcpy(newdegrees, ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
     PrintData (); 
     char temp;
     cin >> temp;
@@ -231,7 +236,7 @@ void VCGPU::PrintData (){
     printf("\n");
     printf("Degrees\n");
     for (int i = 0; i < graph.nrVertices+1; ++i){
-        printf("%d ", graph.degrees[i]);
+        printf("%d ", newdegrees[i]);
     }
 }
 void VCGPU::Match(){

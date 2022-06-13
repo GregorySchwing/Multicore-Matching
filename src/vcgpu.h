@@ -85,7 +85,7 @@ class VCGPU
         long long sizeOfSearchTree;
         int k;
         int fullpathcount;
-        int *edgestatus;
+        int *edgestatus, *newdegrees;
         // VC arrays
         int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves;
         int2 *dsearchtree;
