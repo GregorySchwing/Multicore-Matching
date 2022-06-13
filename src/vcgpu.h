@@ -42,6 +42,7 @@ __global__ void SetEdges(const int nrVertices,
 __global__ void PopulateSearchTree(int nrVertices, 
                                     int depthOfSearchTree,
                                     int leafIndex,
+                                    int * dfinishedLeavesPerLevel,
                                     int *dforwardlinkedlist, 
                                     int *dbackwardlinkedlist, 
                                     int *dlength, 
@@ -91,6 +92,8 @@ class VCGPU
         long long sizeOfSearchTree;
         int k;
         int fullpathcount, depthOfSearchTree;
+        int * finishedLeavesPerLevel, * totalLeavesPerLevel;
+        int * dfinishedLeavesPerLevel;
         int *edgestatus, *newdegrees;
         
         // VC arrays

@@ -54,6 +54,8 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         k(_k),
         depthOfSearchTree(_k/2)
 {
+    finishedLeavesPerLevel = new int[depthOfSearchTree];
+    totalLeavesPerLevel = new int[depthOfSearchTree];
     sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(depthOfSearchTree);
     // Wrong since numEdges < neighbors (up to double the num edges, in and out)
     //cudaMalloc(&dedgestatus, sizeof(int)*graph.nrEdges) != cudaSuccess || 
@@ -62,6 +64,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         cudaMalloc(&dsearchtree, sizeof(int2)*sizeOfSearchTree) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
+        cudaMalloc(&dfinishedLeavesPerLevel, sizeof(int)*depthOfSearchTree) != cudaSuccess || 
         //cudaMalloc(&active_frontier_status, sizeof(int)*depthOfSearchTree) != cudaSuccess || 
         cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
@@ -91,6 +94,8 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 VCGPU::~VCGPU(){
     delete edgestatus;
     delete newdegrees;
+    delete finishedLeavesPerLevel;
+    delete totalLeavesPerLevel;
     cudaFree(ddegrees);
 	cudaFree(dlength);
     cudaFree(dsearchtree);
@@ -104,8 +109,11 @@ VCGPU::~VCGPU(){
 __host__ __device__ long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels){
     long long summand= 0;
     // ceiling(vertexCount/2) loops
-    for (int i = 0; i <= NumberOfLevels; ++i)
+    for (int i = 0; i <= NumberOfLevels; ++i){
         summand += pow (3.0, i);
+        finishedLeavesPerLevel[i] = 0;
+        totalLeavesPerLevel[i] = pow (3.0, i);
+    }
     return summand;
 }
 
@@ -133,6 +141,7 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     PopulateSearchTree<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
                                                             sizeOfSearchTree, 
+                                                            dfinishedLeavesPerLevel,
                                                             leafIndex,
                                                             dforwardlinkedlist,
                                                             dbackwardlinkedlist, 
@@ -297,6 +306,7 @@ void VCGPU::ReinitializeArrays(){
 __global__ void PopulateSearchTree(int nrVertices, 
                                     int depthOfSearchTree,
                                                 int leafIndex,
+                                                int * dfinishedLeavesPerLevel,
                                                 int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
                                                 int *dlength, 
@@ -353,6 +363,8 @@ __global__ void PopulateSearchTree(int nrVertices,
     dsearchtree[levelOffset + 0] = make_int2(first, third);
     dsearchtree[levelOffset + 1] = make_int2(second, third);
     dsearchtree[levelOffset + 2] = make_int2(second, fourth);
+    // Add to device pointer of level
+    atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf], 3); 
 }
 
 // Makes sense for BFS
