@@ -102,24 +102,22 @@ void VCGPU::GetLengthStatistics(int nrVertices, int threadsPerBlock, int *dbackw
 }
 
 void VCGPU::numberCompletedPaths(int nrVertices, 
+                        int leafIndex,
                         int *dbackwardlinkedlist, 
                         int *dlength){
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     PopulateSearchTree<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, 
-                                                            4,
+                                                            leafIndex,
                                                             dforwardlinkedlist,
                                                             dbackwardlinkedlist, 
                                                             dlength,
                                                             dfullpathcount,
                                                             dsearchtree);
-
+    cudaMemcpy(&fullpathcount, &dfullpathcount[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
     
-    /*
-    CalculateLeafOffsets<<<1, 1>>>(
-                                    dfullpathcount,
-                                    dnumleaves,
-                                    active_frontier_status);
-    */
+    CalculateLeafOffsets(leafIndex
+                        fullpathcount);
+    
 }
 
 // 2 Possibilities for recycling the paths of length 1&2
@@ -157,7 +155,7 @@ void VCGPU::FindCover(){
         SetEdgesOfLeaf(activeRoot);
         Match();
         // Need to pass device pointer to LOP
-        numberCompletedPaths(graph.nrVertices, dbackwardlinkedlist, dlength);
+        numberCompletedPaths(graph.nrVertices, 4, dbackwardlinkedlist, dlength);
 		matcher.copyMatchingBackToHost(match);
     }
 }

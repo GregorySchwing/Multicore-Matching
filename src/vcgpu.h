@@ -66,6 +66,7 @@ class VCGPU
 		~VCGPU();
         
         void numberCompletedPaths(int nrVertices, 
+                                int leafIndex,
                                 int *dbackwardlinkedlist, 
                                 int *dlength);		
 		                       
@@ -83,6 +84,7 @@ class VCGPU
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
         long long sizeOfSearchTree;
         int k;
+        int fullpathcount;
         // VC arrays
         int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves;
         int2 *dsearchtree;
