@@ -92,8 +92,8 @@ class VCGPU
         long long sizeOfSearchTree;
         int k;
         int fullpathcount, depthOfSearchTree;
-        int * finishedLeavesPerLevel, * totalLeavesPerLevel;
-        int * dfinishedLeavesPerLevel;
+        float * finishedLeavesPerLevel, * totalLeavesPerLevel;
+        float * dfinishedLeavesPerLevel;
         int *edgestatus, *newdegrees;
         
         // VC arrays
