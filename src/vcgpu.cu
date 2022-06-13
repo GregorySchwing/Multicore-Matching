@@ -455,7 +455,7 @@ __global__ void SetEdges(const int leafIndex,
                 // All this logic is necessary because we aren't using degree to set upperbound
                 // we are using row offsets, which may include some edges turned off on a previous
                 // pendant edge processing step.
-                atomicAdd(&ddegrees[ni], -tmp);
+                atomicAdd(&ddegrees[j], -tmp);
                 dedgestatus[j_n] ^= (foundChild & tmp);
         }
     }
