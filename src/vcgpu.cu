@@ -143,7 +143,7 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
     
     int4 myActiveLeaves = CalculateLeafOffsets(leafIndex,
                                                 fullpathcount);
-    printf("My active leaves %d %d %d %d\n", myActiveLeaves.x, myActiveLeaves.y, myActiveLeaves.z, myActiveLeaves.w);
+    //printf("My active leaves %d %d %d %d\n", myActiveLeaves.x, myActiveLeaves.y, myActiveLeaves.z, myActiveLeaves.w);
     return myActiveLeaves;
 }
 
@@ -182,7 +182,8 @@ void VCGPU::FindCover(int root){
     int depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - (int)(root==0);
     if (depthOfLeaf >= depthOfSearchTree)
         return;
-    printf("level depth of leaf %d\n",depthOfLeaf);
+    printf("\33[2K\r");
+    printf("Calling Find Cover from %d,level depth of leaf%d\n", root, depthOfLeaf);
     ReinitializeArrays();
     SetEdgesOfLeaf(root);
     Match();
@@ -197,12 +198,10 @@ void VCGPU::FindCover(int root){
     //char temp;
     //cin >> temp;
     while(newLeaves.x < newLeaves.y){
-        printf("Calling Find Cover from %d\n", newLeaves.x);
         FindCover(newLeaves.x);
         ++newLeaves.x;
     }
     while(newLeaves.z < newLeaves.w){
-        printf("Calling Find Cover from %d\n", newLeaves.z);
         FindCover(newLeaves.z);
         ++newLeaves.z;
     }
@@ -213,9 +212,7 @@ void VCGPU::SetEdgesOfLeaf(int leafIndex){
     // Root of search tree is empty.
     if (leafIndex == 0)
         return;
-    printf("Setting edges of leaf %d\n", leafIndex);
 	int blocksPerGrid = 2*(ceil(logf(2*leafIndex + 1) / logf(3)) - (int)(leafIndex==0));
-    printf("blocksPerGrid %d\n", blocksPerGrid);
     SetEdges<<<blocksPerGrid, threadsPerBlock>>>(leafIndex,
                                                 dedgestatus,
                                                 ddegrees,
