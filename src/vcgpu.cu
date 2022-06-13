@@ -366,30 +366,22 @@ __global__ void SetEdges(const int leafIndex,
     if (threadIdx.x == 0)
         printf("thisBlocksSearchTreeNode %d\n", thisBlocksSearchTreeNode);
     int2 verticesInNode = dsearchtree[thisBlocksSearchTreeNode];
-    i = verticesInNode.x;
-    int2 indices = tex1Dfetch(neighbourRangesTexture, i);
+    if (threadIdx.x < blockDim.x/2){
+        i = verticesInNode.x;
+    } else {
+        i = verticesInNode.y;
+    }
+    const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
+    if (threadIdx.x == blockDim.x/2 || threadIdx.x == 0){
         printf("Setting vertex %d\n", i);
         printf("Turning off edges between %d and %d in col array\n",indices.x,indices.y);
-    for (int j = indices.x + threadIdx.x; j < indices.y; j += blockDim.x){
+    }
+    for (int j = indices.x + (threadIdx.x % blockDim.x/2); j < indices.y; j += blockDim.x/2){
         //const int ni = tex1Dfetch(neighboursTexture, j);
         //printf("Turning off edge %d which is index %d of the val array\n",ni,j);
         // Set out-edges
-        atomicAdd(&ddegrees[i], -dedgestatus[j]);
         dedgestatus[j] = 0;
     }
-    __syncthreads();
-    i = verticesInNode.y;
-    indices = tex1Dfetch(neighbourRangesTexture, i);
-        printf("Setting vertex %d\n", i);
-        printf("Turning off edges between %d and %d in col array\n",indices.x,indices.y);
-    for (int j = indices.x + threadIdx.x; j < indices.y; j += blockDim.x){
-        //const int ni = tex1Dfetch(neighboursTexture, j);
-        //printf("Turning off edge %d which is index %d of the val array\n",ni,j);
-        // Set out-edges
-        atomicAdd(&ddegrees[i], -dedgestatus[j]);
-        dedgestatus[j] = 0;
-    }
-    __syncthreads();
     // (u,v) is the form of edge pairs.  We are traversing over v's outgoing edges, 
     // looking for u as the destination and turning off that edge.
     bool foundChild, tmp;
@@ -402,9 +394,8 @@ __global__ void SetEdges(const int leafIndex,
     // 2) 1 out edge is traversed at a time, and then all the threads scan
     // all the edges leaving that vertex for the original vertex.
     // This is the more favorable data access pattern.
-    i = verticesInNode.x;
-    int2 indices_curr = tex1Dfetch(neighbourRangesTexture, i);
-    for (int j = indices_curr.x + threadIdx.x; j < indices_curr.y; j += blockDim.x){
+    const int2 indices_curr = tex1Dfetch(neighbourRangesTexture, i);
+    for (int j = indices_curr.x + (threadIdx.x % blockDim.x/2); j < indices_curr.y; j += blockDim.x/2){
         const int ni = tex1Dfetch(neighboursTexture, j);    
         const int2 indices_neighbor = tex1Dfetch(neighbourRangesTexture, ni);
           for (int j_n = indices_neighbor.x; j_n < indices_neighbor.y; ++j_n){
@@ -426,36 +417,6 @@ __global__ void SetEdges(const int leafIndex,
                 // All this logic is necessary because we aren't using degree to set upperbound
                 // we are using row offsets, which may include some edges turned off on a previous
                 // pendant edge processing step.
-                atomicAdd(&ddegrees[j], -tmp);
-                dedgestatus[j_n] ^= (foundChild & tmp);
-        }
-    }
-    __syncthreads();
-    i = verticesInNode.y;
-    indices_curr = tex1Dfetch(neighbourRangesTexture, i);
-    for (int j = indices_curr.x + threadIdx.x; j < indices_curr.y; j += blockDim.x){
-        const int ni = tex1Dfetch(neighboursTexture, j);    
-        const int2 indices_neighbor = tex1Dfetch(neighbourRangesTexture, ni);
-          for (int j_n = indices_neighbor.x; j_n < indices_neighbor.y; ++j_n){
-                const int nj = tex1Dfetch(neighboursTexture, j_n);       
-                foundChild = i == nj;
-                // Set in-edge
-                // store edge status
-                tmp = dedgestatus[j_n];
-                //   foundChild     tmp   (foundChild & tmp)  (foundChild & tmp)^tmp
-                //1)      0          0            0                       0
-                //2)      1          0            0                       0
-                //3)      0          1            0                       1
-                //4)      1          1            1                       0
-                //
-                // Case 1: isnt myChild and edge is off, stay off
-                // Case 2: is myChild and edge is off, stay off
-                // Case 3: isn't myChild and edge is on, stay on
-                // Case 4: is myChild and edge is on, turn off
-                // All this logic is necessary because we aren't using degree to set upperbound
-                // we are using row offsets, which may include some edges turned off on a previous
-                // pendant edge processing step.
-                atomicAdd(&ddegrees[j], -tmp);
                 dedgestatus[j_n] ^= (foundChild & tmp);
         }
     }
