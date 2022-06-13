@@ -61,7 +61,6 @@ __global__ void CalculateDegrees(
                         int * dedgestatus,
                         int * ddegrees);
 
-long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels);
                              
 
 namespace mtc
@@ -71,7 +70,8 @@ class VCGPU
 	public:
 		VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier, const unsigned int &_k);
 		~VCGPU();
-        
+        long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels);
+
         int4 numberCompletedPaths(int nrVertices, 
                                 int leafIndex,
                                 int *dbackwardlinkedlist, 

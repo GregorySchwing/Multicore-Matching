@@ -106,7 +106,7 @@ VCGPU::~VCGPU(){
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels){
+long long VCGPU::CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels){
     long long summand= 0;
     // ceiling(vertexCount/2) loops
     for (int i = 0; i <= NumberOfLevels; ++i){
