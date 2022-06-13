@@ -149,6 +149,8 @@ void VCGPU::FindCover(){
     
     int leftMostLeafOfLevel = 0;
     int rightMostLeafOfLevel = 1;
+    // Will most likely copy back the frontier bool array and iterate through each frontier one at a time
+    // for v1.
     for (int activeRoot = leftMostLeafOfLevel; activeRoot < rightMostLeafOfLevel; ++activeRoot){
         matcher.initialMatching(match);
         ReinitializeArrays();
@@ -275,7 +277,12 @@ __global__ void PopulateSearchTree(int nrVertices,
     dsearchtree[levelOffset + 2] = make_int2(second, fourth);
 }
 
+// Makes sense for BFS
+// For DFS use Recursive Backtracking
+__global__ void GetFrontierStatus(int nrNodes,
+							int *active_frontier_status){
 
+}
 
 __global__ void ReducePathLengths(int nrVertices,
 							int *dbackwardlinkedlist,
@@ -380,11 +387,8 @@ __global__ void CalculateNumberOfLeaves(int *dfullpathcount){
 // currently a single root is expanded in gpu memory at a time. 
 // efforts were made in the FPT-kVC "done" branch to maintain multiple copies of the graph
 // and explore the search tree in parallel.
-__global__ void CalculateLeafOffsets(
-                                        int * dfullpathcount,
-                                        int * dnumleaves,
-                                        int * active_frontier_status){
-    int globalIndex = blockIdx.x * blockDim.x + threadIdx.x;
+int4 CalculateLeafOffsets(              int leafIndex,
+                                        int fullpathcount){
     int leafIndex;
     int arbitraryParameter;
     int leftMostLeafIndexOfFullLevel;
@@ -393,7 +397,7 @@ __global__ void CalculateLeafOffsets(
     printf("globalIndex %d, CalculateLeafOffsets\n",globalIndex);
     printf("globalIndex %d, global_active_leaves_count_current %x\n",globalIndex, global_active_leaves_count_current[0]);
     #endif
-    int leavesToProcess = dfullpathcount[globalIndex];
+    int leavesToProcess = fullpathcount;
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Solved for leavesToProcess < closed form
     // start from level 1, hence add a level if LTP > 0, 1 complete level 
@@ -443,16 +447,10 @@ __global__ void CalculateLeafOffsets(
     printf("Leaves %d, leavesFromIncompleteLvl %d\n",leavesToProcess, leavesFromIncompleteLvl);
     printf("Leaves %d, leftMostLeafIndexOfFullLevel %d\n",leavesToProcess, leftMostLeafIndexOfFullLevel);
     printf("Leaves %d, leftMostLeafIndexOfIncompleteLevel %d\n",leavesToProcess, leftMostLeafIndexOfIncompleteLevel);
-    dnumleaves[0] = totalNewActive;
-    /*
-    active_leaf_offsets[0] = make_int4( leftMostLeafIndexOfFullLevel,
+    
+    return make_int4( leftMostLeafIndexOfFullLevel,
                                         leftMostLeafIndexOfFullLevel + leavesFromCompleteLvl,
                                         leftMostLeafIndexOfIncompleteLevel,
                                         leftMostLeafIndexOfIncompleteLevel + leavesFromIncompleteLvl);
-    active_leaf_offsets[0] = leftMostLeafIndexOfFullLevel;
-    active_leaf_offsets[1] = leftMostLeafIndexOfFullLevel + leavesFromCompleteLvl;
-    active_leaf_offsets[2] = leftMostLeafIndexOfIncompleteLevel;
-    active_leaf_offsets[3] = leftMostLeafIndexOfIncompleteLevel + leavesFromIncompleteLvl;
-                                        */
 
 }
