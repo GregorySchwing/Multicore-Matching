@@ -115,8 +115,9 @@ void VCGPU::numberCompletedPaths(int nrVertices,
                                                             dsearchtree);
     cudaMemcpy(&fullpathcount, &dfullpathcount[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
     
-    CalculateLeafOffsets(leafIndex,
+    int4 myActiveLeaves = CalculateLeafOffsets(leafIndex,
                         fullpathcount);
+    printf("My active leaves %d %d %d %d\n", myActiveLeaves.x, myActiveLeaves.y, myActiveLeaves.z, myActiveLeaves.w);
     
 }
 
