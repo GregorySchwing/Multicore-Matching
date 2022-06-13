@@ -28,6 +28,9 @@ using namespace mtc;
 #include <iostream>
 
 
+// RE?
+#include <ncurses.h>
+
 inline void checkLastErrorCUDA(const char *file, int line)
 {
   cudaError_t code = cudaGetLastError();
@@ -201,7 +204,7 @@ void VCGPU::FindCover(int root){
     }
     refresh ();
     endwin();
-    
+
     ReinitializeArrays();
     SetEdgesOfLeaf(root);
     Match();
