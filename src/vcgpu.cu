@@ -212,7 +212,7 @@ void VCGPU::SetEdgesOfLeaf(int leafIndex){
                                                 dedgestatus,
                                                 ddegrees,
                                                 dsearchtree);
-	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
+	blocksPerGrid = (graph.nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     CalculateDegrees<<<blocksPerGrid, threadsPerBlock>>>(graph.nrVertices,
                                                 dedgestatus,
                                                 ddegrees);
