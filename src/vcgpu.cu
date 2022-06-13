@@ -183,7 +183,7 @@ void VCGPU::FindCover(int root){
     if (depthOfLeaf >= depthOfSearchTree)
         return;
     printf("\33[2K\r");
-    printf("Calling Find Cover from %d,level depth of leaf%d\n", root, depthOfLeaf);
+    printf("Calling Find Cover from %d, level depth of leaf %d\n", root, depthOfLeaf);
     ReinitializeArrays();
     SetEdgesOfLeaf(root);
     Match();
