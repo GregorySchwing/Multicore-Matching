@@ -23,40 +23,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 using namespace mtc;
 
-#include <stdio.h>
-#include <termios.h>
-#include <unistd.h>
-#include <fcntl.h>
+
 
 #include <iostream>
-
-int kbhit(void)
-{
-  struct termios oldt, newt;
-  int ch;
-  int oldf;
-
-  tcgetattr(STDIN_FILENO, &oldt);
-  newt = oldt;
-  newt.c_lflag &= ~(ICANON | ECHO);
-  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-  oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
-  fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
-
-  ch = getchar();
-
-  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-  fcntl(STDIN_FILENO, F_SETFL, oldf);
-
-  if(ch != EOF)
-  {
-    ungetc(ch, stdin);
-    return 1;
-  }
-
-  return 0;
-}
-
 
 
 inline void checkLastErrorCUDA(const char *file, int line)
@@ -251,6 +220,7 @@ void VCGPU::Match(){
 
 void VCGPU::ReinitializeArrays(){
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dedgestatus),  1, size_t(graph.neighbours.size()));
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dlength),  0, size_t(graph.neighbours.size()));
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dfullpathcount),  0, size_t(1));
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dnumleaves),  0, size_t(1));
     // Only >= 0 are heads of full paths
