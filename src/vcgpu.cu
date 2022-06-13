@@ -371,10 +371,10 @@ __global__ void SetEdges(const int leafIndex,
     if (threadIdx.x == blockDim.x/2 || threadIdx.x == 0)
         printf("Setting vertex %d\n", i);
     const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
-    printf("Turning off edges between %d and %d in col array\n",indices.x,indices.y);
+    //printf("Turning off edges between %d and %d in col array\n",indices.x,indices.y);
     for (int j = indices.x + (threadIdx.x % blockDim.x/2); j < indices.y; j += blockDim.x/2){
         const int ni = tex1Dfetch(neighboursTexture, j);
-        printf("Turning off edge %d which is index %d of the val array\n",ni,j);
+        //printf("Turning off edge %d which is index %d of the val array\n",ni,j);
         // Set out-edges
         ddegrees[ni] -= dedgestatus[ni];
         dedgestatus[ni] = 0;
