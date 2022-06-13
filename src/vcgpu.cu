@@ -343,7 +343,8 @@ __global__ void SetEdges(const int leafIndex,
     //if (threadIdx.x == 0){
     int thisBlocksSearchTreeNode = leafIndex / pow (3.0, numberOfLevelsToAscend);
     //}
-
+    if (threadIdx.x == 0)
+        printf("thisBlocksSearchTreeNode %d\n", thisBlocksSearchTreeNode);
     int2 verticesInNode = dsearchtree[thisBlocksSearchTreeNode];
     if (threadIdx.x < blockDim.x/2){
         i = verticesInNode.x;
