@@ -36,11 +36,11 @@ class GraphMatchingGPU : public GraphMatching
 		GraphMatchingGPU(const Graph &, const int &, const unsigned int &);
 		virtual ~GraphMatchingGPU();
 		virtual void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const = 0;
+		int2 *dneighbourRanges;
+		int *dneighbours;
 	protected:
 		const int threadsPerBlock;
 		const uint selectBarrier;
-		int2 *dneighbourRanges;
-		int *dneighbours;
 };
 
 class GraphMatchingGPURandom : public GraphMatchingGPU
