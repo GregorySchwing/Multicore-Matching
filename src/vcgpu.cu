@@ -198,7 +198,7 @@ void VCGPU::SetEdgesOfLeaf(int leafIndex){
 
 void VCGPU::PrintData (){
    
-    printf("neighbours size %d num edges %d\n",  neighbours.size(), graph.nrEdges);
+    printf("neighbours size %d num edges %d\n",  graph.neighbours.size(), graph.nrEdges);
     printf("Row Offs\n");
     for (int i = 0; i < graph.nrVertices; ++i){
         printf("%d %d, ",graph.neighbourRanges[i].x, graph.neighbourRanges[i].y);
