@@ -179,7 +179,7 @@ void VCGPU::FindCover(int root){
     //std::vector<int> match;
     //matcher.initialMatching(match);
     int depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - (int)(root==0);
-    if (depthOfLeaf > depthOfSearchTree)
+    if (depthOfLeaf >= depthOfSearchTree)
         return;
     printf("level depth of leaf %d\n",depthOfLeaf);
     ReinitializeArrays();
@@ -345,7 +345,7 @@ __global__ void PopulateSearchTree(int nrVertices,
                                                 levelOffset + 1,
                                                 levelOffset + 2);
     int depthOfLeaf = ceil(logf(2*levelOffset + 2 + 1) / logf(3)) - (levelOffset == 0);
-    if (depthOfLeaf > depthOfSearchTree){
+    if (depthOfLeaf >= depthOfSearchTree){
         return;
     }
     // Test from root for now, this code can have an arbitrary root though
