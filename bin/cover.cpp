@@ -523,7 +523,7 @@ int main(int argc, char **argv)
 
 				try
 				{
-					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 40);
+					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 30);
 					vc.matcher.initialMatching(match);
 					vc.FindCover(0);
 					vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);
