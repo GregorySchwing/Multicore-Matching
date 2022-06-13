@@ -196,7 +196,7 @@ void VCGPU::SetEdgesOfLeaf(int leafIndex){
 
 void VCGPU::PrintData (){
     printf("Row Offs\n");
-    for (int i = 0; i < graph.nrVertices+1; ++i){
+    for (int i = 0; i < graph.nrVertices; ++i){
         printf("%d %d, ",graph.neighbourRanges[i].x, graph.neighbourRanges[i].y);
     }
     printf("\n");
@@ -348,7 +348,8 @@ __global__ void SetEdges(const int leafIndex,
     } else {
         i = verticesInNode.y;
     }
-
+    if (threadIdx.x == blockDim.x/2-1 || threadIdx.x == 0)
+        printf("Setting vertex %d\n", i);
     const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
     for (int j = indices.x + (threadIdx.x % blockDim.x/2); j < indices.y; j += blockDim.x/2){
         const int ni = tex1Dfetch(neighboursTexture, j);
