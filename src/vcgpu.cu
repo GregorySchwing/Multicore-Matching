@@ -382,10 +382,9 @@ __global__ void SetEdges(const int leafIndex,
         // Set out-edges
         ddegrees[ni] -= dedgestatus[ni];
         dedgestatus[ni] = 0;
-
-        if (threadIdx.x == blockDim.x/2 || threadIdx.x == 0){
-            ddegrees[i] = 0;
-        }
+    }
+    if (threadIdx.x == blockDim.x/2 || threadIdx.x == 0){
+        ddegrees[i] = 0;
     }
     __syncthreads();
     // (u,v) is the form of edge pairs.  We are traversing over v's outgoing edges, 
