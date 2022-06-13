@@ -29,6 +29,7 @@ using namespace mtc;
 
 
 // RE?
+#include <curses.h>
 #include <ncurses.h>
 
 inline void checkLastErrorCUDA(const char *file, int line)
