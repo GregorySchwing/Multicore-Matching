@@ -204,7 +204,7 @@ void VCGPU::SetEdgesOfLeaf(int leafIndex){
     if (leafIndex == 0)
         return;
     printf("Setting edges of leaf %d\n", leafIndex);
-	int blocksPerGrid = 2*(ceil(logf(2*leafIndex + 1) / logf(3)) - (int)(leafIndex==0));
+	int blocksPerGrid = ceil(logf(2*leafIndex + 1) / logf(3)) - (int)(leafIndex==0);
     printf("blocksPerGrid %d\n", blocksPerGrid);
     SetEdges<<<blocksPerGrid, threadsPerBlock>>>(leafIndex,
                                                 dedgestatus,
@@ -366,12 +366,7 @@ __global__ void SetEdges(const int leafIndex,
     if (threadIdx.x == 0)
         printf("thisBlocksSearchTreeNode %d\n", thisBlocksSearchTreeNode);
     int2 verticesInNode = dsearchtree[thisBlocksSearchTreeNode];
-    if (blockIdx.x % 2 == 0){
-        i = verticesInNode.x;
-    } else {
-        i = verticesInNode.y;
-    }
-    const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
+    int2 indices = tex1Dfetch(neighbourRangesTexture, verticesInNode.x);
     if (threadIdx.x == 0){
         printf("Setting vertex %d\n", i);
         printf("Turning off edges between %d and %d in col array\n",indices.x,indices.y);
@@ -382,6 +377,18 @@ __global__ void SetEdges(const int leafIndex,
         // Set out-edges
         dedgestatus[j] = 0;
     }
+    indices = tex1Dfetch(neighbourRangesTexture, verticesInNode.y);
+    if (threadIdx.x == 0){
+        printf("Setting vertex %d\n", i);
+        printf("Turning off edges between %d and %d in col array\n",indices.x,indices.y);
+    }
+    for (int j = indices.x + threadIdx.x; j < indices.y; j += blockDim.x){
+        //const int ni = tex1Dfetch(neighboursTexture, j);
+        //printf("Turning off edge %d which is index %d of the val array\n",ni,j);
+        // Set out-edges
+        dedgestatus[j] = 0;
+    }
+    /*
     // (u,v) is the form of edge pairs.  We are traversing over v's outgoing edges, 
     // looking for u as the destination and turning off that edge.
     bool foundChild, tmp;
@@ -420,6 +427,7 @@ __global__ void SetEdges(const int leafIndex,
                 dedgestatus[j_n] ^= (foundChild & tmp);
         }
     }
+    */
 }
 
 __global__ void InitDegrees(const int nrVertices,
