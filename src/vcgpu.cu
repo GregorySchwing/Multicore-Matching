@@ -51,17 +51,18 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 		matcher(_graph, _threadsPerBlock, _barrier),
         dfll(_graph.nrVertices),
         dbll(_graph.nrVertices),
-        k(_k)
+        k(_k),
+        depthOfSearchTree(_k/2)
 {
-    depthOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(_k/2);
+    sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(depthOfSearchTree);
     // Wrong since numEdges < neighbors (up to double the num edges, in and out)
     //cudaMalloc(&dedgestatus, sizeof(int)*graph.nrEdges) != cudaSuccess || 
     if (cudaMalloc(&dedgestatus, sizeof(int)*graph.neighbours.size()) != cudaSuccess || 
         cudaMalloc(&dlength, sizeof(int)*graph.nrVertices) != cudaSuccess || 
-        cudaMalloc(&dsearchtree, sizeof(int2)*depthOfSearchTree) != cudaSuccess || 
+        cudaMalloc(&dsearchtree, sizeof(int2)*sizeOfSearchTree) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
-        cudaMalloc(&active_frontier_status, sizeof(int)*depthOfSearchTree) != cudaSuccess || 
+        //cudaMalloc(&active_frontier_status, sizeof(int)*depthOfSearchTree) != cudaSuccess || 
         cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
@@ -131,7 +132,7 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
                         int *dlength){
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     PopulateSearchTree<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
-                                                            depthOfSearchTree, 
+                                                            sizeOfSearchTree, 
                                                             leafIndex,
                                                             dforwardlinkedlist,
                                                             dbackwardlinkedlist, 
