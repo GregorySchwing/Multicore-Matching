@@ -72,6 +72,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 }
 
 VCGPU::~VCGPU(){
+    delete edgestatus;
     cudaFree(ddegrees);
 	cudaFree(dlength);
     cudaFree(dsearchtree);
@@ -188,6 +189,7 @@ void VCGPU::SetEdgesOfLeaf(int leafIndex){
                                                 dedgestatus,
                                                 ddegrees,
                                                 dsearchtree);
+    cudaMemcpy(edgestatus, dedgestatus, sizeof(int)*graph.nrEdges, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
     checkLastErrorCUDA(__FILE__, __LINE__);
 }
