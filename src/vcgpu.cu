@@ -69,6 +69,21 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 	}
     edgestatus = new int[graph.neighbours.size()];
     ReinitializeArrays();
+	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
+
+	neighbourRangesTexture.addressMode[0] = cudaAddressModeWrap;
+	neighbourRangesTexture.filterMode = cudaFilterModePoint;
+	neighbourRangesTexture.normalized = false;
+	cudaBindTexture(0, neighbourRangesTexture, (void *)dneighbourRanges, neighbourRangesTextureDesc, sizeof(int2)*graph.neighbourRanges.size());
+	
+	cudaChannelFormatDesc neighboursTextureDesc = cudaCreateChannelDesc<int>();
+
+	neighboursTexture.addressMode[0] = cudaAddressModeWrap;
+	neighboursTexture.filterMode = cudaFilterModePoint;
+	neighboursTexture.normalized = false;
+	cudaBindTexture(0, neighboursTexture, (void *)dneighbours, neighboursTextureDesc, sizeof(int)*graph.neighbours.size());
+
+
 }
 
 VCGPU::~VCGPU(){
