@@ -78,7 +78,7 @@ class VCGPU
 
         void SetEdgesOfLeaf(int leafIndex);
         void Match();
-        void FindCover();
+        void FindCover(int root);
         void ReinitializeArrays();
 
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
