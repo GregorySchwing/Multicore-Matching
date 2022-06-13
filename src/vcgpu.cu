@@ -189,12 +189,12 @@ void VCGPU::FindCover(int root){
     char temp;
     cin >> temp;
     while(newLeaves.x < newLeaves.y){
-        printf("Calling Find Cover from %d\n", newLeaves.x)
+        printf("Calling Find Cover from %d\n", newLeaves.x);
         FindCover(newLeaves.x);
         ++newLeaves.x;
     }
     while(newLeaves.z < newLeaves.w){
-        printf("Calling Find Cover from %d\n", newLeaves.z)
+        printf("Calling Find Cover from %d\n", newLeaves.z);
         FindCover(newLeaves.z);
         ++newLeaves.z;
     }
