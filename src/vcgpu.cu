@@ -377,10 +377,10 @@ __global__ void SetEdges(const int leafIndex,
         printf("Turning off edges between %d and %d in col array\n",indices.x,indices.y);
     }
     for (int j = indices.x + (threadIdx.x % blockDim.x/2); j < indices.y; j += blockDim.x/2){
-        const int ni = tex1Dfetch(neighboursTexture, j);
+        //const int ni = tex1Dfetch(neighboursTexture, j);
         //printf("Turning off edge %d which is index %d of the val array\n",ni,j);
         // Set out-edges
-        ddegrees[i] -= dedgestatus[j];
+        atomicAdd(&ddegrees[i], -dedgestatus[j]);
         dedgestatus[j] = 0;
     }
     __syncthreads();
