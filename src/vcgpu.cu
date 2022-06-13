@@ -478,11 +478,12 @@ int4 CalculateLeafOffsets(              int leafIndex,
     int arbitraryParameter;
     int leftMostLeafIndexOfFullLevel;
     int leftMostLeafIndexOfIncompleteLevel;
-    #ifndef NDEBUG
-    printf("globalIndex %d, CalculateLeafOffsets\n",globalIndex);
-    printf("globalIndex %d, global_active_leaves_count_current %x\n",globalIndex, global_active_leaves_count_current[0]);
-    #endif
     int leavesToProcess = fullpathcount;
+    if (leavesToProcess == 0)
+        return make_int4( leafIndex,
+                          leafIndex,
+                          leafIndex,
+                          leafIndex);
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Solved for leavesToProcess < closed form
     // start from level 1, hence add a level if LTP > 0, 1 complete level 
