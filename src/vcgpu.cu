@@ -103,7 +103,7 @@ VCGPU::~VCGPU(){
 __host__ __device__ long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels){
     long long summand= 0;
     // ceiling(vertexCount/2) loops
-    for (int i = 0; i < NumberOfLevels; ++i)
+    for (int i = 0; i <= NumberOfLevels; ++i)
         summand += pow (3.0, i);
     return summand;
 }
@@ -345,7 +345,7 @@ __global__ void PopulateSearchTree(int nrVertices,
                                                 levelOffset + 1,
                                                 levelOffset + 2);
     int depthOfLeaf = ceil(logf(2*levelOffset + 2 + 1) / logf(3)) - (levelOffset == 0);
-    if (depthOfLeaf >= depthOfSearchTree){
+    if (depthOfLeaf > depthOfSearchTree){
         return;
     }
     // Test from root for now, this code can have an arbitrary root though
