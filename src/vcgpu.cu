@@ -192,8 +192,8 @@ void VCGPU::FindCover(int root){
     cudaMemcpy(edgestatus, dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
     cudaMemcpy(newdegrees, ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
     PrintData (); 
-    char temp;
-    cin >> temp;
+    //char temp;
+    //cin >> temp;
     while(newLeaves.x < newLeaves.y){
         printf("Calling Find Cover from %d\n", newLeaves.x);
         FindCover(newLeaves.x);
