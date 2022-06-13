@@ -197,7 +197,7 @@ void VCGPU::FindCover(int root){
         printf("\033[A\33[2K\r");
     }  
     for(int i = 0; i < depthOfSearchTree; ++i){
-        printf("Depth %f Complete\n", finishedLeavesPerLevel[i]/totalLeavesPerLevel[i]);
+        printf("Depth %d %f Complete\n", i finishedLeavesPerLevel[i]/totalLeavesPerLevel[i]);
     }    
     ReinitializeArrays();
     SetEdgesOfLeaf(root);
