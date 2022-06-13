@@ -177,7 +177,7 @@ void VCGPU::FindCover(int root){
     // and the device search tree.
     //std::vector<int> match;
     //matcher.initialMatching(match);
-    int depthOfLeaf = ceil(logf(2*leafIndex + 1) / logf(3));
+    int depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - (int)(root==0);
     if (depthOfLeaf > k)
         return;
     printf("level depth of leaf %d\n",depthOfLeaf);
