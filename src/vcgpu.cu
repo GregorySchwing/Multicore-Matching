@@ -368,7 +368,7 @@ __global__ void SetEdges(const int leafIndex,
     int2 verticesInNode = dsearchtree[thisBlocksSearchTreeNode];
     int2 indices = tex1Dfetch(neighbourRangesTexture, verticesInNode.x);
     if (threadIdx.x == 0){
-        printf("Setting vertex %d\n", i);
+        printf("Setting vertex %d\n", verticesInNode.x);
         printf("Turning off edges between %d and %d in col array\n",indices.x,indices.y);
     }
     for (int j = indices.x + threadIdx.x; j < indices.y; j += blockDim.x){
@@ -379,7 +379,7 @@ __global__ void SetEdges(const int leafIndex,
     }
     indices = tex1Dfetch(neighbourRangesTexture, verticesInNode.y);
     if (threadIdx.x == 0){
-        printf("Setting vertex %d\n", i);
+        printf("Setting vertex %d\n", verticesInNode.y);
         printf("Turning off edges between %d and %d in col array\n",indices.x,indices.y);
     }
     for (int j = indices.x + threadIdx.x; j < indices.y; j += blockDim.x){
