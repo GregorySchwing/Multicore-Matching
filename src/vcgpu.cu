@@ -389,7 +389,6 @@ __global__ void CalculateNumberOfLeaves(int *dfullpathcount){
 // and explore the search tree in parallel.
 int4 CalculateLeafOffsets(              int leafIndex,
                                         int fullpathcount){
-    int leafIndex;
     int arbitraryParameter;
     int leftMostLeafIndexOfFullLevel;
     int leftMostLeafIndexOfIncompleteLevel;
@@ -438,7 +437,6 @@ int4 CalculateLeafOffsets(              int leafIndex,
     leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
 
     int totalNewActive = (leavesFromCompleteLvl - removeFromComplete) + leavesFromIncompleteLvl;
-    printf("globalIndex %d, CalculateLeafOffsets\n",globalIndex);
     printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, completeLevel);
     printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, incompleteLevel);
     printf("Leaves %d, treeSizeComplete %d\n",leavesToProcess, treeSizeComplete);
