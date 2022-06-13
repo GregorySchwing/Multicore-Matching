@@ -40,12 +40,13 @@ __global__ void SetEdges(const int nrVertices,
                         int2 *dsearchtree);
 
 __global__ void PopulateSearchTree(int nrVertices, 
-                                                int leafIndex,
-                                                int *dforwardlinkedlist, 
-                                                int *dbackwardlinkedlist, 
-                                                int *dlength, 
-                                                int *dfullpathcount,
-                                                int2* dsearchtree);
+                                    int depthOfSearchTree,
+                                    int leafIndex,
+                                    int *dforwardlinkedlist, 
+                                    int *dbackwardlinkedlist, 
+                                    int *dlength, 
+                                    int *dfullpathcount,
+                                    int2* dsearchtree);
 
 __global__ void CalculateNumberOfLeafNodes(
                                         int * dfullpathcount,

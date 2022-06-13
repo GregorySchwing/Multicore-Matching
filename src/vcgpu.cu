@@ -130,7 +130,8 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
                         int *dbackwardlinkedlist, 
                         int *dlength){
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
-    PopulateSearchTree<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, 
+    PopulateSearchTree<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
+                                                            depthOfSearchTree, 
                                                             leafIndex,
                                                             dforwardlinkedlist,
                                                             dbackwardlinkedlist, 
@@ -295,6 +296,7 @@ void VCGPU::ReinitializeArrays(){
 
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void PopulateSearchTree(int nrVertices, 
+                                    int depthOfSearchTree,
                                                 int leafIndex,
                                                 int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
