@@ -69,8 +69,6 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 	}
     edgestatus = new int[graph.neighbours.size()];
     newdegrees = new int[graph.nrVertices];
-
-    newdegrees
     ReinitializeArrays();
 	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
 
