@@ -25,6 +25,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "matchgpu.h"
 #include <exception>
 
+// RE?
+#include <ncurses.h>
+
 __global__ void InitDegrees(const int nrVertices,
                             int * ddegrees);
 
