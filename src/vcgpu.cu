@@ -67,7 +67,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 		cerr << "Not enough memory on device!" << endl;
 		throw exception();
 	}
-    edgestatus = new * int[graph.neighbours.size()];
+    edgestatus = new int[graph.neighbours.size()];
     ReinitializeArrays();
 }
 
