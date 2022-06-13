@@ -377,7 +377,7 @@ __global__ void SetEdges(const int leafIndex,
         // Set out-edges
         dedgestatus[j] = 0;
     }
-    __sync_threads();
+    __syncthreads();
     indices = tex1Dfetch(neighbourRangesTexture, verticesInNode.y);
     if (threadIdx.x == 0){
         printf("Setting vertex %d\n", verticesInNode.y);
