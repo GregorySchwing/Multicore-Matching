@@ -363,7 +363,7 @@ __global__ void SetEdges(const int leafIndex,
         ddegrees[ni] -= dedgestatus[ni];
         dedgestatus[ni] = 0;
 
-        if (threadIdx.x == blockDim.x/2 || threadIdx.x == 0)
+        if (threadIdx.x == blockDim.x/2 || threadIdx.x == 0){
             ddegrees[ni] = 0;
         }
     }
