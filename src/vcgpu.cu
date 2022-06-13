@@ -191,7 +191,9 @@ void VCGPU::FindCover(int root){
     int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength); 
     cudaMemcpy(edgestatus, dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
     cudaMemcpy(newdegrees, ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
+    #ifndef NDEBUG
     PrintData (); 
+    #endif
     //char temp;
     //cin >> temp;
     while(newLeaves.x < newLeaves.y){
@@ -337,6 +339,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     // Subtract 1 because reasons
     int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
     int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
+    #ifndef NDEBUG
     printf("Level Depth %d\n", incompleteLevel);
     printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
     printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
@@ -345,6 +348,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     printf("Displacement frok GLLO %d %d %d \n", levelOffset,
                                                 levelOffset + 1,
                                                 levelOffset + 2);
+    #endif
     int depthOfLeaf = ceil(logf(2*levelOffset + 2 + 1) / logf(3)) - (levelOffset == 0);
     if (depthOfLeaf > depthOfSearchTree){
         return;
@@ -378,8 +382,6 @@ __global__ void SetEdges(const int leafIndex,
     //if (threadIdx.x == 0){
     int thisBlocksSearchTreeNode = leafIndex / pow (3.0, numberOfLevelsToAscend);
     //}
-    if (threadIdx.x == 0)
-        printf("thisBlocksSearchTreeNode %d\n", thisBlocksSearchTreeNode);
     int2 verticesInNode = dsearchtree[thisBlocksSearchTreeNode];
     int i;
     if (blockIdx.x % 2 == 0)
@@ -387,10 +389,13 @@ __global__ void SetEdges(const int leafIndex,
     else 
         i = verticesInNode.y;
     int2 indices = tex1Dfetch(neighbourRangesTexture, i);
+    #ifndef NDEBUG
     if (threadIdx.x == 0){
+        printf("thisBlocksSearchTreeNode %d\n", thisBlocksSearchTreeNode);
         printf("Setting vertex %d\n", i);
         printf("Turning off edges between %d and %d in col array\n",indices.x,indices.y);
     }
+    #endif
     for (int j = indices.x + threadIdx.x; j < indices.y; j += blockDim.x){
         //const int ni = tex1Dfetch(neighboursTexture, j);
         //printf("Turning off edge %d which is index %d of the val array\n",ni,j);
@@ -532,6 +537,7 @@ int4 CalculateLeafOffsets(              int leafIndex,
     leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
 
     int totalNewActive = (leavesFromCompleteLvl - removeFromComplete) + leavesFromIncompleteLvl;
+    #ifndef NDEBUG
     printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, completeLevel);
     printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, incompleteLevel);
     printf("Leaves %d, treeSizeComplete %d\n",leavesToProcess, treeSizeComplete);
@@ -540,7 +546,7 @@ int4 CalculateLeafOffsets(              int leafIndex,
     printf("Leaves %d, leavesFromIncompleteLvl %d\n",leavesToProcess, leavesFromIncompleteLvl);
     printf("Leaves %d, leftMostLeafIndexOfFullLevel %d\n",leavesToProcess, leftMostLeafIndexOfFullLevel);
     printf("Leaves %d, leftMostLeafIndexOfIncompleteLevel %d\n",leavesToProcess, leftMostLeafIndexOfIncompleteLevel);
-    
+    #endif
     // Grow tree leftmost first, so put the incomplete level first.
     // Shape of leaves
     //CL    -     -    o o o 
