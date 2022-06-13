@@ -525,7 +525,7 @@ int main(int argc, char **argv)
 				{
 					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 10);
 					vc.matcher.initialMatching(match);
-					vc.FindCover();
+					vc.FindCover(0);
 					vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);
 					vc.matcher.copyMatchingBackToHost(match);
 				}

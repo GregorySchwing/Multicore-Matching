@@ -65,7 +65,7 @@ class VCGPU
 		VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier, const unsigned int &_k);
 		~VCGPU();
         
-        void numberCompletedPaths(int nrVertices, 
+        int4 numberCompletedPaths(int nrVertices, 
                                 int leafIndex,
                                 int *dbackwardlinkedlist, 
                                 int *dlength);		

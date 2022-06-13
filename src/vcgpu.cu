@@ -101,7 +101,7 @@ void VCGPU::GetLengthStatistics(int nrVertices, int threadsPerBlock, int *dbackw
 	ReducePathLengths<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, dbackwardlinkedlist, dlength, dreducedlength);
 }
 
-void VCGPU::numberCompletedPaths(int nrVertices, 
+int4 VCGPU::numberCompletedPaths(int nrVertices, 
                         int leafIndex,
                         int *dbackwardlinkedlist, 
                         int *dlength){
@@ -118,7 +118,7 @@ void VCGPU::numberCompletedPaths(int nrVertices,
     int4 myActiveLeaves = CalculateLeafOffsets(leafIndex,
                                                 fullpathcount);
     printf("My active leaves %d %d %d %d\n", myActiveLeaves.x, myActiveLeaves.y, myActiveLeaves.z, myActiveLeaves.w);
-    
+    return myActiveLeaves;
 }
 
 // 2 Possibilities for recycling the paths of length 1&2
@@ -139,25 +139,33 @@ void VCGPU::numberCompletedPaths(int nrVertices,
 // And perform BFS at each leaf node, if we stick to BFS for as 
 // long as complete levels can be formed.
 
+// Will most likely copy back the frontier bool array and iterate through each frontier one at a time
+// for v1.
+//for (int activeRoot = leftMostLeafOfLevel; activeRoot < rightMostLeafOfLevel; ++activeRoot){
+
 // For DFS, we'd assume that every level beneath the last BFS has
 // started at its left most child, and will need to be recursively
 // searched from the bottom.
 
-void VCGPU::FindCover(){
-    std::vector<int> match;
-    
-    int leftMostLeafOfLevel = 0;
-    int rightMostLeafOfLevel = 1;
-    // Will most likely copy back the frontier bool array and iterate through each frontier one at a time
-    // for v1.
-    for (int activeRoot = leftMostLeafOfLevel; activeRoot < rightMostLeafOfLevel; ++activeRoot){
-        matcher.initialMatching(match);
-        ReinitializeArrays();
-        SetEdgesOfLeaf(activeRoot);
-        Match();
-        // Need to pass device pointer to LOP
-        numberCompletedPaths(graph.nrVertices, 4, dbackwardlinkedlist, dlength);
-		matcher.copyMatchingBackToHost(match);
+void VCGPU::FindCover(int root){
+    // If you want to check the quality of each match, uncomment
+    // Else, the only noticable changes will be in the recursion stack 
+    // and the device search tree.
+    //std::vector<int> match;
+    //matcher.initialMatching(match);
+    ReinitializeArrays();
+    SetEdgesOfLeaf(root);
+    Match();
+    //matcher.copyMatchingBackToHost(match);
+    // Need to pass device pointer to LOP
+    int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength);
+    while(newLeaves.x < newLeaves.y){
+        FindCover(newLeaves.x);
+        ++newLeaves.x;
+    }
+    while(newLeaves.z < newLeaves.w){
+        FindCover(newLeaves.z);
+        ++newLeaves.z;
     }
 }
 
@@ -427,7 +435,6 @@ int4 CalculateLeafOffsets(              int leafIndex,
     int leavesFromIncompleteLvl = 3*removeFromComplete;
     
     // Test from root for now, this code can have an arbitrary root though
-    //leafIndex = global_active_leaves[globalIndex];
     arbitraryParameter = 3*((3*leafIndex)+1);
     // Closed form solution of recurrence relation shown in comment above method
     // Subtract 1 because reasons
@@ -444,9 +451,13 @@ int4 CalculateLeafOffsets(              int leafIndex,
     printf("Leaves %d, leftMostLeafIndexOfFullLevel %d\n",leavesToProcess, leftMostLeafIndexOfFullLevel);
     printf("Leaves %d, leftMostLeafIndexOfIncompleteLevel %d\n",leavesToProcess, leftMostLeafIndexOfIncompleteLevel);
     
-    return make_int4( leftMostLeafIndexOfFullLevel,
-                                        leftMostLeafIndexOfFullLevel + leavesFromCompleteLvl,
-                                        leftMostLeafIndexOfIncompleteLevel,
-                                        leftMostLeafIndexOfIncompleteLevel + leavesFromIncompleteLvl);
+    // Grow tree leftmost first, so put the incomplete level first.
+    // Shape of leaves
+    //CL    -     -    o o o 
+    //IL  o o o o o o
+    return make_int4( leftMostLeafIndexOfIncompleteLevel,
+                        leftMostLeafIndexOfIncompleteLevel + leavesFromIncompleteLvl
+                        leftMostLeafIndexOfFullLevel,
+                        leftMostLeafIndexOfFullLevel + leavesFromCompleteLvl);
 
 }
