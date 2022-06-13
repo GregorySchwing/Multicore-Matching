@@ -358,12 +358,13 @@ __global__ void SetEdges(const int leafIndex,
     const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
     for (int j = indices.x + (threadIdx.x % blockDim.x/2); j < indices.y; j += blockDim.x/2){
         const int ni = tex1Dfetch(neighboursTexture, j);
+        printf("Turning off edge %d which is index %d of the val array\n",ni,j);
         // Set out-edges
         ddegrees[ni] -= dedgestatus[ni];
         dedgestatus[ni] = 0;
 
-        if (threadIdx.x == 0){
-                ddegrees[ni] = 0;
+        if (threadIdx.x == blockDim.x/2 || threadIdx.x == 0)
+            ddegrees[ni] = 0;
         }
     }
     __syncthreads();
