@@ -204,7 +204,7 @@ void VCGPU::SetEdgesOfLeaf(int leafIndex){
     if (leafIndex == 0)
         return;
     printf("Setting edges of leaf %d\n", leafIndex);
-	int blocksPerGrid = ceil(logf(2*leafIndex + 1) / logf(3)) - (int)(leafIndex==0);
+	int blocksPerGrid = 2*(ceil(logf(2*leafIndex + 1) / logf(3)) - (int)(leafIndex==0));
     printf("blocksPerGrid %d\n", blocksPerGrid);
     SetEdges<<<blocksPerGrid, threadsPerBlock>>>(leafIndex,
                                                 dedgestatus,
@@ -361,22 +361,22 @@ __global__ void SetEdges(const int leafIndex,
 	const int numberOfLevelsToAscend = blockIdx.x;
     int i;
     //if (threadIdx.x == 0){
-    int thisBlocksSearchTreeNode = leafIndex / pow (3.0, numberOfLevelsToAscend);
+    int thisBlocksSearchTreeNode = leafIndex / pow (3.0, numberOfLevelsToAscend) / 2;
     //}
     if (threadIdx.x == 0)
         printf("thisBlocksSearchTreeNode %d\n", thisBlocksSearchTreeNode);
     int2 verticesInNode = dsearchtree[thisBlocksSearchTreeNode];
-    if (threadIdx.x < blockDim.x/2){
+    if (blockIdx.x % 2 == 0){
         i = verticesInNode.x;
     } else {
         i = verticesInNode.y;
     }
     const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
-    if (threadIdx.x == blockDim.x/2 || threadIdx.x == 0){
+    if (threadIdx.x == 0){
         printf("Setting vertex %d\n", i);
         printf("Turning off edges between %d and %d in col array\n",indices.x,indices.y);
     }
-    for (int j = indices.x + (threadIdx.x % blockDim.x/2); j < indices.y; j += blockDim.x/2){
+    for (int j = indices.x; j < indices.y; j += blockDim.x){
         //const int ni = tex1Dfetch(neighboursTexture, j);
         //printf("Turning off edge %d which is index %d of the val array\n",ni,j);
         // Set out-edges
@@ -395,7 +395,7 @@ __global__ void SetEdges(const int leafIndex,
     // all the edges leaving that vertex for the original vertex.
     // This is the more favorable data access pattern.
     const int2 indices_curr = tex1Dfetch(neighbourRangesTexture, i);
-    for (int j = indices_curr.x + (threadIdx.x % blockDim.x/2); j < indices_curr.y; j += blockDim.x/2){
+    for (int j = indices_curr.x; j < indices_curr.y; j += blockDim.x){
         const int ni = tex1Dfetch(neighboursTexture, j);    
         const int2 indices_neighbor = tex1Dfetch(neighbourRangesTexture, ni);
           for (int j_n = indices_neighbor.x; j_n < indices_neighbor.y; ++j_n){
