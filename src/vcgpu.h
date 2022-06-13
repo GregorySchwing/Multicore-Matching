@@ -88,7 +88,7 @@ class VCGPU
         void ReinitializeArrays();
         void PrintData ();
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
-        long long depthOfSearchTree;
+        long long sizeOfSearchTree;
         int k;
         int fullpathcount, depthOfSearchTree;
         int *edgestatus, *newdegrees;
