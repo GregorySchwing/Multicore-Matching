@@ -344,7 +344,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     printf("Displacement frok GLLO %d %d %d \n", levelOffset,
                                                 levelOffset + 1,
                                                 levelOffset + 2);
-    int depthOfLeaf = ceil(logf(2*levelOffset + 0 + 1) / logf(3));
+    int depthOfLeaf = ceil(logf(2*levelOffset + 2 + 1) / logf(3)) - (levelOffset == 0);
     if (depthOfLeaf > depthOfSearchTree){
         return;
     }
