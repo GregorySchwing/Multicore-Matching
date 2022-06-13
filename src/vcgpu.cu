@@ -53,15 +53,15 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         dbll(_graph.nrVertices),
         k(_k)
 {
-    sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(_k/2);
+    depthOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(_k/2);
     // Wrong since numEdges < neighbors (up to double the num edges, in and out)
     //cudaMalloc(&dedgestatus, sizeof(int)*graph.nrEdges) != cudaSuccess || 
     if (cudaMalloc(&dedgestatus, sizeof(int)*graph.neighbours.size()) != cudaSuccess || 
         cudaMalloc(&dlength, sizeof(int)*graph.nrVertices) != cudaSuccess || 
-        cudaMalloc(&dsearchtree, sizeof(int2)*sizeOfSearchTree) != cudaSuccess || 
+        cudaMalloc(&dsearchtree, sizeof(int2)*depthOfSearchTree) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
-        cudaMalloc(&active_frontier_status, sizeof(int)*sizeOfSearchTree) != cudaSuccess || 
+        cudaMalloc(&active_frontier_status, sizeof(int)*depthOfSearchTree) != cudaSuccess || 
         cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
@@ -178,7 +178,7 @@ void VCGPU::FindCover(int root){
     //std::vector<int> match;
     //matcher.initialMatching(match);
     int depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - (int)(root==0);
-    if (depthOfLeaf > k)
+    if (depthOfLeaf > depthOfSearchTree)
         return;
     printf("level depth of leaf %d\n",depthOfLeaf);
     ReinitializeArrays();
