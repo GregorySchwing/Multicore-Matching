@@ -192,6 +192,13 @@ void VCGPU::FindCover(int root){
     if (depthOfLeaf >= depthOfSearchTree)
         return;
     printf("\033[A\33[2K\rCalling Find Cover from %d, level depth of leaf %d\n", root, depthOfLeaf);
+    cudaMemcpy(finishedLeavesPerLevel, dfinishedLeavesPerLevel, sizeof(int)*depthOfSearchTree, cudaMemcpyDeviceToHost);
+    for(int i = 0; i < depthOfSearchTree; ++i){
+        printf("\033[A\33[2K\r");
+    }  
+    for(int i = 0; i < depthOfSearchTree; ++i){
+        printf("Depth %f Complete\n", finishedLeavesPerLevel[i]/totalLeavesPerLevel[i]);
+    }    
     ReinitializeArrays();
     SetEdgesOfLeaf(root);
     Match();
