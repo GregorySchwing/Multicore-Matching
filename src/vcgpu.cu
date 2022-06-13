@@ -202,7 +202,7 @@ void VCGPU::FindCover(int root){
     //curs_set (0);
     for(int i = 0; i < depthOfSearchTree; ++i){
         //mvprintw (3, 4+i*4, "Depth %d %f Complete\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i]);
-        mvprintw ("Depth %d %f Complete\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i]);
+        printf ("Depth %d %f Complete\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i]);
     }
     //refresh ();
 
