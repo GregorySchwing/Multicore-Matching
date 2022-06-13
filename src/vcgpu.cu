@@ -380,8 +380,8 @@ __global__ void SetEdges(const int leafIndex,
         const int ni = tex1Dfetch(neighboursTexture, j);
         //printf("Turning off edge %d which is index %d of the val array\n",ni,j);
         // Set out-edges
-        ddegrees[i] -= dedgestatus[ni];
-        dedgestatus[ni] = 0;
+        ddegrees[i] -= dedgestatus[j];
+        dedgestatus[j] = 0;
     }
     __syncthreads();
     // (u,v) is the form of edge pairs.  We are traversing over v's outgoing edges, 
@@ -405,7 +405,7 @@ __global__ void SetEdges(const int leafIndex,
                 foundChild = i == nj;
                 // Set in-edge
                 // store edge status
-                tmp = dedgestatus[nj];
+                tmp = dedgestatus[j_n];
                 //   foundChild     tmp   (foundChild & tmp)  (foundChild & tmp)^tmp
                 //1)      0          0            0                       0
                 //2)      1          0            0                       0
@@ -419,8 +419,8 @@ __global__ void SetEdges(const int leafIndex,
                 // All this logic is necessary because we aren't using degree to set upperbound
                 // we are using row offsets, which may include some edges turned off on a previous
                 // pendant edge processing step.
-                ddegrees[ni] -= dedgestatus[nj];
-                dedgestatus[nj] ^= (foundChild & tmp);
+                ddegrees[ni] -= tmp;
+                dedgestatus[j_n] ^= (foundChild & tmp);
         }
     }
 }
