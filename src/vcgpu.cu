@@ -204,7 +204,7 @@ void VCGPU::SetEdgesOfLeaf(int leafIndex){
     if (leafIndex == 0)
         return;
     printf("Setting edges of leaf %d\n", leafIndex);
-	int blocksPerGrid = ceil(logf(2*leafIndex + 1) / logf(3)) - (int)(leafIndex==0);
+	int blocksPerGrid = 2*(ceil(logf(2*leafIndex + 1) / logf(3)) - (int)(leafIndex==0));
     printf("blocksPerGrid %d\n", blocksPerGrid);
     SetEdges<<<blocksPerGrid, threadsPerBlock>>>(leafIndex,
                                                 dedgestatus,
@@ -358,15 +358,19 @@ __global__ void SetEdges(const int leafIndex,
 
 	//Determine blue and red groups using MD5 hashing.
 	//Based on the Wikipedia MD5 hashing pseudocode (http://en.wikipedia.org/wiki/MD5).
-	const int numberOfLevelsToAscend = blockIdx.x;
-    int i;
+	const int numberOfLevelsToAscend = blockIdx.x/2;
     //if (threadIdx.x == 0){
     int thisBlocksSearchTreeNode = leafIndex / pow (3.0, numberOfLevelsToAscend);
     //}
     if (threadIdx.x == 0)
         printf("thisBlocksSearchTreeNode %d\n", thisBlocksSearchTreeNode);
     int2 verticesInNode = dsearchtree[thisBlocksSearchTreeNode];
-    int2 indices = tex1Dfetch(neighbourRangesTexture, verticesInNode.x);
+    int i;
+    if (blockIdx.x % 2 == 0)
+        i = verticesInNode.x;
+    else 
+        i = verticesInNode.y;
+    int2 indices = tex1Dfetch(neighbourRangesTexture, i);
     if (threadIdx.x == 0){
         printf("Setting vertex %d\n", verticesInNode.x);
         printf("Turning off edges between %d and %d in col array\n",indices.x,indices.y);
@@ -376,20 +380,7 @@ __global__ void SetEdges(const int leafIndex,
         //printf("Turning off edge %d which is index %d of the val array\n",ni,j);
         // Set out-edges
         dedgestatus[j] = 0;
-    }
-    //__syncthreads();
-    indices = tex1Dfetch(neighbourRangesTexture, verticesInNode.y);
-    if (threadIdx.x == 0){
-        printf("Setting vertex %d\n", verticesInNode.y);
-        printf("Turning off edges between %d and %d in col array\n",indices.x,indices.y);
-    }
-    for (int j = indices.x + threadIdx.x; j < indices.y; j += blockDim.x){
-        //const int ni = tex1Dfetch(neighboursTexture, j);
-        //printf("Turning off edge %d which is index %d of the val array\n",ni,j);
-        // Set out-edges
-        dedgestatus[j] = 0;
-    }
-    /*
+    }/*   
     // (u,v) is the form of edge pairs.  We are traversing over v's outgoing edges, 
     // looking for u as the destination and turning off that edge.
     bool foundChild, tmp;

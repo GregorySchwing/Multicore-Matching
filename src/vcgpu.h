@@ -86,6 +86,7 @@ class VCGPU
         int k;
         int fullpathcount;
         int *edgestatus, *newdegrees;
+        
         // VC arrays
         int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves;
         int2 *dsearchtree;
