@@ -422,7 +422,11 @@ __global__ void SetEdges(const int leafIndex,
                 // All this logic is necessary because we aren't using degree to set upperbound
                 // we are using row offsets, which may include some edges turned off on a previous
                 // pendant edge processing step.
-                dedgestatus[j_n] ^= (foundChild & tmp);
+                // Doesnt work for some reason
+                // dedgestatus[j_n] ^= (foundChild & tmp);
+
+                if(foundChild && tmp)
+                    dedgestatus[j] = 0;
         }
     } 
 }
