@@ -376,7 +376,7 @@ __global__ void SetEdges(const int leafIndex,
         printf("Setting vertex %d\n", i);
         printf("Turning off edges between %d and %d in col array\n",indices.x,indices.y);
     }
-    for (int j = indices.x; j < indices.y; j += blockDim.x){
+    for (int j = indices.x + threadIdx.x; j < indices.y; j += blockDim.x){
         //const int ni = tex1Dfetch(neighboursTexture, j);
         //printf("Turning off edge %d which is index %d of the val array\n",ni,j);
         // Set out-edges
@@ -395,7 +395,7 @@ __global__ void SetEdges(const int leafIndex,
     // all the edges leaving that vertex for the original vertex.
     // This is the more favorable data access pattern.
     const int2 indices_curr = tex1Dfetch(neighbourRangesTexture, i);
-    for (int j = indices_curr.x; j < indices_curr.y; j += blockDim.x){
+    for (int j = indices_curr.x + threadIdx.x; j < indices_curr.y; j += blockDim.x){
         const int ni = tex1Dfetch(neighboursTexture, j);    
         const int2 indices_neighbor = tex1Dfetch(neighbourRangesTexture, ni);
           for (int j_n = indices_neighbor.x; j_n < indices_neighbor.y; ++j_n){
