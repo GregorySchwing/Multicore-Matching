@@ -1647,13 +1647,13 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 			cerr << "Unable to clear matching on device!" << endl;
 			throw exception();
 		}
-		printf("coarsenRounds round %d\n", coarsenRounds);
+		//printf("coarsenRounds round %d\n", coarsenRounds);
 
 		for (int i = 0; i < NR_MATCH_ROUNDS; ++i)
 		{
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
-			printf("Match round %d\n", i);
+			//printf("Match round %d\n", i);
 			//if (useMoreMemory){
 			//	gSelect<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dsense, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices, rand());
 			//}else{
@@ -1661,19 +1661,19 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 			//}
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
-			printf("gSelect done\n");
+			//printf("gSelect done\n");
 			if (useMaxLength)
 				grRequest<<<blocksPerGrid, threadsPerBlock>>>(ddegree, dedgestatus, drequests, dmatch, dsense, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
 			else 
 				grRequest<<<blocksPerGrid, threadsPerBlock>>>(ddegree, dedgestatus, drequests, dmatch, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
-			printf("grRequest done\n");
+			//printf("grRequest done\n");
 			
 			grRespond<<<blocksPerGrid, threadsPerBlock>>>(ddegree, drequests, dmatch, dsense, graph.nrVertices);
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
-			printf("grRespond done\n");
+			//printf("grRespond done\n");
 			/*
 			if (useMoreMemory){
 				gReverseLL<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, 
@@ -1696,7 +1696,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 			//}
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);													
-			printf("gMatch done\n");
+			//printf("gMatch done\n");
 
 	#ifdef MATCH_INTERMEDIATE_COUNT
 			cudaMemcpy(&match[0], dmatch, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
