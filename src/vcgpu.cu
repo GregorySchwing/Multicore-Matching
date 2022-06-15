@@ -63,6 +63,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 
     sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(depthOfSearchTree);
     printf("SIZE OF SEARCH TREE %lld\n", sizeOfSearchTree);
+    searchtree.resize(sizeOfSearchTree);
 
     // Wrong since numEdges < neighbors (up to double the num edges, in and out)
     //cudaMalloc(&dedgestatus, sizeof(int)*graph.nrEdges) != cudaSuccess || 

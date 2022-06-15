@@ -99,6 +99,7 @@ class VCGPU
         std::vector<float> totalLeavesPerLevel;
         std::vector<int> edgestatus;
         std::vector<int> newdegrees;
+        std::vector<int2> searchtree;
 
         
         // VC arrays
