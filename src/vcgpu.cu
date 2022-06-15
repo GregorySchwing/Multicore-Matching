@@ -58,8 +58,8 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         k(_k),
         depthOfSearchTree(_k/2)
 {
-    finishedLeavesPerLevel.resize(depthOfSearchTree);
-    totalLeavesPerLevel.resize(depthOfSearchTree);
+    finishedLeavesPerLevel.resize(depthOfSearchTree+1);
+    totalLeavesPerLevel.resize(depthOfSearchTree+1);
 
     sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(depthOfSearchTree);
     printf("SIZE OF SEARCH TREE %lld\n", sizeOfSearchTree);
