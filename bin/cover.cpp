@@ -523,7 +523,7 @@ int main(int argc, char **argv)
 
 				try
 				{
-					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 30);
+					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 20);
 					vc.matcher.initialMatching(match);
 					initscr ();
 					vc.FindCover(0);
