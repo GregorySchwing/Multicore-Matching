@@ -19,8 +19,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${MATCH_SOURCE_DIR})
 
 find_package(CUDA REQUIRED)
 find_package(TBB REQUIRED)
+find_package(Curses REQUIRED)
+
 #set(CMAKE_CXX_FLAGS "-O2 -g -Wall -Wextra -Wshadow -Werror -ansi")
-set(CMAKE_CXX_FLAGS "-O3 -Wall -ffast-math -DNDEBUG ")
+set(CMAKE_CXX_FLAGS "-O3 -Wall -ffast-math -DNDEBUG -lncurses")
 #set(CUDA_NVCC_FLAGS -g -G)
 set(CUDA_NVCC_FLAGS -Xptxas -dlcm=cg)
 
