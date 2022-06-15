@@ -41,6 +41,7 @@ target_link_libraries(cover ncurses)
 
 target_link_libraries(cover ${CUDA_LIBRARY} cuda)
 target_link_libraries(cover ${TBB_LIBRARY})
+target_link_libraries(cover PUBLIC curses)
 target_link_libraries(cover PUBLIC ${TBB_IMPORTED_TARGETS})
 target_link_libraries(cover ${Boost_LIBRARIES})
 target_link_libraries(cover matcher)
