@@ -109,14 +109,14 @@ class VCGPU
         float * dfinishedLeavesPerLevel;
 
         int *dlength, *dforwardlinkedlist, *dbackwardlinkedlist;
-        thrust::device_vector<int> dfll;
-        thrust::device_vector<int> dbll;
+        device_vector<int> dfll;
+        device_vector<int> dbll;
 
-        thrust::host_vector<int> recursive_leaf_offsets;
-        thrust::device_vector<int> d_recursive_leaf_offsets;
+        host_vector<int> recursive_leaf_offsets;
+        device_vector<int> d_recursive_leaf_offsets;
 
-        thrust::host_vector<int> recursive_leaf_counters;
-        thrust::device_vector<int> d_recursive_leaf_counters;
+        host_vector<int> recursive_leaf_counters;
+        device_vector<int> d_recursive_leaf_counters;
 
         GraphMatchingGeneralGPURandom matcher;
 
