@@ -26,6 +26,9 @@ target_link_libraries(match ${Boost_LIBRARIES})
 target_link_libraries(match PUBLIC ${TBB_IMPORTED_TARGETS})
 target_link_libraries(match matcher)
 
+find_package(Curses)
+
+
 link_directories(${Boost_LIBRARY_DIRS})
 include_directories(${Boost_INCLUDE_DIRS} ${MATCH_SOURCE_DIR}/DotWriter/lib/)
 add_executable(cover cover.cpp ${DOT_LIBRARY_HEADERS} ${DOT_LIBRARY_SOURCES})
@@ -41,7 +44,7 @@ target_link_libraries(cover ncurses)
 
 target_link_libraries(cover ${CUDA_LIBRARY} cuda)
 target_link_libraries(cover ${TBB_LIBRARY})
-target_link_libraries(cover PUBLIC curses)
+target_link_libraries(cover PUBLIC ${CURSES_LIBRARIES}))
 target_link_libraries(cover PUBLIC ${TBB_IMPORTED_TARGETS})
 target_link_libraries(cover ${Boost_LIBRARIES})
 target_link_libraries(cover matcher)
