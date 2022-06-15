@@ -211,8 +211,8 @@ void VCGPU::FindCover(int root){
     //matcher.copyMatchingBackToHost(match);
     // Need to pass device pointer to LOP
     int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength); 
-    cudaMemcpy(edgestatus, dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
-    cudaMemcpy(newdegrees, ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
+    cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
     #ifndef NDEBUG
     PrintData (); 
     #endif
