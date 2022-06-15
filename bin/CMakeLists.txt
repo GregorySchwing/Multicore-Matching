@@ -23,8 +23,8 @@ target_compile_options(match PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
 target_link_libraries(match ${CUDA_LIBRARY} cuda)
 target_link_libraries(match ${TBB_LIBRARY})
 target_link_libraries(match ${Boost_LIBRARIES})
-target_link_libraries(match PUBLIC ${CURSES_LIBRARIES})
-target_link_libraries(match PUBLIC ${TBB_IMPORTED_TARGETS})
+target_link_libraries(match ${CURSES_LIBRARIES})
+target_link_libraries(match ${TBB_IMPORTED_TARGETS})
 target_link_libraries(match matcher)
 
 
@@ -43,8 +43,9 @@ target_compile_options(cover PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
 
 target_link_libraries(cover ${CUDA_LIBRARY} cuda)
 target_link_libraries(cover ${TBB_LIBRARY})
-target_link_libraries(cover PUBLIC ${CURSES_LIBRARIES})
-target_link_libraries(cover PUBLIC ${TBB_IMPORTED_TARGETS})
+target_link_libraries(cover ${CURSES_LIBRARIES})
+target_link_libraries(cover curses)
+target_link_libraries(cover ${TBB_IMPORTED_TARGETS})
 target_link_libraries(cover ${Boost_LIBRARIES})
 target_link_libraries(cover matcher)
 
