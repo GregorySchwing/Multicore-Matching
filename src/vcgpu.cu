@@ -225,6 +225,12 @@ void VCGPU::FindCover(int root){
         FindCover(newLeaves.z);
         ++newLeaves.z;
     }
+
+    if (root == 0){
+        cudaMemcpy(&searchtree[0], dsearchtree, sizeof(int2)*searchtree.size(), cudaMemcpyDeviceToHost);
+  
+    }
+
 }
 
 

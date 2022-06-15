@@ -1,6 +1,7 @@
-include_directories(${CUDA_INCLUDE_DIR} ${TBB_INCLUDE_DIR} ${MATCH_SOURCE_DIR}/src/ ${MATCH_SOURCE_DIR}/DotWriter/lib)
+include_directories(${CUDA_INCLUDE_DIR} ${TBB_INCLUDE_DIR} ${MATCH_SOURCE_DIR}/src/ ${MATCH_SOURCE_DIR}/DotWriter/lib ${MATCH_SOURCE_DIR}/utils)
 file (GLOB DOT_LIBRARY_SOURCES ${MATCH_SOURCE_DIR}/DotWriter/lib/*.cpp)
 file (GLOB DOT_LIBRARY_HEADERS ${MATCH_SOURCE_DIR}/DotWriter/lib/*.h)
+
 
 
 cuda_add_executable(gpustat gpustat.cu)
