@@ -24,6 +24,7 @@ target_link_libraries(match ${CUDA_LIBRARY} cuda)
 target_link_libraries(match ${TBB_LIBRARY})
 target_link_libraries(match ${Boost_LIBRARIES})
 target_link_libraries(match ${CURSES_LIBRARIES})
+target_link_libraries(match ncurses)
 target_link_libraries(match ${TBB_IMPORTED_TARGETS})
 target_link_libraries(match matcher)
 
