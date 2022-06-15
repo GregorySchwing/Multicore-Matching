@@ -303,7 +303,7 @@ void VCGPU::Match(){
 
 void VCGPU::ReinitializeArrays(){
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dedgestatus),  1, size_t(graph.neighbours.size()));
-    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dlength),  0, size_t(graph.neighbours.size()));
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dlength),  0, size_t(graph.nrVertices));
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dfullpathcount),  0, size_t(1));
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dnumleaves),  0, size_t(1));
     // Only >= 0 are heads of full paths
