@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "graph.h"
 #include "matchgpu.h"
 #include <exception>
-
+#include <memory>
 // RE?
 #include <ncurses.h>
 
