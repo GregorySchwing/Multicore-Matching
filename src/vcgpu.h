@@ -95,10 +95,10 @@ class VCGPU
         long long sizeOfSearchTree;
         int k;
         int fullpathcount, depthOfSearchTree;
-        std::unique_ptr<float[]> finishedLeavesPerLevel;
-        std::unique_ptr<float[]> totalLeavesPerLevel;
-        std::unique_ptr<int[]> edgestatus;
-        std::unique_ptr<int[]> newdegrees;
+        std::vector<float> finishedLeavesPerLevel;
+        std::vector<float> totalLeavesPerLevel;
+        std::vector<int> edgestatus;
+        std::vector<int> newdegrees;
 
         
         // VC arrays

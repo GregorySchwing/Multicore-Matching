@@ -58,8 +58,8 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         k(_k),
         depthOfSearchTree(_k/2)
 {
-    finishedLeavesPerLevel = new float[depthOfSearchTree];
-    totalLeavesPerLevel = new float[depthOfSearchTree];
+    finishedLeavesPerLevel.resize(depthOfSearchTree);
+    totalLeavesPerLevel.resize(depthOfSearchTree);
 
     sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(depthOfSearchTree);
     printf("SIZE OF SEARCH TREE %lld\n", sizeOfSearchTree);
@@ -80,8 +80,8 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 		cerr << "Not enough memory on device!" << endl;
 		throw exception();
 	}
-    edgestatus = new int[graph.neighbours.size()];
-    newdegrees = new int[graph.nrVertices];
+    edgestatus.resize(graph.neighbours.size());
+    newdegrees.resize(graph.nrVertices);
     ReinitializeArrays();
 	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
 
@@ -101,10 +101,6 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 }
 
 VCGPU::~VCGPU(){
-    //delete edgestatus;
-    //delete newdegrees;
-    //delete finishedLeavesPerLevel;
-    //delete totalLeavesPerLevel;
     cudaFree(ddegrees);
 	cudaFree(dlength);
     cudaFree(dsearchtree);
@@ -201,7 +197,7 @@ void VCGPU::FindCover(int root){
     if (depthOfLeaf >= depthOfSearchTree)
         return;
 //    printf("\033[A\33[2K\rCalling Find Cover from %d, level depth of leaf %d\n", root, depthOfLeaf);
-    cudaMemcpy(finishedLeavesPerLevel, dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree, cudaMemcpyDeviceToHost);
+    cudaMemcpy(&finishedLeavesPerLevel[0], dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree, cudaMemcpyDeviceToHost);
 
     curs_set (0);
     for(int i = 0; i < depthOfSearchTree; ++i){
