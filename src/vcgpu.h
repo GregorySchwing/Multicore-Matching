@@ -27,6 +27,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <memory>
 // RE?
 #include <ncurses.h>
+#include "utils/GraphViz.h"
+
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 __global__ void InitDegrees(const int nrVertices,
@@ -120,7 +122,7 @@ class VCGPU
         thrust::device_vector<int> d_recursive_leaf_counters;
 
         GraphMatchingGeneralGPURandom matcher;
-
+        GraphViz gviz;
 	protected:
 		const Graph &graph;
         const int &threadsPerBlock;
