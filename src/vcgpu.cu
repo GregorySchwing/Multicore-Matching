@@ -101,10 +101,10 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 }
 
 VCGPU::~VCGPU(){
-    delete edgestatus;
-    delete newdegrees;
-    delete finishedLeavesPerLevel;
-    delete totalLeavesPerLevel;
+    //delete edgestatus;
+    //delete newdegrees;
+    //delete finishedLeavesPerLevel;
+    //delete totalLeavesPerLevel;
     cudaFree(ddegrees);
 	cudaFree(dlength);
     cudaFree(dsearchtree);

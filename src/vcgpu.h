@@ -95,14 +95,17 @@ class VCGPU
         long long sizeOfSearchTree;
         int k;
         int fullpathcount, depthOfSearchTree;
-        float * finishedLeavesPerLevel, * totalLeavesPerLevel;
-        float * dfinishedLeavesPerLevel;
-        int *edgestatus, *newdegrees;
+        std::unique_ptr<float[]> finishedLeavesPerLevel;
+        std::unique_ptr<float[]> totalLeavesPerLevel;
+        std::unique_ptr<int[]> edgestatus;
+        std::unique_ptr<int[]> newdegrees;
+
         
         // VC arrays
         int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves;
         int2 *dsearchtree;
         int *active_frontier_status;
+        float * dfinishedLeavesPerLevel;
 
         int *dlength, *dforwardlinkedlist, *dbackwardlinkedlist;
         thrust::device_vector<int> dfll;
