@@ -65,6 +65,7 @@ __global__ void CalculateDegrees(
                         int * ddegrees);
 
                              
+using namespace thrust;
 
 namespace mtc
 {
