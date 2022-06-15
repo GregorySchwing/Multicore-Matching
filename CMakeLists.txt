@@ -21,6 +21,8 @@ find_package(CUDA REQUIRED)
 find_package(TBB REQUIRED)
 find_package(Curses REQUIRED)
 
+include_directories(${CURSES_INCLUDE_DIR})
+
 #set(CMAKE_CXX_FLAGS "-O2 -g -Wall -Wextra -Wshadow -Werror -ansi")
 set(CMAKE_CXX_FLAGS "-O3 -Wall -ffast-math -DNDEBUG -lncurses")
 #set(CUDA_NVCC_FLAGS -g -G)
