@@ -31,7 +31,7 @@ target_link_libraries(match matcher)
 
 link_directories(${Boost_LIBRARY_DIRS})
 include_directories(${Boost_INCLUDE_DIRS} ${MATCH_SOURCE_DIR}/DotWriter/lib/ ${CURSES_INCLUDE_DIR})
-add_executable(cover cover.cpp ${DOT_LIBRARY_HEADERS} ${DOT_LIBRARY_SOURCES} ${CURSES_INCLUDE_DIR})
+add_executable(cover cover.cpp ${DOT_LIBRARY_HEADERS} ${DOT_LIBRARY_SOURCES})
 set_target_properties(match PROPERTIES
 CUDA_ARCHITECTURES "35;37;60;70;80")
 target_compile_options(cover PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
@@ -43,7 +43,7 @@ target_compile_options(cover PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
 
 target_link_libraries(cover ${CUDA_LIBRARY} cuda)
 target_link_libraries(cover ${TBB_LIBRARY})
-target_link_libraries(cover ${CURSES_LIBRARY})
+target_link_libraries(cover ${CURSES_LIBRARIES})
 target_link_libraries(cover ${TBB_IMPORTED_TARGETS})
 target_link_libraries(cover ${Boost_LIBRARIES})
 target_link_libraries(cover matcher)
