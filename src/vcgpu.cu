@@ -60,12 +60,17 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 {
     finishedLeavesPerLevel = new float[depthOfSearchTree];
     totalLeavesPerLevel = new float[depthOfSearchTree];
+
     sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(depthOfSearchTree);
+    print("SIZE OF SEARCH TREE %lld\n", sizeOfSearchTree);
+    print("30 K SIZE OF SEARCH TREE %lld\n", CalculateSpaceForDesiredNumberOfLevels(30/2));
+    print("20 K SIZE OF SEARCH TREE %lld\n", CalculateSpaceForDesiredNumberOfLevels(20/2));
+
     // Wrong since numEdges < neighbors (up to double the num edges, in and out)
     //cudaMalloc(&dedgestatus, sizeof(int)*graph.nrEdges) != cudaSuccess || 
     if (cudaMalloc(&dedgestatus, sizeof(int)*graph.neighbours.size()) != cudaSuccess || 
         cudaMalloc(&dlength, sizeof(int)*graph.nrVertices) != cudaSuccess || 
-        //cudaMalloc(&dsearchtree, sizeof(int2)*sizeOfSearchTree) != cudaSuccess || 
+        cudaMalloc(&dsearchtree, sizeof(int2)*sizeOfSearchTree) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree) != cudaSuccess || 
@@ -75,7 +80,6 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 		cerr << "Not enough memory on device!" << endl;
 		throw exception();
 	}
-    printf("finished cudamallocing\n");
     edgestatus = new int[graph.neighbours.size()];
     newdegrees = new int[graph.nrVertices];
     ReinitializeArrays();
