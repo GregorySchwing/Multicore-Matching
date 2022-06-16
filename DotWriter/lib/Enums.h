@@ -298,7 +298,7 @@ struct DirEdgeConstraints {
     DEFAULT,
     TRUE,
     HIER,
-    COUNT
+    COUNT,
   };
 
 private:
