@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include <sstream>
 #include <string>
-#include "graph.h"
+#include "../src/graph.h"
 
 class GraphViz {
     public:
@@ -49,7 +49,7 @@ class GraphViz {
 
         void writeGraphViz(std::vector<int> & match, 
 					const Graph & g,
-					const string &fileName_arg,  
+					const std::string &fileName_arg,  
 					std::vector<int> & fll,
 					std::vector<int> & bll);
 };
