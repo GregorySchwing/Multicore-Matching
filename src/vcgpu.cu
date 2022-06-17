@@ -360,7 +360,7 @@ __global__ void ReduceEdgeStatusArray(int nrNeighbors,
     int lane = threadIdx.x % warpSize;
     int warpID = threadIdx.x / warpSize;
     while (idx < nrNeighbors) { // grid stride loop to load
-        val += gdata[idx];
+        val += dedgestatus[idx];
         idx += gridDim.x*blockDim.x;
     }
     // 1st warp-shuffle reduction
