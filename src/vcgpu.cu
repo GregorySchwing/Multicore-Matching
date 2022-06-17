@@ -171,9 +171,12 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
                                                         ddynamicallyaddedvertices);
 
     cudaMemcpy(&fullpathcount, &dfullpathcount[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
-    
+    cudaMemcpy(&dynamicallyaddedvertices, &ddynamicallyaddedvertices[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
+
     int4 myActiveLeaves = CalculateLeafOffsets(leafIndex,
                                                 fullpathcount);
+
+
     //printf("My active leaves %d %d %d %d\n", myActiveLeaves.x, myActiveLeaves.y, myActiveLeaves.z, myActiveLeaves.w);
     return myActiveLeaves;
 }
@@ -325,6 +328,7 @@ void VCGPU::ReinitializeArrays(){
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dlength),  0, size_t(graph.nrVertices));
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dfullpathcount),  0, size_t(1));
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dnumleaves),  0, size_t(1));
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(ddynamicallyaddedvertices),  0, size_t(1));
     // Only >= 0 are heads of full paths
     // Before implementing recursive backtracking, I can keep performing this memcpy to set degrees
     // and the remove tentative vertices to check a cover.
@@ -410,7 +414,7 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
                                                 int *dbackwardlinkedlist, 
                                                 int * dedgestatus,
                                                 int *dlength, 
-                                                int *dnumberofpendantvertices){
+                                                int *ddynamicallyaddedvertices){
 	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
 	// If not a head to a path of length 4, return (leaving the headindex == -1)
     if (threadID >= nrVertices || 
@@ -425,8 +429,10 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
     // This avoids iterating over all degrees, but it is possible
     // to miss some vertices which could be pendant but are red not blue.
     if (match[first] == 2){
+        atomicAdd(&ddynamicallyaddedvertices[0], 1); 
         SetEdges(first, dedgestatus);
     } else if (match[second] == 2){
+        atomicAdd(&ddynamicallyaddedvertices[0], 1); 
         SetEdges(second, dedgestatus);
     }
 }
@@ -454,8 +460,10 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
     // This avoids iterating over all degrees, but it is possible
     // to miss some vertices which could be pendant but are red not blue.
     if (match[first] == 2){
+        atomicAdd(&ddynamicallyaddedvertices[0], 1); 
         SetEdges(first, dedgestatus);
     } else if (match[third] == 2){
+        atomicAdd(&ddynamicallyaddedvertices[0], 1); 
         SetEdges(third, dedgestatus);
     }
 }

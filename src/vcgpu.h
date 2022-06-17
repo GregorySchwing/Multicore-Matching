@@ -115,7 +115,7 @@ class VCGPU
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
         long long sizeOfSearchTree;
         int k;
-        int fullpathcount, depthOfSearchTree;
+        int fullpathcount, dynamicallyaddedvertices, depthOfSearchTree;
         std::vector<float> finishedLeavesPerLevel;
         std::vector<float> totalLeavesPerLevel;
         std::vector<int> edgestatus;
