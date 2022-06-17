@@ -71,8 +71,7 @@ __global__ void CalculateDegrees(
 
                              
 
-namespace mtc
-{
+
 class VCGPU
 {
 	public:
@@ -157,8 +156,6 @@ class VCGPU
 					std::vector<int> & fll,
 					std::vector<int> & bll);
         
-};
-
 };
 
 #endif
