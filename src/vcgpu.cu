@@ -72,6 +72,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         cudaMalloc(&dsearchtree, sizeof(int2)*sizeOfSearchTree) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
+        cudaMalloc(&dremainingedges, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&ddynamicallyaddedvertices, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree) != cudaSuccess || 
         //cudaMalloc(&active_frontier_status, sizeof(int)*depthOfSearchTree) != cudaSuccess || 
@@ -108,6 +109,7 @@ VCGPU::~VCGPU(){
     cudaFree(dfullpathcount);
     cudaFree(dnumleaves);
     cudaFree(ddynamicallyaddedvertices);
+    cudaFree(dremainingedges);
 	cudaUnbindTexture(neighboursTexture);
 	cudaUnbindTexture(neighbourRangesTexture);
 }
@@ -230,7 +232,12 @@ void VCGPU::FindCover(int root){
     Match();
     //matcher.copyMatchingBackToHost(match);
     // Need to pass device pointer to LOP
-    int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength); 
+    int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength);
+    
+	int blocksPerGrid = (graph.neighbours.size() + threadsPerBlock - 1)/threadsPerBlock;
+    reduceEdgeStatusArray<<<blocksPerGrid, threadsPerBlock, sizeof(int)*threadsPerBlock>>>(graph.neighbours.size(), dedgestatus, dremainingedges);
+
+    cudaMemcpy(&remainingedges[0], dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
     cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
     cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
     #ifndef NDEBUG
@@ -329,6 +336,7 @@ void VCGPU::ReinitializeArrays(){
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dfullpathcount),  0, size_t(1));
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dnumleaves),  0, size_t(1));
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(ddynamicallyaddedvertices),  0, size_t(1));
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dremainingedges),  0, size_t(1));
     // Only >= 0 are heads of full paths
     // Before implementing recursive backtracking, I can keep performing this memcpy to set degrees
     // and the remove tentative vertices to check a cover.
@@ -341,6 +349,35 @@ void VCGPU::ReinitializeArrays(){
 	dbackwardlinkedlist = thrust::raw_pointer_cast(&dbll[0]);
 }
 
+__global__ void ReduceEdgeStatusArray(int nrNeighbors,
+							int *dedgestatus,
+                            int* dremainingedges){
+    extern __shared__ int sdata[];
+    int tid = threadIdx.x;
+    int idx = threadIdx.x+blockDim.x*blockIdx.x;
+    int val = 0;
+    unsigned mask = 0xFFFFFFFFU;
+    int lane = threadIdx.x % warpSize;
+    int warpID = threadIdx.x / warpSize;
+    while (idx < N) { // grid stride loop to load
+        val += gdata[idx];
+        idx += gridDim.x*blockDim.x;
+    }
+    // 1st warp-shuffle reduction
+    for (int offset = warpSize/2; offset > 0; offset >>= 1)
+        val += __shfl_down_sync(mask, val, offset);
+    if (lane == 0) sdata[warpID] = val;
+    __syncthreads(); // put warp results in shared mem
+    // hereafter, just warp 0
+    if (warpID == 0){
+        // reload val from shared mem if warp existed
+        val = (tid < blockDim.x/warpSize)?sdata[lane]:0;
+        // final warp-shuffle reduction
+        for (int offset = warpSize/2; offset > 0; offset >>= 1)
+        val += __shfl_down_sync(mask, val, offset);
+        if (tid == 0) atomicAdd(dremainingedges, val);
+    }
+}
 
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void PopulateSearchTree(int nrVertices, 

@@ -40,6 +40,10 @@ __global__ void ReducePathLengths(int nrVertices,
                             int* dlength,
                             int* dreducedlength);
 
+__global__ void ReduceEdgeStatusArray(int nrNeighbors,
+							int *dedgestatus,
+                            int* dremainingedges);
+                         
 __global__ void SetEdges(const int nrVertices,
                         int * dedgestatus,
                         int * ddegrees,
@@ -106,7 +110,6 @@ class VCGPU
                                 int *dbackwardlinkedlist, 
                                 int *dlength,
                                 int *dreducedlength);
-
         void SetEdgesOfLeaf(int leafIndex);
         void Match();
         void FindCover(int root);
@@ -115,7 +118,7 @@ class VCGPU
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
         long long sizeOfSearchTree;
         int k;
-        int fullpathcount, dynamicallyaddedvertices, depthOfSearchTree;
+        int fullpathcount, dynamicallyaddedvertices, depthOfSearchTree, remainingedges;
         std::vector<float> finishedLeavesPerLevel;
         std::vector<float> totalLeavesPerLevel;
         std::vector<int> edgestatus;
@@ -124,7 +127,7 @@ class VCGPU
 
         
         // VC arrays
-        int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves, *ddynamicallyaddedvertices;
+        int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves, *ddynamicallyaddedvertices, *dremainingedges;
         int2 *dsearchtree;
         int *active_frontier_status;
         float * dfinishedLeavesPerLevel;
