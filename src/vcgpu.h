@@ -31,6 +31,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
+
+#include "../DotWriter/lib/DotWriter.h"
+#include "../DotWriter/lib/Enums.h"
+
 __global__ void InitDegrees(const int nrVertices,
                             int * ddegrees);
 
@@ -78,7 +82,11 @@ class VCGPU
 		VCGPU(const mtc::Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier, const unsigned int &_k);
 		~VCGPU();
         long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels);
-
+void writeGraphViz(std::vector<int> & match, 
+					const Graph & g,
+					const string &fileName_arg,  
+					std::vector<int> & fll,
+					std::vector<int> & bll);
         int4 numberCompletedPaths(int nrVertices, 
                                 int leafIndex,
                                 int *dbackwardlinkedlist, 
