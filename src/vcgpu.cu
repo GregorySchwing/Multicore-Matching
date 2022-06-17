@@ -557,7 +557,7 @@ __device__ void SetEdges(   int vertexToInclude,
         const int2 indices_neighbor = tex1Dfetch(neighbourRangesTexture, ni);
           for (int j_n = indices_neighbor.x; j_n < indices_neighbor.y; ++j_n){
                 const int nj = tex1Dfetch(neighboursTexture, j_n);       
-                foundChild = i == nj;
+                foundChild = vertexToInclude == nj;
                 // Set in-edge
                 // store edge status
                 tmp = dedgestatus[j_n];
