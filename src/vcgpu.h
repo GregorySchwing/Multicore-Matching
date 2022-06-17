@@ -135,6 +135,7 @@ class VCGPU
         void DrawSearchTree();
 
     private:
+    /*
         DotWriter::RootGraph * inputGraph;
         DotWriter::RootGraph * searchTree;
 
@@ -156,6 +157,7 @@ class VCGPU
 					const std::string &fileName_arg,  
 					std::vector<int> & fll,
 					std::vector<int> & bll);
+                    */
         
 };
 
