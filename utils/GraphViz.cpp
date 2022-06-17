@@ -25,7 +25,7 @@ GraphViz::GraphViz(){
 
 void GraphViz::DrawInputGraphColored(){
 
-void writeGraphViz(std::vector<int> & match, 
+void GraphViz::writeGraphViz(std::vector<int> & match, 
 					const Graph & g,
 					const string &fileName_arg,  
 					std::vector<int> & fll,

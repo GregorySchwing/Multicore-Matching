@@ -44,5 +44,11 @@ class GraphViz {
         int curr, next;
         std::map<std::string, DotWriter::Node *>::const_iterator nodeIt1;
         std::map<std::string, DotWriter::Node *>::const_iterator nodeIt2;
+
+        void writeGraphViz(std::vector<int> & match, 
+					const Graph & g,
+					const string &fileName_arg,  
+					std::vector<int> & fll,
+					std::vector<int> & bll);
 };
 #endif
