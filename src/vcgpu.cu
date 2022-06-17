@@ -387,6 +387,7 @@ __global__ void PopulateSearchTree(int nrVertices,
 
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
+                                                int *match, 
                                                 int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
                                                 int * dedgestatus,
@@ -414,6 +415,7 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
 
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void DetectAndSetPendantPathsCase3(int nrVertices, 
+                                                int *match, 
                                                 int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
                                                 int * dedgestatus,

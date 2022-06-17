@@ -68,6 +68,7 @@ __global__ void CalculateDegrees(
                         int * ddegrees);
 
 __global__ void DetectAndSetPendantPathsCase3(int nrVertices, 
+                                                int *match, 
                                                 int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
                                                 int * dedgestatus,
@@ -75,6 +76,7 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
                                                 int *dnumberofpendantvertices);
 
 __global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
+                                                int *match, 
                                                 int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
                                                 int * dedgestatus,
