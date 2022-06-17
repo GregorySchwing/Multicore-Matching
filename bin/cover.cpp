@@ -36,7 +36,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 
-
+#include "../DotWriter/lib/DotWriter.h"
+#include "../DotWriter/lib/Enums.h"
 #include <sstream>
 #include "vcgpu.h"
 
@@ -48,7 +49,97 @@ using namespace tbb;
 using namespace mtc;
 
 
+void writeGraphViz(std::vector<int> & match, 
+					const Graph & g,
+					const string &fileName_arg,  
+					std::vector<int> & fll,
+					std::vector<int> & bll)
+{
+	DotWriter::RootGraph gVizWriter(false, "graph");
+    std::string subgraph1 = "linearforest";
+	std::string subgraph2 = "fullgraph";
+    DotWriter::Subgraph * linearforestgraph = gVizWriter.AddSubgraph(subgraph1);
+    DotWriter::Subgraph * fullgraph = gVizWriter.AddSubgraph(subgraph2);
 
+    std::map<std::string, DotWriter::Node *> linearForestNodeMap;    
+	std::map<std::string, DotWriter::Node *> fullGraphNodeMap;    
+
+	int curr, next;
+	std::map<std::string, DotWriter::Node *>::const_iterator nodeIt1;
+	std::map<std::string, DotWriter::Node *>::const_iterator nodeIt2;
+
+    for (int i = 0; i < g.nrVertices; ++i){
+		// skip singletons
+		if (fll[i] == i && bll[i] == i)
+			continue;
+		// Start from heads only
+		if (bll[i] == i){
+			curr = i;
+			next = fll[curr];
+			while(curr != next){
+				std::string node1Name = SSTR(curr);
+				nodeIt1 = linearForestNodeMap.find(node1Name);
+				if(nodeIt1 == linearForestNodeMap.end()){
+					linearForestNodeMap[node1Name] = linearforestgraph->AddNode(node1Name);
+					linearForestNodeMap[node1Name]->GetAttributes().SetColor(DotWriter::Color::e(match[curr]));
+					linearForestNodeMap[node1Name]->GetAttributes().SetFillColor(DotWriter::Color::e(match[curr]));
+					linearForestNodeMap[node1Name]->GetAttributes().SetStyle("filled");
+				}
+				std::string node2Name = SSTR(next);
+				nodeIt2 = linearForestNodeMap.find(node2Name);
+				if(nodeIt2 == linearForestNodeMap.end()){
+					linearForestNodeMap[node2Name] = linearforestgraph->AddNode(node2Name);
+					linearForestNodeMap[node2Name]->GetAttributes().SetColor(DotWriter::Color::e(match[next]));
+					linearForestNodeMap[node2Name]->GetAttributes().SetFillColor(DotWriter::Color::e(match[next]));
+					linearForestNodeMap[node2Name]->GetAttributes().SetStyle("filled");
+				}
+				nodeIt1 = linearForestNodeMap.find(node1Name);
+				nodeIt2 = linearForestNodeMap.find(node2Name);
+
+				if(nodeIt1 != linearForestNodeMap.end() && nodeIt2 != linearForestNodeMap.end()) 
+					linearforestgraph->AddEdge(linearForestNodeMap[node1Name], linearForestNodeMap[node2Name]); 
+
+				curr = next; 
+				next = fll[curr];
+			}
+		}
+	}
+
+    // Since the graph doesnt grow uniformly, it is too difficult to only copy the new parts..
+    for (int i = 0; i < g.nrVertices; ++i){
+		std::string node1Name = SSTR(i);
+        std::map<std::string, DotWriter::Node *>::const_iterator nodeIt1 = fullGraphNodeMap.find(node1Name);
+        if(nodeIt1 == fullGraphNodeMap.end()) {
+            fullGraphNodeMap[node1Name] = fullgraph->AddNode(node1Name);
+			// Only color the linear forest vertices
+            if(linearForestNodeMap.find(node1Name) != linearForestNodeMap.end()){
+                fullGraphNodeMap[node1Name]->GetAttributes().SetColor(DotWriter::Color::e(match[i]));
+                fullGraphNodeMap[node1Name]->GetAttributes().SetFillColor(DotWriter::Color::e(match[i]));
+                fullGraphNodeMap[node1Name]->GetAttributes().SetStyle("filled");
+            }
+        }
+        for (int j = g.neighbourRanges[i].x; j < g.neighbourRanges[i].y; ++j){
+            //if (i < g.neighbours[j]){
+                std::string node2Name = SSTR(g.neighbours[j]);
+                std::map<std::string, DotWriter::Node *>::const_iterator nodeIt2 = fullGraphNodeMap.find(node2Name);
+                if(nodeIt2 == fullGraphNodeMap.end()) {
+                    fullGraphNodeMap[node2Name] = fullgraph->AddNode(node2Name);
+                    if(linearForestNodeMap.find(node2Name) != linearForestNodeMap.end()){
+                        fullGraphNodeMap[node2Name]->GetAttributes().SetColor(DotWriter::Color::e(match[g.neighbours[j]]));
+                        fullGraphNodeMap[node2Name]->GetAttributes().SetFillColor(DotWriter::Color::e(match[g.neighbours[j]]));
+                        fullGraphNodeMap[node2Name]->GetAttributes().SetStyle("filled");
+                    }
+                }  
+                fullgraph->AddEdge(fullGraphNodeMap[node1Name], fullGraphNodeMap[node2Name]); 
+            //}
+        }
+    }
+
+    gVizWriter.WriteToFile(fileName_arg);
+
+	std::cout << "Wrote graph viz " << fileName_arg << std::endl;
+
+}
 
 
 void initCUDA(CUdevice &device, int &nrThreads, const int &deviceIndex, const int &nrVertices)
