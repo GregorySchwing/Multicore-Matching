@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define GRAPHVIZ_H
 
 #include "../DotWriter/lib/DotWriter.h"
-//#include "../DotWriter/lib/Enums.h"
+#include "../DotWriter/lib/Enums.h"
 #include <set>
 #include <sstream>
 

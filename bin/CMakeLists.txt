@@ -25,6 +25,7 @@ target_link_libraries(match ${TBB_LIBRARY})
 target_link_libraries(match ${Boost_LIBRARIES})
 target_link_libraries(match ${CURSES_LIBRARIES})
 target_link_libraries(match ${TBB_IMPORTED_TARGETS})
+target_link_libraries(match TBB::tbb)
 target_link_libraries(match matcher)
 
 
@@ -46,6 +47,7 @@ target_link_libraries(cover ${TBB_LIBRARY})
 target_link_libraries(cover ${CURSES_LIBRARIES})
 target_link_libraries(cover ${TBB_IMPORTED_TARGETS})
 target_link_libraries(cover ${Boost_LIBRARIES})
+target_link_libraries(cover TBB::tbb)
 target_link_libraries(cover matcher)
 
 add_executable(graphstat graphstat.cpp)
