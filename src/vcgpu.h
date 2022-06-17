@@ -122,7 +122,7 @@ class VCGPU
         thrust::device_vector<int> d_recursive_leaf_counters;
 
         GraphMatchingGeneralGPURandom matcher;
-        GraphViz gviz;
+        //GraphViz gviz;
 	protected:
 		const Graph &graph;
         const int &threadsPerBlock;
