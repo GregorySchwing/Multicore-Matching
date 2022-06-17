@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef GRAPHVIZ_H
 #define GRAPHVIZ_H
 
-#include "../DotWriter/lib/DotWriter.h"
 //#include "../DotWriter/lib/Enums.h"
 #include <set>
 #include <sstream>
@@ -30,30 +29,6 @@ class Graph;
 class GraphViz {
     public:
         GraphViz();
-        void DrawInputGraphColored();
-        void DrawSearchTree();
 
-    private:
-        DotWriter::RootGraph * inputGraph;
-        DotWriter::RootGraph * searchTree;
-
-		std::string subgraph1 = "linearforest";
-	    std::string subgraph2 = "fullgraph";
-
-        DotWriter::Subgraph * linearforestgraph;
-        DotWriter::Subgraph * fullgraph;
-
-        std::map<std::string, DotWriter::Node *> linearForestNodeMap;    
-        std::map<std::string, DotWriter::Node *> fullGraphNodeMap;    
-
-        int curr, next;
-        std::map<std::string, DotWriter::Node *>::const_iterator nodeIt1;
-        std::map<std::string, DotWriter::Node *>::const_iterator nodeIt2;
-
-        void writeGraphViz(std::vector<int> & match, 
-					const Graph & g,
-					const std::string &fileName_arg,  
-					std::vector<int> & fll,
-					std::vector<int> & bll);
 };
 #endif
