@@ -24,6 +24,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include "../src/graph.h"
 
+
+class Graph; 
+
 class GraphViz {
     public:
         GraphViz();
