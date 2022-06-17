@@ -21,6 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //#include "../DotWriter/lib/Enums.h"
 #include <set>
 #include <sstream>
+#include <string>
+#include "graph.h"
 
 class GraphViz {
     public:
