@@ -75,7 +75,7 @@ __global__ void CalculateDegrees(
 class VCGPU
 {
 	public:
-		VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier, const unsigned int &_k);
+		VCGPU(const mtc::Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier, const unsigned int &_k);
 		~VCGPU();
         long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels);
 
@@ -122,7 +122,7 @@ class VCGPU
         thrust::host_vector<int> recursive_leaf_counters;
         thrust::device_vector<int> d_recursive_leaf_counters;
 
-        GraphMatchingGeneralGPURandom matcher;
+        mtc::GraphMatchingGeneralGPURandom matcher;
 	protected:
 		const Graph &graph;
         const int &threadsPerBlock;
