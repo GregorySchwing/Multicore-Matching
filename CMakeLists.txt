@@ -16,11 +16,11 @@ cmake_minimum_required(VERSION 2.6)
 project(MATCH)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${MATCH_SOURCE_DIR})
+list(APPEND CMAKE_MODULE_PATH "/opt/intel/oneapi/tbb/latest")
 
 find_package(CUDA REQUIRED)
 find_package(TBB REQUIRED)
 find_package(Curses REQUIRED)
-find_package(TBB REQUIRED)
 
 include_directories(${CURSES_INCLUDE_DIR})
 
