@@ -385,6 +385,61 @@ __global__ void PopulateSearchTree(int nrVertices,
     atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf], 3); 
 }
 
+// Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
+__global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
+                                                int *dforwardlinkedlist, 
+                                                int *dbackwardlinkedlist, 
+                                                int * dedgestatus,
+                                                int *dlength, 
+                                                int *dnumberofpendantvertices){
+	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+	// If not a head to a path of length 4, return (leaving the headindex == -1)
+    if (threadID >= nrVertices || 
+        dlength[threadID] != 1 || 
+        dbackwardlinkedlist[threadID] != threadID) 
+            return;
+
+    int first = dforwardlinkedlist[threadID];
+    int second = dforwardlinkedlist[first];
+
+    // Color == 2 if blue vertex has no unmatched neighbors
+    // This avoids iterating over all degrees, but it is possible
+    // to miss some vertices which could be pendant but are red not blue.
+    if (match[first] == 2){
+        SetEdges(first, dedgestatus);
+    } else if (match[second] == 2){
+        SetEdges(second, dedgestatus);
+    }
+}
+
+// Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
+__global__ void DetectAndSetPendantPathsCase3(int nrVertices, 
+                                                int *dforwardlinkedlist, 
+                                                int *dbackwardlinkedlist, 
+                                                int * dedgestatus,
+                                                int *dlength, 
+                                                int *ddynamicallyaddedvertices){
+	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+	// If not a head to a path of length 4, return (leaving the headindex == -1)
+    if (threadID >= nrVertices || 
+        dlength[threadID] != 2 || 
+        dbackwardlinkedlist[threadID] != threadID) 
+            return;
+
+    int first = dforwardlinkedlist[threadID];
+    int second = dforwardlinkedlist[first];
+    int third = dforwardlinkedlist[second];
+
+    // Color == 2 if blue vertex has no unmatched neighbors
+    // This avoids iterating over all degrees, but it is possible
+    // to miss some vertices which could be pendant but are red not blue.
+    if (match[first] == 2){
+        SetEdges(first, dedgestatus);
+    } else if (match[third] == 2){
+        SetEdges(third, dedgestatus);
+    }
+}
+
 // Makes sense for BFS
 // For DFS use Recursive Backtracking
 __global__ void GetFrontierStatus(int nrNodes,
@@ -471,6 +526,61 @@ __global__ void SetEdges(const int leafIndex,
         }
     } 
 }
+
+__device__ void SetEdges(   int vertexToInclude,
+                            int * dedgestatus){
+
+    int2 indices = tex1Dfetch(neighbourRangesTexture, vertexToInclude);
+    for (int j = indices.x; j < indices.y; j += 1){
+        //const int ni = tex1Dfetch(neighboursTexture, j);
+        //printf("Turning off edge %d which is index %d of the val array\n",ni,j);
+        // Set out-edges
+        dedgestatus[j] = 0;
+    }   
+    // (u,v) is the form of edge pairs.  We are traversing over v's outgoing edges, 
+    // looking for u as the destination and turning off that edge.
+    bool foundChild, tmp;
+    // There are two possibilities for parallelization here:
+    // 1) Each thread will take an out edge, and then each thread will scan the edges leaving 
+    // that vertex for the original vertex.
+    //for (int edge = LB + threadIdx.x; edge < UB; edge += blockDim.x){
+
+    // Basically, each thread is reading wildly different data
+    // 2) 1 out edge is traversed at a time, and then all the threads scan
+    // all the edges leaving that vertex for the original vertex.
+    // This is the more favorable data access pattern.
+    const int2 indices_curr = tex1Dfetch(neighbourRangesTexture, vertexToInclude);
+    for (int j = indices_curr.x; j < indices_curr.y; j += 1){
+        const int ni = tex1Dfetch(neighboursTexture, j);    
+        const int2 indices_neighbor = tex1Dfetch(neighbourRangesTexture, ni);
+          for (int j_n = indices_neighbor.x; j_n < indices_neighbor.y; ++j_n){
+                const int nj = tex1Dfetch(neighboursTexture, j_n);       
+                foundChild = i == nj;
+                // Set in-edge
+                // store edge status
+                tmp = dedgestatus[j_n];
+                //   foundChild     tmp   (foundChild & tmp)  (foundChild & tmp)^tmp
+                //1)      0          0            0                       0
+                //2)      1          0            0                       0
+                //3)      0          1            0                       1
+                //4)      1          1            1                       0
+                //
+                // Case 1: isnt myChild and edge is off, stay off
+                // Case 2: is myChild and edge is off, stay off
+                // Case 3: isn't myChild and edge is on, stay on
+                // Case 4: is myChild and edge is on, turn off
+                // All this logic is necessary because we aren't using degree to set upperbound
+                // we are using row offsets, which may include some edges turned off on a previous
+                // pendant edge processing step.
+                // Doesnt work for some reason
+                // dedgestatus[j_n] ^= (foundChild & tmp);
+
+                if(foundChild && tmp)
+                    dedgestatus[j] = 0;
+        }
+    } 
+}
+
 
 __global__ void CalculateDegrees(
                         int nrVertices,

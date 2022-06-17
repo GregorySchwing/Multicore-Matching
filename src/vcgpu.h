@@ -67,8 +67,23 @@ __global__ void CalculateDegrees(
                         int * dedgestatus,
                         int * ddegrees);
 
-                             
+__global__ void DetectAndSetPendantPathsCase3(int nrVertices, 
+                                                int *dforwardlinkedlist, 
+                                                int *dbackwardlinkedlist, 
+                                                int * dedgestatus,
+                                                int *dlength, 
+                                                int *dnumberofpendantvertices);
 
+__global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
+                                                int *dforwardlinkedlist, 
+                                                int *dbackwardlinkedlist, 
+                                                int * dedgestatus,
+                                                int *dlength, 
+                                                int *dnumberofpendantvertices);                        
+
+                             
+__device__ void SetEdges(   int vertexToInclude,
+                            int * dedgestatus);
 
 class VCGPU
 {
