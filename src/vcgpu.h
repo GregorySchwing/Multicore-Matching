@@ -73,6 +73,8 @@ __global__ void CalculateDegrees(
 
 class VCGPU
 {
+
+    class DotWriter;
 	public:
 		VCGPU(const mtc::Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier, const unsigned int &_k);
 		~VCGPU();
