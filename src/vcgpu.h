@@ -27,7 +27,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <memory>
 // RE?
 #include <ncurses.h>
-//#include "GraphViz.h"
 
 
 #include <thrust/device_vector.h>
@@ -130,9 +129,6 @@ class VCGPU
         const unsigned int &barrier;
 		//int2 *dneighbourRanges;
 		//int *dneighbours;
-
-        void DrawInputGraphColored();
-        void DrawSearchTree();
         
 };
 

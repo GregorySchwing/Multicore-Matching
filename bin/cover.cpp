@@ -36,13 +36,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 
-#include "../DotWriter/lib/DotWriter.h"
-#include "../DotWriter/lib/Enums.h"
+//#include "../DotWriter/lib/DotWriter.h"
+//#include "../DotWriter/lib/Enums.h"
 #include <sstream>
 #include "vcgpu.h"
-#include "GraphViz.h"
-
-
 
 #define SSTR( x ) static_cast< std::ostringstream & >( \
         ( std::ostringstream() << std::dec << x ) ).str()
@@ -51,6 +48,7 @@ using namespace std;
 using namespace tbb;
 using namespace mtc;
 
+/*
 void writeGraphViz(std::vector<int> & match, 
 					const Graph & g,
 					const string &fileName_arg,  
@@ -74,7 +72,7 @@ void writeGraphViz(std::vector<int> & match,
 		// skip singletons
 		if (fll[i] == i && bll[i] == i)
 			continue;
-		// Start from degrees only
+		// Start from heads only
 		if (bll[i] == i){
 			curr = i;
 			next = fll[curr];
@@ -142,6 +140,7 @@ void writeGraphViz(std::vector<int> & match,
 	std::cout << "Wrote graph viz " << fileName_arg << std::endl;
 
 }
+*/
 
 void initCUDA(CUdevice &device, int &nrThreads, const int &deviceIndex, const int &nrVertices)
 {
