@@ -124,7 +124,7 @@ class VCGPU
 
         
         // VC arrays
-        int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves;
+        int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves, *ddynamicallyaddedvertices;
         int2 *dsearchtree;
         int *active_frontier_status;
         float * dfinishedLeavesPerLevel;

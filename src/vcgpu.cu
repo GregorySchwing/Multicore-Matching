@@ -72,6 +72,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         cudaMalloc(&dsearchtree, sizeof(int2)*sizeOfSearchTree) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
+        cudaMalloc(&ddynamicallyaddedvertices, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree) != cudaSuccess || 
         //cudaMalloc(&active_frontier_status, sizeof(int)*depthOfSearchTree) != cudaSuccess || 
         cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
@@ -106,6 +107,7 @@ VCGPU::~VCGPU(){
     cudaFree(dedgestatus);
     cudaFree(dfullpathcount);
     cudaFree(dnumleaves);
+    cudaFree(ddynamicallyaddedvertices);
 	cudaUnbindTexture(neighboursTexture);
 	cudaUnbindTexture(neighbourRangesTexture);
 }
@@ -152,6 +154,24 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
                                                             dlength,
                                                             dfullpathcount,
                                                             dsearchtree);
+
+    DetectAndSetPendantPathsCase3<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
+                                                        matcher.dmatch,
+                                                        dfinishedLeavesPerLevel,
+                                                        dforwardlinkedlist,
+                                                        dbackwardlinkedlist,
+                                                        dedgestatus, 
+                                                        dlength,
+                                                        ddynamicallyaddedvertices);
+    DetectAndSetPendantPathsCase4<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
+                                                        matcher.dmatch,
+                                                        dfinishedLeavesPerLevel,
+                                                        dforwardlinkedlist,
+                                                        dbackwardlinkedlist,
+                                                        dedgestatus, 
+                                                        dlength,
+                                                        ddynamicallyaddedvertices);
+
     cudaMemcpy(&fullpathcount, &dfullpathcount[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
     
     int4 myActiveLeaves = CalculateLeafOffsets(leafIndex,
