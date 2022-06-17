@@ -242,9 +242,9 @@ void VCGPU::FindCover(int root){
     cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
     cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
     cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
-    #ifndef NDEBUG
+    //#ifndef NDEBUG
     PrintData (); 
-    #endif
+    //#endif
     //char temp;
     //cin >> temp;
     while(newLeaves.x < newLeaves.y){
