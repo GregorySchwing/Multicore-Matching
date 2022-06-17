@@ -301,6 +301,10 @@ void VCGPU::PrintData (){
     for (int i = 0; i < graph.nrVertices+1; ++i){
         printf("%d ", newdegrees[i]);
     }
+    printf("Remaining Edges\n");
+    printf("%d\n", remainingedges);
+    printf("\n");
+
 }
 void VCGPU::Match(){
     //Initialise timers.
