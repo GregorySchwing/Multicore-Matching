@@ -29,7 +29,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <ncurses.h>
 //#include "GraphViz.h"
 
-#include "../DotWriter/lib/DotWriter.h"
 
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
