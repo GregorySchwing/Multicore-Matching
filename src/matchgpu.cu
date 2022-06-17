@@ -42,6 +42,11 @@ inline void checkLastErrorCUDA(const char *file, int line)
     exit(code);
   }
 }
+
+
+
+#include "GraphViz.h"
+
 /*
 #include "../DotWriter/lib/DotWriter.h"
 #include "../DotWriter/lib/Enums.h"
