@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
 //#include "cub/cub.cuh"
+#include "../DotWriter/lib/DotWriter.h"
 
 using namespace std;
 using namespace mtc;
