@@ -359,7 +359,7 @@ __global__ void ReduceEdgeStatusArray(int nrNeighbors,
     unsigned mask = 0xFFFFFFFFU;
     int lane = threadIdx.x % warpSize;
     int warpID = threadIdx.x / warpSize;
-    while (idx < N) { // grid stride loop to load
+    while (idx < nrNeighbors) { // grid stride loop to load
         val += gdata[idx];
         idx += gridDim.x*blockDim.x;
     }
