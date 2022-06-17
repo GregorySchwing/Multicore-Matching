@@ -124,7 +124,7 @@ class VCGPU
 
         mtc::GraphMatchingGeneralGPURandom matcher;
 	protected:
-		const Graph &graph;
+		const mtc::Graph &graph;
         const int &threadsPerBlock;
         const unsigned int &barrier;
 		//int2 *dneighbourRanges;
@@ -151,7 +151,7 @@ class VCGPU
         std::map<std::string, DotWriter::Node *>::const_iterator nodeIt2;
 
         void writeGraphViz(std::vector<int> & match, 
-					const Graph & g,
+					const mtc::Graph & g,
 					const std::string &fileName_arg,  
 					std::vector<int> & fll,
 					std::vector<int> & bll);
