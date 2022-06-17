@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include <sstream>
 #include <string>
-#include "../src/graph.h"
+#include "graph.h"
 
 
 class Graph; 

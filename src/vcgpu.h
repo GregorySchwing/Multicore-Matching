@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <memory>
 // RE?
 #include <ncurses.h>
-#include "../utils/GraphViz.h"
+#include "GraphViz.h"
 
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
