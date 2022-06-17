@@ -42,7 +42,7 @@ inline void checkLastErrorCUDA(const char *file, int line)
     exit(code);
   }
 }
-
+/*
 #include "../DotWriter/lib/DotWriter.h"
 #include "../DotWriter/lib/Enums.h"
 #include <sstream>
@@ -107,7 +107,7 @@ void writeGraphVizIntermediate(std::vector<int> & match,
 	std::cout << "Wrote graph viz " << fileName_arg << std::endl;
 
 }
-
+*/
 __constant__ uint dSelectBarrier = 0x8000000;
 
 GraphMatchingGPU::GraphMatchingGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_selectBarrier) :
