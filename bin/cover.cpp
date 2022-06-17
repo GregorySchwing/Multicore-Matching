@@ -50,7 +50,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 using namespace tbb;
 using namespace mtc;
-/*
+
 void writeGraphViz(std::vector<int> & match, 
 					const Graph & g,
 					const string &fileName_arg,  
@@ -142,7 +142,7 @@ void writeGraphViz(std::vector<int> & match,
 	std::cout << "Wrote graph viz " << fileName_arg << std::endl;
 
 }
-*/
+
 void initCUDA(CUdevice &device, int &nrThreads, const int &deviceIndex, const int &nrVertices)
 {
 	//Initialise CUDA.
