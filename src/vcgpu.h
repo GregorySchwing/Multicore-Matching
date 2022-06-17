@@ -133,31 +133,6 @@ class VCGPU
 
         void DrawInputGraphColored();
         void DrawSearchTree();
-
-    private:
-    /*
-        DotWriter::RootGraph * inputGraph;
-        DotWriter::RootGraph * searchTree;
-
-		std::string subgraph1 = "linearforest";
-	    std::string subgraph2 = "fullgraph";
-
-        DotWriter::Subgraph * linearforestgraph;
-        DotWriter::Subgraph * fullgraph;
-
-        std::map<std::string, DotWriter::Node *> linearForestNodeMap;    
-        std::map<std::string, DotWriter::Node *> fullGraphNodeMap;    
-
-        int curr, next;
-        std::map<std::string, DotWriter::Node *>::const_iterator nodeIt1;
-        std::map<std::string, DotWriter::Node *>::const_iterator nodeIt2;
-
-        void writeGraphViz(std::vector<int> & match, 
-					const mtc::Graph & g,
-					const std::string &fileName_arg,  
-					std::vector<int> & fll,
-					std::vector<int> & bll);
-                    */
         
 };
 
