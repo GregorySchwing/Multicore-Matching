@@ -31,6 +31,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
+
+#include "GraphViz.h"
+
 __global__ void InitDegrees(const int nrVertices,
                             int * ddegrees);
 
@@ -143,6 +146,8 @@ class VCGPU
         thrust::device_vector<int> d_recursive_leaf_counters;
 
         mtc::GraphMatchingGeneralGPURandom matcher;
+
+        GraphViz * Gviz;
 	protected:
 		const mtc::Graph &graph;
         const int &threadsPerBlock;

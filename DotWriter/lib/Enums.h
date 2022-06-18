@@ -294,9 +294,11 @@ public:
 };
 
 struct DirEdgeConstraints {
+  
   enum e {
     DEFAULT,
-    TRUE,
+    // TRUE, original - error
+    TRUEVAL,
     HIER,
     COUNT
   };

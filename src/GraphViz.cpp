@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../utils/GraphViz.h"
+#include "GraphViz.h"
 
 GraphViz::GraphViz(){
 	inputGraph = new DotWriter::RootGraph(false, "graph");
