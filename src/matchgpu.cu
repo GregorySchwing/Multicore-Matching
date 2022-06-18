@@ -164,7 +164,6 @@ GraphMatchingGeneralGPURandom::GraphMatchingGeneralGPURandom(const Graph &_graph
 		GraphMatchingGPU(_graph, _nrThreads, _selectBarrier)
 {
 	if (cudaMalloc(&drequests, sizeof(int)*graph.nrVertices) != cudaSuccess ||  
-		cudaMalloc(&dmatch, sizeof(int)*graph.nrVertices) != cudaSuccess || 
 		cudaMalloc(&dsense, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
@@ -175,7 +174,6 @@ GraphMatchingGeneralGPURandom::GraphMatchingGeneralGPURandom(const Graph &_graph
 GraphMatchingGeneralGPURandom::~GraphMatchingGeneralGPURandom()
 {
 	cudaFree(drequests);
-	cudaFree(dmatch);
 	cudaFree(dsense);
 }
 
@@ -1579,7 +1577,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 		// Each inner loop call adds at most one edge to a path.
 		// However, after the first inner loop call, which is guarunteed
 		// to match at least half the graph, success is random.
-		if (cudaMemset(dmatch, 0, sizeof(int)*graph.nrVertices) != cudaSuccess)
+		if (cudaMemset(match, 0, sizeof(int)*graph.nrVertices) != cudaSuccess)
 		{
 			cerr << "Unable to clear matching on device!" << endl;
 			throw exception();
@@ -1594,41 +1592,41 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 			//if (useMoreMemory){
 			//	gSelect<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dsense, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices, rand());
 			//}else{
-			gSelect<<<blocksPerGrid, threadsPerBlock>>>(ddegree, dmatch, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices, rand());
+			gSelect<<<blocksPerGrid, threadsPerBlock>>>(ddegree, match, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices, rand());
 			//}
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
 			//printf("gSelect done\n");
 			if (useMaxLength)
-				grRequest<<<blocksPerGrid, threadsPerBlock>>>(ddegree, dedgestatus, drequests, dmatch, dsense, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
+				grRequest<<<blocksPerGrid, threadsPerBlock>>>(ddegree, dedgestatus, drequests, match, dsense, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
 			else 
-				grRequest<<<blocksPerGrid, threadsPerBlock>>>(ddegree, dedgestatus, drequests, dmatch, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
+				grRequest<<<blocksPerGrid, threadsPerBlock>>>(ddegree, dedgestatus, drequests, match, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
 			//printf("grRequest done\n");
 			
-			grRespond<<<blocksPerGrid, threadsPerBlock>>>(ddegree, drequests, dmatch, dsense, graph.nrVertices);
+			grRespond<<<blocksPerGrid, threadsPerBlock>>>(ddegree, drequests, match, dsense, graph.nrVertices);
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
 			//printf("grRespond done\n");
 			/*
 			if (useMoreMemory){
-				gReverseLL<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, 
+				gReverseLL<<<blocksPerGrid, threadsPerBlock>>>(match, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, 
 					drequests, graph.nrVertices);
-				gMatch<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, 
+				gMatch<<<blocksPerGrid, threadsPerBlock>>>(match, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, 
 					drequests, graph.nrVertices);
 			}else{
 			*/
-			gReverseLL<<<blocksPerGrid, threadsPerBlock>>>(ddegree, dmatch, dforwardlinkedlist, dbackwardlinkedlist, 
+			gReverseLL<<<blocksPerGrid, threadsPerBlock>>>(ddegree, match, dforwardlinkedlist, dbackwardlinkedlist, 
 														drequests, graph.nrVertices);
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
-			gMatch<<<blocksPerGrid, threadsPerBlock>>>(ddegree, dmatch, dforwardlinkedlist, dbackwardlinkedlist, 
+			gMatch<<<blocksPerGrid, threadsPerBlock>>>(ddegree, match, dforwardlinkedlist, dbackwardlinkedlist, 
 														drequests, graph.nrVertices);
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
 			if (useMaxLength)
-				gLength<<<blocksPerGrid, threadsPerBlock>>>(dmatch, drequests, dforwardlinkedlist, dbackwardlinkedlist, 
+				gLength<<<blocksPerGrid, threadsPerBlock>>>(match, drequests, dforwardlinkedlist, dbackwardlinkedlist, 
 															dlength, graph.nrVertices);
 			//}
 			cudaDeviceSynchronize();
@@ -1636,7 +1634,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 			//printf("gMatch done\n");
 
 	#ifdef MATCH_INTERMEDIATE_COUNT
-			cudaMemcpy(&match[0], dmatch, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
+			cudaMemcpy(&match[0], match, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
 			cudaMemcpy(&fll[0], dforwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
 			cudaMemcpy(&bll[0], dbackwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
 			writeGraphVizIntermediate(match, 
@@ -1671,22 +1669,13 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 
 	// call uncoarsen for viz
 	#ifdef UNCOARSEN_GRAPH	
-	gUncoarsen<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dforwardlinkedlist, dbackwardlinkedlist, 
+	gUncoarsen<<<blocksPerGrid, threadsPerBlock>>>(match, dforwardlinkedlist, dbackwardlinkedlist, 
 													graph.nrVertices);
 	#endif
 
 	//Free memory.
 	cudaUnbindTexture(neighboursTexture);
 	cudaUnbindTexture(neighbourRangesTexture);
-}
-
-void GraphMatchingGeneralGPURandom::copyMatchingBackToHost(std::vector<int> & match){
-	//Copy obtained matching on the device back to the host.
-	if (cudaMemcpy(&match[0], dmatch, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost) != cudaSuccess)
-	{
-		cerr << "Unable to retrieve data!" << endl;
-		throw exception();
-	}
 }
 
 void GraphMatchingGPURandomMaximal::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const

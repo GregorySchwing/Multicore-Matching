@@ -58,10 +58,9 @@ class GraphMatchingGeneralGPURandom : public GraphMatchingGPU
 	public:
 		GraphMatchingGeneralGPURandom(const Graph &, const int &, const unsigned int &);
 		~GraphMatchingGeneralGPURandom();
-		void copyMatchingBackToHost(std::vector<int> & match);
 
 		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const;
-		int *dmatch, *drequests, *dsense;
+		int *drequests, *dsense;
 };
 
 class GraphMatchingGPURandomMaximal : public GraphMatchingGPU

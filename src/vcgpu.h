@@ -97,7 +97,6 @@ __device__ void SetEdges(   int vertexToInclude,
 class VCGPU
 {
 
-    class DotWriter;
 	public:
 		VCGPU(const mtc::Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier, const unsigned int &_k);
 		~VCGPU();
@@ -118,6 +117,7 @@ class VCGPU
         void FindCover(int root);
         void ReinitializeArrays();
         void PrintData ();
+        void CopyMatchingBackToHost(std::vector<int> & match);
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
         long long sizeOfSearchTree;
         int k;
@@ -127,7 +127,6 @@ class VCGPU
         std::vector<int> edgestatus;
         std::vector<int> newdegrees;
         std::vector<int2> searchtree;
-
         
         // VC arrays
         int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves, *ddynamicallyaddedvertices, *dremainingedges;
@@ -135,7 +134,8 @@ class VCGPU
         int *active_frontier_status;
         float * dfinishedLeavesPerLevel;
 
-        int *dlength, *dforwardlinkedlist, *dbackwardlinkedlist;
+        int *dlength, *dforwardlinkedlist, *dbackwardlinkedlist, *dmatch;
+        thrust::device_vector<int> dmtch;
         thrust::device_vector<int> dfll;
         thrust::device_vector<int> dbll;
 
@@ -147,7 +147,7 @@ class VCGPU
 
         mtc::GraphMatchingGeneralGPURandom matcher;
 
-        GraphViz * Gviz;
+        GraphViz Gviz;
 	protected:
 		const mtc::Graph &graph;
         const int &threadsPerBlock;

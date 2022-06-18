@@ -16,9 +16,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #ifndef GRAPHVIZ_H
 #define GRAPHVIZ_H
-
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 #include "../DotWriter/lib/DotWriter.h"
-//#include "../DotWriter/lib/Enums.h"
 #include <set>
 #include <sstream>
 #include <string>
@@ -28,10 +28,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class GraphViz {
     public:
         GraphViz();
-        void DrawInputGraphColored();
+        void DrawInputGraphColored(const mtc::Graph &_graph, 
+									thrust::device_vector<int> & dmatch,
+									thrust::device_vector<int> & dfll,
+									thrust::device_vector<int> & dbll,
+									int iter);
         void DrawSearchTree();
 
     private:
+        thrust::host_vector<int> match;
+        thrust::host_vector<int> fll;
+        thrust::host_vector<int> bll;
+
         DotWriter::RootGraph * inputGraph;
         DotWriter::RootGraph * searchTree;
 
@@ -48,10 +56,10 @@ class GraphViz {
         std::map<std::string, DotWriter::Node *>::const_iterator nodeIt1;
         std::map<std::string, DotWriter::Node *>::const_iterator nodeIt2;
 
-        void writeGraphViz(std::vector<int> & match, 
+        void writeGraphViz(thrust::host_vector<int> & match, 
 					const mtc::Graph & g,
 					const std::string &fileName_arg,  
-					std::vector<int> & fll,
-					std::vector<int> & bll);
+					thrust::host_vector<int> & fll,
+					thrust::host_vector<int> & bll);
 };
 #endif

@@ -19,20 +19,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define SSTR( x ) static_cast< std::ostringstream & >( \
         ( std::ostringstream() << std::dec << x ) ).str()
-		
+
 GraphViz::GraphViz(){
 	inputGraph = new DotWriter::RootGraph(false, "graph");
     linearforestgraph = inputGraph->AddSubgraph(subgraph1);
     fullgraph = inputGraph->AddSubgraph(subgraph2);
 }
 
-void GraphViz::DrawInputGraphColored(){}
+void GraphViz::DrawInputGraphColored(const mtc::Graph &_graph, 
+									thrust::device_vector<int> & dmatch,
+									thrust::device_vector<int> & dfll,
+									thrust::device_vector<int> & dbll,
+									int iter){
 
-void GraphViz::writeGraphViz(std::vector<int> & match, 
+        match = dmatch;
+        fll = dfll;
+        bll = dbll;										
+		writeGraphViz(match, _graph, "iter_" + SSTR(iter), fll, bll);
+
+}
+
+
+void GraphViz::writeGraphViz(thrust::host_vector<int> & match, 
 					const mtc::Graph & g,
 					const std::string &fileName_arg,  
-					std::vector<int> & fll,
-					std::vector<int> & bll)
+					thrust::host_vector<int> & fll,
+					thrust::host_vector<int> & bll)
 {
     for (int i = 0; i < g.nrVertices; ++i){
 		// skip singletons

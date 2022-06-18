@@ -158,14 +158,14 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
                                                             dsearchtree);
 
     DetectAndSetPendantPathsCase3<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
-                                                        matcher.dmatch,
+                                                        dmatch,
                                                         dforwardlinkedlist,
                                                         dbackwardlinkedlist,
                                                         dedgestatus, 
                                                         dlength,
                                                         ddynamicallyaddedvertices);
     DetectAndSetPendantPathsCase4<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
-                                                        matcher.dmatch,
+                                                        dmatch,
                                                         dforwardlinkedlist,
                                                         dbackwardlinkedlist,
                                                         dedgestatus, 
@@ -244,6 +244,11 @@ void VCGPU::FindCover(int root){
     cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
     //#ifndef NDEBUG
     PrintData (); 
+    Gviz.DrawInputGraphColored(graph, 
+							dmtch,
+							dfll,
+							dbll,
+							root);
     //#endif
     //char temp;
     //cin >> temp;
@@ -763,4 +768,13 @@ int4 CalculateLeafOffsets(              int leafIndex,
                         leftMostLeafIndexOfFullLevel,
                         leftMostLeafIndexOfFullLevel + leavesFromCompleteLvl);
 
+}
+
+void VCGPU::CopyMatchingBackToHost(std::vector<int> & match){
+	//Copy obtained matching on the device back to the host.
+	if (cudaMemcpy(&match[0], dmatch, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost) != cudaSuccess)
+	{
+		cerr << "Unable to retrieve data!" << endl;
+		throw exception();
+	}
 }
