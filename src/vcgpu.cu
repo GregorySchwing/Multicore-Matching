@@ -81,6 +81,9 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 		cerr << "Not enough memory on device!" << endl;
 		throw exception();
 	}
+    dmtch.resize(graph.nrVertices);
+    dmatch = thrust::raw_pointer_cast(&dmtch[0]);
+
     edgestatus.resize(graph.neighbours.size());
     newdegrees.resize(graph.nrVertices);
     ReinitializeArrays();
@@ -326,7 +329,7 @@ void VCGPU::Match(){
     cudaEventRecord(t0, 0);
     cudaEventSynchronize(t0);
 
-    matcher.performMatching(&matcher.match[0], t1, t2, dforwardlinkedlist, dbackwardlinkedlist, dlength, ddegrees, dedgestatus);
+    matcher.performMatching(dmatch, t1, t2, dforwardlinkedlist, dbackwardlinkedlist, dlength, ddegrees, dedgestatus);
     
     cudaEventElapsedTime(&time1, t1, t2);
     cudaEventRecord(t3, 0);
