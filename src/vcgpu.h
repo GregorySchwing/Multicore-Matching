@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 
-#include "GraphViz.h"
+#include "GraphViz.cuh"
 
 __global__ void InitDegrees(const int nrVertices,
                             int * ddegrees);

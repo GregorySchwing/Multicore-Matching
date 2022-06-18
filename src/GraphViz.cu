@@ -15,19 +15,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "GraphViz.h"
+#include "GraphViz.cuh"
 
+#define SSTR( x ) static_cast< std::ostringstream & >( \
+        ( std::ostringstream() << std::dec << x ) ).str()
+		
 GraphViz::GraphViz(){
 	inputGraph = new DotWriter::RootGraph(false, "graph");
     linearforestgraph = inputGraph->AddSubgraph(subgraph1);
     fullgraph = inputGraph->AddSubgraph(subgraph2);
 }
 
-void GraphViz::DrawInputGraphColored(){
+void GraphViz::DrawInputGraphColored(){}
 
 void GraphViz::writeGraphViz(std::vector<int> & match, 
-					const Graph & g,
-					const string &fileName_arg,  
+					const mtc::Graph & g,
+					const std::string &fileName_arg,  
 					std::vector<int> & fll,
 					std::vector<int> & bll)
 {
