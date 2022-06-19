@@ -33,7 +33,9 @@ class GraphViz {
 									thrust::device_vector<int> & dfll,
 									thrust::device_vector<int> & dbll,
 									int iter);
-        void DrawSearchTree();
+        void DrawSearchTree(int sizeOfSearchTree,
+							int2 * searchTree,
+							int iter);
 
     private:
         thrust::host_vector<int> match;
@@ -41,25 +43,30 @@ class GraphViz {
         thrust::host_vector<int> bll;
 
         DotWriter::RootGraph * inputGraph;
-        DotWriter::RootGraph * searchTree;
+        DotWriter::RootGraph * searchTreeGraph;
 
 		std::string subgraph1 = "linearforest";
 	    std::string subgraph2 = "fullgraph";
+	    std::string subgraph3 = "searchtree";
 
         DotWriter::Subgraph * linearforestgraph;
         DotWriter::Subgraph * fullgraph;
+        DotWriter::Subgraph * searchtreesubgraph;
 
         std::map<std::string, DotWriter::Node *> linearForestNodeMap;    
         std::map<std::string, DotWriter::Node *> fullGraphNodeMap;    
+        std::map<std::string, DotWriter::Node *> searchTreeNodeMap;    
 
         int curr, next;
         std::map<std::string, DotWriter::Node *>::const_iterator nodeIt1;
         std::map<std::string, DotWriter::Node *>::const_iterator nodeIt2;
 
-        void writeGraphViz(thrust::host_vector<int> & match, 
+        void createColoredInputGraphViz(thrust::host_vector<int> & match, 
 					const mtc::Graph & g,
-					const std::string &fileName_arg,  
 					thrust::host_vector<int> & fll,
 					thrust::host_vector<int> & bll);
+
+       void createSearchTreeGraphViz(int sizeOfSearchTree,
+										int2 * searchTree);             
 };
 #endif

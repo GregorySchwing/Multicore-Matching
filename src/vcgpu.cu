@@ -245,6 +245,9 @@ void VCGPU::FindCover(int root){
     cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
     cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
     cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
+    
+    cudaMemcpy(&searchtree[0], dsearchtree, sizeof(int2)*searchtree.size(), cudaMemcpyDeviceToHost);
+    
     //#ifndef NDEBUG
     PrintData (); 
     Gviz.DrawInputGraphColored(graph, 
@@ -252,6 +255,12 @@ void VCGPU::FindCover(int root){
 							dfll,
 							dbll,
 							root);
+    cudaDeviceSynchronize();
+    checkLastErrorCUDA(__FILE__, __LINE__);
+    Gviz.DrawSearchTree(sizeOfSearchTree,
+					&searchtree[0],
+					root);   
+    exit(0);          
     //#endif
     //char temp;
     //cin >> temp;
@@ -265,7 +274,6 @@ void VCGPU::FindCover(int root){
     }
 
     if (root == 0){
-        cudaMemcpy(&searchtree[0], dsearchtree, sizeof(int2)*searchtree.size(), cudaMemcpyDeviceToHost);
   
     }
 
@@ -410,7 +418,7 @@ __global__ void PopulateSearchTree(int nrVertices,
         dbackwardlinkedlist[threadID] != threadID) 
             return;
 
-    int first = dforwardlinkedlist[threadID];
+    int first = threadID;
     int second = dforwardlinkedlist[first];
     int third = dforwardlinkedlist[second];
     int fourth = dforwardlinkedlist[third];
@@ -436,18 +444,20 @@ __global__ void PopulateSearchTree(int nrVertices,
     // Subtract 1 because reasons
     int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
     int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
-    #ifndef NDEBUG
+    //#ifndef NDEBUG
     printf("Level Depth %d\n", incompleteLevel);
     printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
     printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
     printf("Global level left offset (GLLO) %d\n", leftMostLeafIndexOfIncompleteLevel);
     printf("internalLeafIndex %d\n", internalLeafIndex);
-    printf("Displacement frok GLLO %d %d %d \n", levelOffset,
+    printf("parent (%d)'s child indices %d %d %d \n", leafIndex, 
+                                                levelOffset,
                                                 levelOffset + 1,
                                                 levelOffset + 2);
-    #endif
+    //#endif
     int depthOfLeaf = ceil(logf(2*levelOffset + 2 + 1) / logf(3)) - (levelOffset == 0);
     if (depthOfLeaf > depthOfSearchTree){
+        printf("child %d exceeded srch tree depth\n", levelOffset);
         return;
     }
     // Test from root for now, this code can have an arbitrary root though

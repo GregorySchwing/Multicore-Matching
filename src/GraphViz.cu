@@ -24,6 +24,9 @@ GraphViz::GraphViz(){
 	inputGraph = new DotWriter::RootGraph(false, "graph");
     linearforestgraph = inputGraph->AddSubgraph(subgraph1);
     fullgraph = inputGraph->AddSubgraph(subgraph2);
+
+	searchTreeGraph = new DotWriter::RootGraph(false, "graph");
+    searchtreesubgraph = searchTreeGraph->AddSubgraph(subgraph3);
 }
 
 void GraphViz::DrawInputGraphColored(const mtc::Graph &_graph, 
@@ -35,14 +38,78 @@ void GraphViz::DrawInputGraphColored(const mtc::Graph &_graph,
         match = dmatch;
         fll = dfll;
         bll = dbll;										
-		writeGraphViz(match, _graph, "iter_" + SSTR(iter), fll, bll);
-
+		createColoredInputGraphViz(match, _graph, fll, bll);
+		inputGraph->WriteToFile("inputGraph_iter_" + SSTR(iter));
+		std::cout << "Wrote graph viz " << "iter_" + SSTR(iter) << std::endl;
 }
 
+void GraphViz::DrawSearchTree(int sizeOfSearchTree,
+							int2 * searchTree,
+							int iter){
+	createSearchTreeGraphViz(sizeOfSearchTree, searchTree);
+	searchTreeGraph->WriteToFile("searchTree_iter_" + SSTR(iter));
+	std::cout << "Wrote graph viz " << "searchTree_iter_" + SSTR(iter) << std::endl;
+}
 
-void GraphViz::writeGraphViz(thrust::host_vector<int> & match, 
+void GraphViz::createSearchTreeGraphViz(int sizeOfSearchTree,
+										int2 * searchTree){
+	std::stringstream currSS;
+	std::stringstream nextSS;
+	for (int i = 0; i < sizeOfSearchTree; ++i){
+		std::string node1Name;
+		int2 currNode = searchTree[i];
+		if (i == 0)
+			node1Name = "root";
+		else if (currNode.x == 0 && currNode.y == 0){
+			printf("Current Leaf %d of search tree is null\n", i);
+			continue;
+		} else {
+			currSS.str(std::string());
+			currSS.clear();
+			currSS << currNode.x << " " << currNode.y;
+			node1Name = currSS.str();
+		}
+		nodeIt1 = searchTreeNodeMap.find(node1Name);
+		if(nodeIt1 == searchTreeNodeMap.end()){
+			searchTreeNodeMap[node1Name] = searchtreesubgraph->AddNode(node1Name);
+			//searchTreeNodeMap[node1Name]->GetAttributes().SetColor(DotWriter::Color::e(match[curr]));
+			//searchTreeNodeMap[node1Name]->GetAttributes().SetFillColor(DotWriter::Color::e(match[curr]));
+			searchTreeNodeMap[node1Name]->GetAttributes().SetStyle("filled");
+		}
+
+		for (int c = 1; c <= 3; ++c){
+
+			int2 childNode = searchTree[i*3 + c];
+			if (childNode.x == 0 && childNode.y == 0){
+				printf("Child Leaf %d of parent %d search tree is null\n", i*3 + c, i);
+				continue;
+			} else {
+				printf("Child Leaf %d (%d, %d) of parent %d search tree is nonnull\n", i*3 + c,childNode.x,childNode.y, i);
+
+			}
+			nextSS.str(std::string());
+			nextSS.clear();
+			nextSS << childNode.x << " " << childNode.y;
+			std::string node2Name = nextSS.str();
+
+			nodeIt2 = searchTreeNodeMap.find(node2Name);
+			if(nodeIt2 == searchTreeNodeMap.end()){
+				searchTreeNodeMap[node2Name] = searchtreesubgraph->AddNode(node2Name);
+				//searchTreeNodeMap[node2Name]->GetAttributes().SetColor(DotWriter::Color::e(match[next]));
+				//searchTreeNodeMap[node2Name]->GetAttributes().SetFillColor(DotWriter::Color::e(match[next]));
+				searchTreeNodeMap[node2Name]->GetAttributes().SetStyle("filled");
+			}
+			nodeIt1 = searchTreeNodeMap.find(node1Name);
+			nodeIt2 = searchTreeNodeMap.find(node2Name);
+
+			if(nodeIt1 != searchTreeNodeMap.end() && nodeIt2 != searchTreeNodeMap.end()) 
+				searchtreesubgraph->AddEdge(searchTreeNodeMap[node1Name], searchTreeNodeMap[node2Name]); 
+		}
+	}
+}
+
+void GraphViz::createColoredInputGraphViz(thrust::host_vector<int> & match, 
 					const mtc::Graph & g,
-					const std::string &fileName_arg,  
 					thrust::host_vector<int> & fll,
 					thrust::host_vector<int> & bll)
 {
@@ -112,13 +179,4 @@ void GraphViz::writeGraphViz(thrust::host_vector<int> & match,
             //}
         }
     }
-
-    inputGraph->WriteToFile(fileName_arg);
-
-	std::cout << "Wrote graph viz " << fileName_arg << std::endl;
-
-}
-
-void GraphViz::DrawSearchTree(){
-
 }
