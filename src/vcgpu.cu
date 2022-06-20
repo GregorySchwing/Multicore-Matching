@@ -223,8 +223,8 @@ void VCGPU::FindCover(int root){
     // and the device search tree.
     //std::vector<int> match;
     //matcher.initialMatching(match);
-    int depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - (int)(root==0);
-    if (depthOfLeaf >= depthOfSearchTree){
+    int depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - 1;
+    if (depthOfLeaf > depthOfSearchTree){
         //printf("depthOfLeaf %d depthOfSearchTree %d\n",  depthOfLeaf, depthOfSearchTree);
         return;
     }
@@ -466,10 +466,10 @@ __global__ void PopulateSearchTree(int nrVertices,
     #endif
     // Get depth of highest index leaf
     int depthOfLeaf = ceil(logf(2*(levelOffset + 2) + 1) / logf(3)) - 1;
-    if (depthOfLeaf > depthOfSearchTree){
+    /*if (depthOfLeaf > depthOfSearchTree){
         printf("child %d exceeded srch tree depth\n", levelOffset);
         return;
-    }
+    }*/
     if (levelOffset + 0 >= sizeOfSearchTree){
         printf("child %d exceeded srch tree depth\n", levelOffset);
         return;        
