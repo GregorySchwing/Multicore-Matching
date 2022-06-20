@@ -36,6 +36,9 @@ class GraphViz {
         void DrawSearchTree(int sizeOfSearchTree,
 							int2 * searchTree,
 							int iter);
+        void DrawSearchTree(int sizeOfSearchTree,
+							int2 * searchTree,
+							std::string prefix);
 
     private:
         thrust::host_vector<int> match;

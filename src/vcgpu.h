@@ -53,6 +53,7 @@ __global__ void SetEdges(const int nrVertices,
                         int2 *dsearchtree);
 
 __global__ void PopulateSearchTree(int nrVertices, 
+                                    int sizeOfSearchTree,
                                     int depthOfSearchTree,
                                     int leafIndex,
                                     float * dfinishedLeavesPerLevel,
@@ -100,6 +101,8 @@ class VCGPU
 	public:
 		VCGPU(const mtc::Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier, const unsigned int &_k);
 		~VCGPU();
+        void CallDrawSearchTree(std::string prefix);
+
         long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels);
 
         int4 numberCompletedPaths(int nrVertices, 
@@ -112,6 +115,7 @@ class VCGPU
                                 int *dbackwardlinkedlist, 
                                 int *dlength,
                                 int *dreducedlength);
+        
         void SetEdgesOfLeaf(int leafIndex);
         void Match();
         void FindCover(int root);

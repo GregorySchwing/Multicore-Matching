@@ -43,6 +43,11 @@ using namespace std;
 using namespace tbb;
 using namespace mtc;
 
+#define SSTR( x ) static_cast< std::ostringstream & >( \
+        ( std::ostringstream() << std::dec << x ) ).str()
+#include <sstream>
+#include <string>
+
 void initCUDA(CUdevice &device, int &nrThreads, const int &deviceIndex, const int &nrVertices)
 {
 	//Initialise CUDA.
@@ -421,13 +426,18 @@ int main(int argc, char **argv)
 				cudaEventSynchronize(t0);
 
 				std::vector<int> match;
-
+				std::stringstream searchTreeName;
+				searchTreeName.str(std::string());
+				searchTreeName.clear();
+				searchTreeName << k << "_final_";
+				std::string stn = searchTreeName.str();
 				try
 				{
 					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 20);
 					vc.matcher.initialMatching(match);
 					//initscr ();
 					vc.FindCover(0);
+					vc.CallDrawSearchTree(stn);
 				    //endwin();
 					vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);
 					vc.CopyMatchingBackToHost(match);

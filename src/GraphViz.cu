@@ -37,7 +37,13 @@ void GraphViz::DrawInputGraphColored(const mtc::Graph &_graph,
 
         match = dmatch;
         fll = dfll;
-        bll = dbll;										
+        bll = dbll;		
+		linearForestNodeMap.clear();	   
+        fullGraphNodeMap.clear();	
+		inputGraph->RemoveSubgraph(linearforestgraph);
+    	inputGraph->RemoveSubgraph(fullgraph);	
+		linearforestgraph = inputGraph->AddSubgraph(subgraph1);
+    	fullgraph = inputGraph->AddSubgraph(subgraph2);				
 		createColoredInputGraphViz(match, _graph, fll, bll);
 		inputGraph->WriteToFile("inputGraph_iter_" + SSTR(iter));
 		std::cout << "Wrote graph viz " << "iter_" + SSTR(iter) << std::endl;
@@ -51,59 +57,66 @@ void GraphViz::DrawSearchTree(int sizeOfSearchTree,
 	std::cout << "Wrote graph viz " << "searchTree_iter_" + SSTR(iter) << std::endl;
 }
 
+void GraphViz::DrawSearchTree(int sizeOfSearchTree,
+							int2 * searchTree,
+							std::string prefix){
+	createSearchTreeGraphViz(sizeOfSearchTree, searchTree);
+	searchTreeGraph->WriteToFile("searchTree_iter_" + prefix);
+	std::cout << "Wrote graph viz " << "searchTree_iter_" + prefix << std::endl;
+}
+
 void GraphViz::createSearchTreeGraphViz(int sizeOfSearchTree,
 										int2 * searchTree){
 	std::stringstream currSS;
 	std::stringstream nextSS;
 	for (int i = 0; i < sizeOfSearchTree; ++i){
+
 		std::string node1Name;
+		std::string node1ID;
 		int2 currNode = searchTree[i];
-		if (i == 0)
+		if (i == 0){
 			node1Name = "root";
-		else if (currNode.x == 0 && currNode.y == 0){
-			printf("Current Leaf %d of search tree is null\n", i);
+			node1ID = SSTR(i);
+		} else if (currNode.x == 0 && currNode.y == 0){
 			continue;
 		} else {
 			currSS.str(std::string());
 			currSS.clear();
 			currSS << currNode.x << " " << currNode.y;
 			node1Name = currSS.str();
+			node1ID = SSTR(i);
 		}
-		nodeIt1 = searchTreeNodeMap.find(node1Name);
+		nodeIt1 = searchTreeNodeMap.find(node1ID);
 		if(nodeIt1 == searchTreeNodeMap.end()){
-			searchTreeNodeMap[node1Name] = searchtreesubgraph->AddNode(node1Name);
+			searchTreeNodeMap[node1ID] = searchtreesubgraph->AddNode(node1Name, node1ID);
 			//searchTreeNodeMap[node1Name]->GetAttributes().SetColor(DotWriter::Color::e(match[curr]));
 			//searchTreeNodeMap[node1Name]->GetAttributes().SetFillColor(DotWriter::Color::e(match[curr]));
-			searchTreeNodeMap[node1Name]->GetAttributes().SetStyle("filled");
+			searchTreeNodeMap[node1ID]->GetAttributes().SetStyle("filled");
 		}
 
 		for (int c = 1; c <= 3; ++c){
-
+			if ((i*3 + c) >= sizeOfSearchTree)
+				continue;
 			int2 childNode = searchTree[i*3 + c];
 			if (childNode.x == 0 && childNode.y == 0){
-				printf("Child Leaf %d of parent %d search tree is null\n", i*3 + c, i);
 				continue;
 			} else {
-				printf("Child Leaf %d (%d, %d) of parent %d search tree is nonnull\n", i*3 + c,childNode.x,childNode.y, i);
-
 			}
 			nextSS.str(std::string());
 			nextSS.clear();
 			nextSS << childNode.x << " " << childNode.y;
 			std::string node2Name = nextSS.str();
-
-			nodeIt2 = searchTreeNodeMap.find(node2Name);
+			std::string node2ID = SSTR(i*3 + c);
+			nodeIt2 = searchTreeNodeMap.find(node2ID);
 			if(nodeIt2 == searchTreeNodeMap.end()){
-				searchTreeNodeMap[node2Name] = searchtreesubgraph->AddNode(node2Name);
+				searchTreeNodeMap[node2ID] = searchtreesubgraph->AddNode(node2Name, node2ID);
 				//searchTreeNodeMap[node2Name]->GetAttributes().SetColor(DotWriter::Color::e(match[next]));
 				//searchTreeNodeMap[node2Name]->GetAttributes().SetFillColor(DotWriter::Color::e(match[next]));
-				searchTreeNodeMap[node2Name]->GetAttributes().SetStyle("filled");
+				searchTreeNodeMap[node2ID]->GetAttributes().SetStyle("filled");
+				searchtreesubgraph->AddEdge(searchTreeNodeMap[node1ID], searchTreeNodeMap[node2ID]); 
+			} else {
+				continue;
 			}
-			nodeIt1 = searchTreeNodeMap.find(node1Name);
-			nodeIt2 = searchTreeNodeMap.find(node2Name);
-
-			if(nodeIt1 != searchTreeNodeMap.end() && nodeIt2 != searchTreeNodeMap.end()) 
-				searchtreesubgraph->AddEdge(searchTreeNodeMap[node1Name], searchTreeNodeMap[node2Name]); 
 		}
 	}
 }

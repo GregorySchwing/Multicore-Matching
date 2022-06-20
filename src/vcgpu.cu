@@ -86,6 +86,10 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 
     edgestatus.resize(graph.neighbours.size());
     newdegrees.resize(graph.nrVertices);
+
+    // Since these are 32 byte sets, simply double for int2
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dsearchtree),  0, size_t(2*sizeOfSearchTree));
+
     ReinitializeArrays();
 	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
 
@@ -152,6 +156,7 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     PopulateSearchTree<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
                                                             sizeOfSearchTree, 
+                                                            depthOfSearchTree,
                                                             leafIndex,
                                                             dfinishedLeavesPerLevel,
                                                             dforwardlinkedlist,
@@ -248,27 +253,23 @@ void VCGPU::FindCover(int root){
     
     cudaMemcpy(&searchtree[0], dsearchtree, sizeof(int2)*searchtree.size(), cudaMemcpyDeviceToHost);
     
-    //#ifndef NDEBUG
+    #ifndef NDEBUG
     PrintData (); 
     Gviz.DrawInputGraphColored(graph, 
 							dmtch,
 							dfll,
 							dbll,
 							root);
-    cudaDeviceSynchronize();
-    checkLastErrorCUDA(__FILE__, __LINE__);
     Gviz.DrawSearchTree(sizeOfSearchTree,
 					&searchtree[0],
 					root);   
-    exit(0);          
-    //#endif
-    //char temp;
-    //cin >> temp;
-    while(newLeaves.x < newLeaves.y){
+    #endif
+
+    while(newLeaves.x < newLeaves.y && newLeaves.x < sizeOfSearchTree){
         FindCover(newLeaves.x);
         ++newLeaves.x;
     }
-    while(newLeaves.z < newLeaves.w){
+    while(newLeaves.z < newLeaves.w && newLeaves.z < sizeOfSearchTree){
         FindCover(newLeaves.z);
         ++newLeaves.z;
     }
@@ -278,6 +279,13 @@ void VCGPU::FindCover(int root){
     }
 
 }
+
+void VCGPU::CallDrawSearchTree(std::string prefix){
+    Gviz.DrawSearchTree(sizeOfSearchTree,
+					&searchtree[0],
+					prefix); 
+}
+
 
 
 void VCGPU::SetEdgesOfLeaf(int leafIndex){
@@ -403,6 +411,7 @@ __global__ void ReduceEdgeStatusArray(int nrNeighbors,
 
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void PopulateSearchTree(int nrVertices, 
+                                    int sizeOfSearchTree,
                                     int depthOfSearchTree,
                                                 int leafIndex,
                                                 float * dfinishedLeavesPerLevel,
@@ -444,7 +453,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     // Subtract 1 because reasons
     int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
     int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
-    //#ifndef NDEBUG
+    #ifndef NDEBUG
     printf("Level Depth %d\n", incompleteLevel);
     printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
     printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
@@ -454,12 +463,18 @@ __global__ void PopulateSearchTree(int nrVertices,
                                                 levelOffset,
                                                 levelOffset + 1,
                                                 levelOffset + 2);
-    //#endif
-    int depthOfLeaf = ceil(logf(2*levelOffset + 2 + 1) / logf(3)) - (levelOffset == 0);
+    #endif
+    // Get depth of highest index leaf
+    int depthOfLeaf = ceil(logf(2*(levelOffset + 2) + 1) / logf(3)) - 1;
     if (depthOfLeaf > depthOfSearchTree){
         printf("child %d exceeded srch tree depth\n", levelOffset);
         return;
     }
+    if (levelOffset + 0 >= sizeOfSearchTree){
+        printf("child %d exceeded srch tree depth\n", levelOffset);
+        return;        
+    }
+
     // Test from root for now, this code can have an arbitrary root though
     dsearchtree[levelOffset + 0] = make_int2(first, third);
     dsearchtree[levelOffset + 1] = make_int2(second, third);
