@@ -137,6 +137,7 @@ class VCGPU
         int2 *dsearchtree;
         int *active_frontier_status;
         float * dfinishedLeavesPerLevel;
+        mtc::Edge * dedges;
 
         int *dlength, *dforwardlinkedlist, *dbackwardlinkedlist, *dmatch;
         thrust::device_vector<int> dmtch;

@@ -68,6 +68,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
     // Wrong since numEdges < neighbors (up to double the num edges, in and out)
     //cudaMalloc(&dedgestatus, sizeof(int)*graph.nrEdges) != cudaSuccess || 
     if (cudaMalloc(&dedgestatus, sizeof(int)*graph.neighbours.size()) != cudaSuccess || 
+        cudaMalloc(&dedges, sizeof(mtc::Edge)*graph.nrEdges) != cudaSuccess || 
         cudaMalloc(&dlength, sizeof(int)*graph.nrVertices) != cudaSuccess || 
         cudaMalloc(&dsearchtree, sizeof(int2)*sizeOfSearchTree) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
@@ -86,6 +87,9 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 
     edgestatus.resize(graph.neighbours.size());
     newdegrees.resize(graph.nrVertices);
+
+
+    cudaMemcpy(dedges, &graph.edges[0], sizeof(mtc::Edge)*graph.nrEdges, cudaMemcpyHostToDevice);
 
     // Since these are 32 byte sets, simply double for int2
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dsearchtree),  0, size_t(2*sizeOfSearchTree));
@@ -112,6 +116,7 @@ VCGPU::~VCGPU(){
     cudaFree(ddegrees);
 	cudaFree(dlength);
     cudaFree(dsearchtree);
+    cudaFree(dedges);
     cudaFree(dedgestatus);
     cudaFree(dfullpathcount);
     cudaFree(dnumleaves);
@@ -247,13 +252,14 @@ void VCGPU::FindCover(int root){
 	int blocksPerGrid = (graph.neighbours.size() + threadsPerBlock - 1)/threadsPerBlock;
     ReduceEdgeStatusArray<<<blocksPerGrid, threadsPerBlock, sizeof(int)*threadsPerBlock>>>(graph.neighbours.size(), dedgestatus, dremainingedges);
 
+
+    #ifndef NDEBUG
     cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
     cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
     cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
-    
     cudaMemcpy(&searchtree[0], dsearchtree, sizeof(int2)*searchtree.size(), cudaMemcpyDeviceToHost);
     
-    #ifndef NDEBUG
+
     PrintData (); 
     Gviz.DrawInputGraphColored(graph, 
 							dmtch,
@@ -281,6 +287,7 @@ void VCGPU::FindCover(int root){
 }
 
 void VCGPU::CallDrawSearchTree(std::string prefix){
+    cudaMemcpy(&searchtree[0], dsearchtree, sizeof(int2)*searchtree.size(), cudaMemcpyDeviceToHost);
     Gviz.DrawSearchTree(sizeOfSearchTree,
 					&searchtree[0],
 					prefix); 
@@ -471,7 +478,7 @@ __global__ void PopulateSearchTree(int nrVertices,
         return;
     }*/
     if (levelOffset + 0 >= sizeOfSearchTree){
-        printf("child %d exceeded srch tree depth\n", levelOffset);
+        //printf("child %d exceeded srch tree depth\n", levelOffset);
         return;        
     }
 
@@ -481,6 +488,63 @@ __global__ void PopulateSearchTree(int nrVertices,
     dsearchtree[levelOffset + 2] = make_int2(second, fourth);
     // Add to device pointer of level
     atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf], 3); 
+}
+
+// Each block is a leaf node
+// First it loads it's solution into shared memory.
+// ADVANCED - If k*sizeof(int) > shared memory limit, check in portions
+// Each thread takes an edge, iterate over all edges,
+// check of vertex a and vertex b is missing from soln
+// if so, indicate in final position of shared memory.
+// sync threads
+// terminate prematurely if final position flag is set.
+// this way we can check leaf nodes in parallel, without needing 
+// an edge status array.
+__global__ void EvaluateLeafNodes(int nrEdges,
+                                    mtc::Edge * dedges, 
+                                    int sizeOfSearchTree,
+                                    int depthOfSearchTree,
+                                    int2 * dsearchtree){
+    extern __shared__ int soln[];
+    const int leafIndex = blockIdx.x;
+    int thisThreadsSearchTreeNode;
+    int2 nodeEntry;
+
+    int tid = threadIdx.x;
+    unsigned mask = 0xFFFFFFFFU;
+    int lane = threadIdx.x % warpSize;
+    int warpID = threadIdx.x / warpSize;
+    // Load solution into shared memory
+    // Need depthOfSearch minus 1 to exclude root
+    for (int numberOfLevelsToAscend = threadIdx.x; numberOfLevelsToAscend < depthOfSearchTree-1; numberOfLevelsToAscend += blockDim.x){
+        thisThreadsSearchTreeNode = leafIndex / pow (3.0, numberOfLevelsToAscend);
+        nodeEntry = dsearchtree[thisThreadsSearchTreeNode];
+        soln[2*numberOfLevelsToAscend] = nodeEntry.x;
+        soln[2*numberOfLevelsToAscend + 1] = nodeEntry.y;
+    }
+    int covered;
+    for (int e = 0; e < nrEdges; e++){
+        Edge & edge = dedges[e];
+        for (int vertexInAnswer = threadIdx.x; 
+                    vertexInAnswer < 2*(depthOfSearchTree-1); 
+                    vertexInAnswer += blockDim.x){
+            covered |= edge.x == soln[vertexInAnswer] || edge.y == soln[vertexInAnswer];
+        }
+        // 1st warp-shuffle reduction
+        for (int offset = warpSize/2; offset > 0; offset >>= 1)
+            covered |= __shfl_down_sync(mask, covered, offset);
+        if (lane == 0) sdata[warpID] = covered;
+        __syncthreads(); // put warp results in shared mem
+        // hereafter, just warp 0
+        if (warpID == 0){
+            // reload val from shared mem if warp existed
+            val = (tid < blockDim.x/warpSize)?sdata[lane]:0;
+            // final warp-shuffle reduction
+            for (int offset = warpSize/2; offset > 0; offset >>= 1)
+            val += __shfl_down_sync(mask, val, offset);
+            if (tid == 0) atomicAdd(dremainingedges, val);
+        }
+    }
 }
 
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
