@@ -74,7 +74,9 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dremainingedges, sizeof(int)*1) != cudaSuccess || 
-        cudaMalloc(&ddynamicallyaddedvertices, sizeof(int)*1) != cudaSuccess || 
+        cudaMalloc(&dnumberofdynamicallyaddedvertices, sizeof(int)*1) != cudaSuccess || 
+        cudaMalloc(&ddynamicallyaddedvertices_csr, sizeof(int)*(depthOfSearchTree+1)) != cudaSuccess || 
+        cudaMalloc(&ddynamicallyaddedvertices, sizeof(int)*(k)) != cudaSuccess ||        
         cudaMalloc(&dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree) != cudaSuccess || 
         //cudaMalloc(&active_frontier_status, sizeof(int)*depthOfSearchTree) != cudaSuccess || 
         cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
@@ -120,6 +122,8 @@ VCGPU::~VCGPU(){
     cudaFree(dedgestatus);
     cudaFree(dfullpathcount);
     cudaFree(dnumleaves);
+    cudaFree(dnumberofdynamicallyaddedvertices);
+    cudaFree(ddynamicallyaddedvertices_csr);
     cudaFree(ddynamicallyaddedvertices);
     cudaFree(dremainingedges);
 	cudaUnbindTexture(neighboursTexture);
@@ -157,7 +161,8 @@ void VCGPU::GetLengthStatistics(int nrVertices, int threadsPerBlock, int *dbackw
 int4 VCGPU::numberCompletedPaths(int nrVertices, 
                         int leafIndex,
                         int *dbackwardlinkedlist, 
-                        int *dlength){
+                        int *dlength,
+                        int recursiveStackDepth){
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     PopulateSearchTree<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
                                                             sizeOfSearchTree, 
@@ -176,6 +181,7 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
                                                         dbackwardlinkedlist,
                                                         dedgestatus, 
                                                         dlength,
+                                                        dnumberofdynamicallyaddedvertices,
                                                         ddynamicallyaddedvertices);
     DetectAndSetPendantPathsCase4<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
                                                         dmatch,
@@ -183,10 +189,14 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
                                                         dbackwardlinkedlist,
                                                         dedgestatus, 
                                                         dlength,
+                                                        dnumberofdynamicallyaddedvertices,
                                                         ddynamicallyaddedvertices);
+    // Create CSR entry for dynamically added verts
+    cudaMemcpy(&ddynamicallyaddedvertices_csr[recursiveStackDepth], dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToDevice);
+
 
     cudaMemcpy(&fullpathcount, &dfullpathcount[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
-    cudaMemcpy(&dynamicallyaddedvertices, &ddynamicallyaddedvertices[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
+    //cudaMemcpy(&numberofdynamicallyaddedvertices, &dnumberofdynamicallyaddedvertices[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
 
     int4 myActiveLeaves = CalculateLeafOffsets(leafIndex,
                                                 fullpathcount);
@@ -196,6 +206,19 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
     return myActiveLeaves;
 }
 
+/*
+void VCGPU::eraseDynVertsOfRecursionLevel(int recursiveStackDepth){
+
+    cudaMemcpy(&numberofdynamicallyaddedverticesLB, ddynamicallyaddedvertices_csr[recursiveStackDepth], sizeof(int)*1, cudaMemcpyDeviceToHost);
+    cudaMemcpy(&numberofdynamicallyaddedverticesUB, ddynamicallyaddedvertices_csr[recursiveStackDepth+1], sizeof(int)*1, cudaMemcpyDeviceToHost);
+    int numberToErase = numberofdynamicallyaddedverticesUB - numberofdynamicallyaddedverticesLB;
+
+    cudaMemcpy(&numberofdynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
+    numberofdynamicallyaddedvertices -= numberToErase;
+    cudaMemcpy(&dnumberofdynamicallyaddedvertices, numberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
+
+}
+*/
 // 2 Possibilities for recycling the paths of length 1&2
 // Depending on whether we want to perform parallel frontier splitting.
 
@@ -222,7 +245,8 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
 // started at its left most child, and will need to be recursively
 // searched from the bottom.
 
-void VCGPU::FindCover(int root){
+void VCGPU::FindCover(int root,
+                      int recursiveStackDepth){
     // If you want to check the quality of each match, uncomment
     // Else, the only noticable changes will be in the recursion stack 
     // and the device search tree.
@@ -247,7 +271,7 @@ void VCGPU::FindCover(int root){
     Match();
     //matcher.copyMatchingBackToHost(match);
     // Need to pass device pointer to LOP
-    int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength);
+    int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
     
 	int blocksPerGrid = (graph.neighbours.size() + threadsPerBlock - 1)/threadsPerBlock;
     ReduceEdgeStatusArray<<<blocksPerGrid, threadsPerBlock, sizeof(int)*threadsPerBlock>>>(graph.neighbours.size(), dedgestatus, dremainingedges);
@@ -272,17 +296,18 @@ void VCGPU::FindCover(int root){
     #endif
 
     while(newLeaves.x < newLeaves.y && newLeaves.x < sizeOfSearchTree){
-        FindCover(newLeaves.x);
+        FindCover(newLeaves.x, ++recursiveStackDepth);
         ++newLeaves.x;
     }
     while(newLeaves.z < newLeaves.w && newLeaves.z < sizeOfSearchTree){
-        FindCover(newLeaves.z);
+        FindCover(newLeaves.z, ++recursiveStackDepth);
         ++newLeaves.z;
     }
-
-    if (root == 0){
-  
-    }
+    // Wipe away my pendant nodes from shared list
+    eraseDynVertsOfRecursionLevel<<<1, threadsPerBlock>>>(recursiveStackDepth,
+                                              dnumberofdynamicallyaddedvertices, 
+                                              ddynamicallyaddedvertices_csr, 
+                                              ddynamicallyaddedvertices);
 
 }
 
@@ -372,7 +397,6 @@ void VCGPU::ReinitializeArrays(){
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dlength),  0, size_t(graph.nrVertices));
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dfullpathcount),  0, size_t(1));
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dnumleaves),  0, size_t(1));
-    cuMemsetD32(reinterpret_cast<CUdeviceptr>(ddynamicallyaddedvertices),  0, size_t(1));
     cuMemsetD32(reinterpret_cast<CUdeviceptr>(dremainingedges),  0, size_t(1));
     // Only >= 0 are heads of full paths
     // Before implementing recursive backtracking, I can keep performing this memcpy to set degrees
@@ -413,6 +437,24 @@ __global__ void ReduceEdgeStatusArray(int nrNeighbors,
         for (int offset = warpSize/2; offset > 0; offset >>= 1)
         val += __shfl_down_sync(mask, val, offset);
         if (tid == 0) atomicAdd(dremainingedges, val);
+    }
+}
+
+// Only launch 1 block so sync threads prevents retrieving a bad UB
+__global__ void eraseDynVertsOfRecursionLevel(int recursiveStackDepth,
+                                              int * dnumberofdynamicallyaddedvertices, 
+                                              int * ddynamicallyaddedvertices_csr, 
+                                              int * ddynamicallyaddedvertices){
+	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+    int LB = ddynamicallyaddedvertices_csr[recursiveStackDepth];
+    int UB = ddynamicallyaddedvertices_csr[recursiveStackDepth+1];
+    for (int entry = LB + threadID; entry < UB; entry += blockDim.x)
+        ddynamicallyaddedvertices[entry] = 0;
+
+    __syncthreads();
+    if (threadID == 0){
+        dnumberofdynamicallyaddedvertices -= (UB - LB);
+        ddynamicallyaddedvertices_csr[recursiveStackDepth+1] = 0;
     }
 }
 
@@ -591,8 +633,11 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
                                                 int *dbackwardlinkedlist, 
                                                 int * dedgestatus,
                                                 int *dlength, 
+                                                int *dnumberofdynamicallyaddedvertices,
                                                 int *ddynamicallyaddedvertices){
 	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+    int dynamicIndex;
+
 	// If not a head to a path of length 4, return (leaving the headindex == -1)
     if (threadID >= nrVertices || 
         dlength[threadID] != 1 || 
@@ -606,11 +651,13 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
     // This avoids iterating over all degrees, but it is possible
     // to miss some vertices which could be pendant but are red not blue.
     if (match[first] == 2){
-        atomicAdd(&ddynamicallyaddedvertices[0], 1); 
-        SetEdges(first, dedgestatus);
+        dynamicIndex = atomicAdd(&dnumberofdynamicallyaddedvertices[0], 1); 
+        ddynamicallyaddedvertices[dynamicIndex] = first;
+        //SetEdges(first, dedgestatus);
     } else if (match[second] == 2){
-        atomicAdd(&ddynamicallyaddedvertices[0], 1); 
-        SetEdges(second, dedgestatus);
+        dynamicIndex = atomicAdd(&dnumberofdynamicallyaddedvertices[0], 1); 
+        ddynamicallyaddedvertices[dynamicIndex] = second;
+        //SetEdges(second, dedgestatus);
     }
 }
 
@@ -621,9 +668,11 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
                                                 int *dbackwardlinkedlist, 
                                                 int * dedgestatus,
                                                 int *dlength, 
+                                                int *dnumberofdynamicallyaddedvertices,
                                                 int *ddynamicallyaddedvertices){
 	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
-	// If not a head to a path of length 4, return (leaving the headindex == -1)
+    int dynamicIndex;
+    // If not a head to a path of length 4, return (leaving the headindex == -1)
     if (threadID >= nrVertices || 
         dlength[threadID] != 2 || 
         dbackwardlinkedlist[threadID] != threadID) 
@@ -637,11 +686,13 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
     // This avoids iterating over all degrees, but it is possible
     // to miss some vertices which could be pendant but are red not blue.
     if (match[first] == 2){
-        atomicAdd(&ddynamicallyaddedvertices[0], 1); 
-        SetEdges(first, dedgestatus);
+        dynamicIndex = atomicAdd(&dnumberofdynamicallyaddedvertices[0], 1); 
+        ddynamicallyaddedvertices[dynamicIndex] = first;
+        //SetEdges(first, dedgestatus);
     } else if (match[third] == 2){
-        atomicAdd(&ddynamicallyaddedvertices[0], 1); 
-        SetEdges(third, dedgestatus);
+        dynamicIndex = atomicAdd(&dnumberofdynamicallyaddedvertices[0], 1); 
+        ddynamicallyaddedvertices[dynamicIndex] = first;
+        //SetEdges(third, dedgestatus);
     }
 }
 

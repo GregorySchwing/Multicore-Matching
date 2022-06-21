@@ -436,7 +436,7 @@ int main(int argc, char **argv)
 					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 10);
 					vc.matcher.initialMatching(match);
 					//initscr ();
-					vc.FindCover(0);
+					vc.FindCover(0, 0);
 					vc.CallDrawSearchTree(stn);
 				    //endwin();
 					vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);

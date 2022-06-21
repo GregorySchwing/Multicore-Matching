@@ -73,6 +73,11 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
                                     int2 * dsearchtree,
                                     int * foundSolution);
 
+__global__ void eraseDynVertsOfRecursionLevel(int recursiveStackDepth,
+                                              int * dnumberofdynamicallyaddedvertices, 
+                                              int * ddynamicallyaddedvertices_csr, 
+                                              int * ddynamicallyaddedvertices);
+
 int4 CalculateLeafOffsets(  int leafIndex,
                             int fullpathcount);
 
@@ -87,7 +92,8 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
                                                 int *dbackwardlinkedlist, 
                                                 int * dedgestatus,
                                                 int *dlength, 
-                                                int *dnumberofpendantvertices);
+                                                int *dnumberofdynamicallyaddedvertices,
+                                                int *ddynamicallyaddedvertices);
 
 __global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
                                                 int *match, 
@@ -95,7 +101,8 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
                                                 int *dbackwardlinkedlist, 
                                                 int * dedgestatus,
                                                 int *dlength, 
-                                                int *dnumberofpendantvertices);                        
+                                                int *dnumberofdynamicallyaddedvertices,
+                                                int *ddynamicallyaddedvertices);                        
 
                              
 __device__ void SetEdges(   int vertexToInclude,
@@ -114,7 +121,8 @@ class VCGPU
         int4 numberCompletedPaths(int nrVertices, 
                                 int leafIndex,
                                 int *dbackwardlinkedlist, 
-                                int *dlength);		
+                                int *dlength,
+                                int recursiveStackDepth);		
 		                       
         void GetLengthStatistics(int nrVertices, 
                                 int threadsPerBlock, 
@@ -124,14 +132,14 @@ class VCGPU
         
         void SetEdgesOfLeaf(int leafIndex);
         void Match();
-        void FindCover(int root);
+        void FindCover(int root, int recursiveStackDepth);
         void ReinitializeArrays();
         void PrintData ();
         void CopyMatchingBackToHost(std::vector<int> & match);
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
         long long sizeOfSearchTree;
         int k;
-        int fullpathcount, dynamicallyaddedvertices, depthOfSearchTree, remainingedges;
+        int fullpathcount, depthOfSearchTree, remainingedges;
         std::vector<float> finishedLeavesPerLevel;
         std::vector<float> totalLeavesPerLevel;
         std::vector<int> edgestatus;
@@ -139,8 +147,15 @@ class VCGPU
         std::vector<int2> searchtree;
         
         // VC arrays
-        int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves, *ddynamicallyaddedvertices, *dremainingedges;
+        int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves, *dremainingedges;
         int2 *dsearchtree;
+        // Indicates the dyn added verts in each recursion stack
+        int *ddynamicallyaddedvertices_csr;
+        int *ddynamicallyaddedvertices;
+        int *dnumberofdynamicallyaddedvertices;
+
+        int numberofdynamicallyaddedvertices;
+        int numberofdynamicallyaddedverticesLB, numberofdynamicallyaddedverticesUB;
         int *active_frontier_status;
         float * dfinishedLeavesPerLevel;
         mtc::Edge * dedges;
