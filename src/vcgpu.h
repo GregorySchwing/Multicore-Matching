@@ -67,6 +67,12 @@ __global__ void CalculateNumberOfLeafNodes(
                                         int * dfullpathcount,
                                         int * dnumleaves);
 
+__global__ void EvaluateSingleLeafNode(int nrEdges,
+                                    int leafIndex,
+                                    mtc::Edge * dedges, 
+                                    int2 * dsearchtree,
+                                    int * foundSolution);
+
 int4 CalculateLeafOffsets(  int leafIndex,
                             int fullpathcount);
 

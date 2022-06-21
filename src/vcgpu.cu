@@ -490,6 +490,42 @@ __global__ void PopulateSearchTree(int nrVertices,
     atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf], 3); 
 }
 
+// Each thread will take an edge.  Each thread will loop through the answer
+// until it finds either vertex a or b of an edge.
+// if it reaches the end of the answer without terminating, it isn't a solution.
+// Amount of shared memory should be 2*depth*sizeof(int)
+// 
+__global__ void EvaluateSingleLeafNode(int nrEdges,
+                                    int leafIndex,
+                                    mtc::Edge * dedges, 
+                                    int2 * dsearchtree,
+                                    int * foundSolution){
+    extern __shared__ int soln[];
+	const int edgeID = blockIdx.x*blockDim.x + threadIdx.x;
+    if (edgeID >= nrEdges)
+        return;
+    const int tid = threadIdx.x;
+    int leafIndexSoln = leafIndex;
+    int2 nodeEntry;
+    int counter = 0;
+    // Load solution into shared memory
+    if (tid == 0){
+        while(leafIndexSoln != 0){
+            nodeEntry = dsearchtree[leafIndexSoln];
+            soln[counter] = nodeEntry.x;
+            soln[counter + 1] = nodeEntry.y;
+            leafIndexSoln = leafIndexSoln / 3;
+            counter += 2;
+        }
+    }    
+    __syncthreads(); // put warp results in shared mem
+    Edge & edge = dedges[edgeID];
+    bool covered = false;
+    for (int solutionIndex = 0; solutionIndex < counter; ++solutionIndex){
+        covered |= (edge.x == soln[solutionIndex] || edge.y == soln[solutionIndex]);
+    }
+    atomicAnd(foundSolution, covered);
+}
 // Each block is a leaf node
 // First it loads it's solution into shared memory.
 // ADVANCED - If k*sizeof(int) > shared memory limit, check in portions
@@ -500,7 +536,8 @@ __global__ void PopulateSearchTree(int nrVertices,
 // terminate prematurely if final position flag is set.
 // this way we can check leaf nodes in parallel, without needing 
 // an edge status array.
-__global__ void EvaluateLeafNodes(int nrEdges,
+/*
+__global__ void EvaluateLeafNodesV2(int nrEdges,
                                     mtc::Edge * dedges, 
                                     int sizeOfSearchTree,
                                     int depthOfSearchTree,
@@ -546,7 +583,7 @@ __global__ void EvaluateLeafNodes(int nrEdges,
         }
     }
 }
-
+*/
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
                                                 int *match, 
