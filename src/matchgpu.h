@@ -35,7 +35,8 @@ class GraphMatchingGPU : public GraphMatching
 	public:
 		GraphMatchingGPU(const Graph &, const int &, const unsigned int &);
 		virtual ~GraphMatchingGPU();
-		virtual void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength ) const = 0;
+		virtual void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int 
+ numberOfDynamicallyAddedVertices, int leafIndex) const = 0;
 		int2 *dneighbourRanges;
 		int *dneighbours;
 	protected:
@@ -49,7 +50,8 @@ class GraphMatchingGPURandom : public GraphMatchingGPU
 		GraphMatchingGPURandom(const Graph &, const int &, const unsigned int &);
 		~GraphMatchingGPURandom();
 		
-		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength ) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int 
+ numberOfDynamicallyAddedVertices, int leafIndex) const;
 
 };
 
@@ -59,7 +61,8 @@ class GraphMatchingGeneralGPURandom : public GraphMatchingGPU
 		GraphMatchingGeneralGPURandom(const Graph &, const int &, const unsigned int &);
 		~GraphMatchingGeneralGPURandom();
 
-		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength ) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int 
+ numberOfDynamicallyAddedVertices, int leafIndex) const;
 		int *drequests, *dsense;
 };
 
@@ -69,7 +72,8 @@ class GraphMatchingGPURandomMaximal : public GraphMatchingGPU
 		GraphMatchingGPURandomMaximal(const Graph &, const int &, const unsigned int &);
 		~GraphMatchingGPURandomMaximal();
 		
-		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength ) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int 
+ numberOfDynamicallyAddedVertices, int leafIndex) const;
 };
 
 class GraphMatchingGPUWeighted : public GraphMatchingGPU
@@ -78,7 +82,8 @@ class GraphMatchingGPUWeighted : public GraphMatchingGPU
 		GraphMatchingGPUWeighted(const Graph &, const int &, const unsigned int &);
 		~GraphMatchingGPUWeighted();
 		
-		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength ) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int 
+ numberOfDynamicallyAddedVertices, int leafIndex) const;
 
 	private:
 		int *dweights;
@@ -90,7 +95,8 @@ class GraphMatchingGPUWeightedMaximal : public GraphMatchingGPU
 		GraphMatchingGPUWeightedMaximal(const Graph &, const int &, const unsigned int &);
 		~GraphMatchingGPUWeightedMaximal();
 		
-		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength ) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int 
+ numberOfDynamicallyAddedVertices, int leafIndex) const;
 
 	private:
 		int *dweights;

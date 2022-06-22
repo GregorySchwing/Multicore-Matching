@@ -274,7 +274,7 @@ void VCGPU::FindCover(int root,
     ReinitializeArrays();
     // TODO - Need to set the pendant vertices also.
     SetEdgesOfLeaf(root);
-    Match();
+    Match(root);
     //matcher.copyMatchingBackToHost(match);
     // Need to pass device pointer to LOP
     int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
@@ -392,7 +392,7 @@ void VCGPU::PrintData (){
     printf("\n");
 
 }
-void VCGPU::Match(){
+void VCGPU::Match(int leafIndex){
     //Initialise timers.
     cudaEvent_t t0, t1, t2, t3;
     float time0, time1;
@@ -405,7 +405,7 @@ void VCGPU::Match(){
     cudaEventRecord(t0, 0);
     cudaEventSynchronize(t0);
 
-    matcher.performMatching(dmatch, t1, t2, dforwardlinkedlist, dbackwardlinkedlist, dlength);
+    matcher.performMatching(dmatch, t1, t2, dforwardlinkedlist, dbackwardlinkedlist, dlength, dsearchtree, ddynamicallyaddedvertices, 0, leafIndex);
     
     cudaEventElapsedTime(&time1, t1, t2);
     cudaEventRecord(t3, 0);

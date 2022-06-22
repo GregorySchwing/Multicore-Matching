@@ -133,7 +133,7 @@ class VCGPU
                                 int *dreducedlength);
         
         void SetEdgesOfLeaf(int leafIndex);
-        void Match();
+        void Match(int leafIndex);
         void FindCover(int root, int recursiveStackDepth);
         void ReinitializeArrays();
         void PrintData ();
