@@ -1160,7 +1160,7 @@ __global__ void grRequest(int *requests, const int *match, const int nrVertices)
 
 
 //==== Random greedy matching kernels ====
-__global__ void grRequest(const int *degree, const int *edgestatus, int *requests, const int *match, const int *sense, const int *forwardlinkedlist, const int *backwardlinkedlist, const int nrVertices)
+__global__ void grRequest(const int *degree, int *requests, const int *match, const int *sense, const int *forwardlinkedlist, const int *backwardlinkedlist, const int nrVertices)
 {
 	//Let all blue (+) vertices make requests.
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
@@ -1224,7 +1224,7 @@ __global__ void grRequest(const int *degree, const int *edgestatus, int *request
 
 
 //==== Random greedy matching kernels ====
-__global__ void grRequest(const int *degree, const int *edgestatus, int *requests, const int *match, const int *sense, const int *length, const int *forwardlinkedlist, const int *backwardlinkedlist, const int nrVertices)
+__global__ void grRequest(const int *degree, int *requests, const int *match, const int *sense, const int *length, const int *forwardlinkedlist, const int *backwardlinkedlist, const int nrVertices)
 {
 	//Let all blue (+) vertices make requests.
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
@@ -1253,7 +1253,7 @@ __global__ void grRequest(const int *degree, const int *edgestatus, int *request
 			// without this continue statement.
 			// r+.-r-, b+.b-; there is a colored neighbor.
 			// Also, skip edges which have been deactivated.
-			if (nf == ni || nb == ni || !edgestatus[j]) continue;
+			if (nf == ni || nb == ni) continue;
 			//if (nf == ni || nb == ni ) continue;
 
 			const int nm = match[ni];
@@ -1447,7 +1447,7 @@ __global__ void gwRespond(int *requests, const int *match, const int nrVertices)
 	}
 }
 
-void GraphMatchingGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
+void GraphMatchingGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree) const
 {
 	//Creates a greedy random matching on the GPU.
 	//Assumes the current matching is empty.
@@ -1546,7 +1546,7 @@ void GraphMatchingGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEv
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
+void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree) const
 {
 	//Creates a greedy random matching on the GPU.
 	//Assumes the current matching is empty.
@@ -1621,9 +1621,9 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 			checkLastErrorCUDA(__FILE__, __LINE__);
 			//printf("gSelect done\n");
 			if (useMaxLength)
-				grRequest<<<blocksPerGrid, threadsPerBlock>>>(ddegree, dedgestatus, drequests, match, dsense, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
+				grRequest<<<blocksPerGrid, threadsPerBlock>>>(ddegree, drequests, match, dsense, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
 			else 
-				grRequest<<<blocksPerGrid, threadsPerBlock>>>(ddegree, dedgestatus, drequests, match, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
+				grRequest<<<blocksPerGrid, threadsPerBlock>>>(ddegree, drequests, match, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
 			//printf("grRequest done\n");
@@ -1701,7 +1701,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGPURandomMaximal::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
+void GraphMatchingGPURandomMaximal::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree) const
 {
 	//Creates a greedy random maximal matching on the GPU using atomic operations.
 	//Assumes the current matching is empty.
@@ -1792,7 +1792,7 @@ void GraphMatchingGPURandomMaximal::performMatching(int *match, cudaEvent_t &t1,
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGPUWeighted::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
+void GraphMatchingGPUWeighted::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree) const
 {
 	//Creates a greedy weighted matching on the GPU.
 	//Assumes the current matching is empty.
@@ -1901,7 +1901,7 @@ void GraphMatchingGPUWeighted::performMatching(int *match, cudaEvent_t &t1, cuda
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGPUWeightedMaximal::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree, const int * dedgestatus) const
+void GraphMatchingGPUWeightedMaximal::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * ddegree) const
 {
 	//Creates a greedy weighted matching on the GPU.
 	//Assumes the current matching is empty.

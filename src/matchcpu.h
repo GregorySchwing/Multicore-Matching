@@ -44,7 +44,7 @@ class GraphMatching
 		static inline bool isHead(const int &m, const std::vector<int> & bll) {return bll[m] == m;};
 
 		void initialMatching(std::vector<int> & match);
-		virtual void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree, const int * edgestatus) const = 0;
+		virtual void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree) const = 0;
 		std::vector<int> match;
 
 	protected:
@@ -57,7 +57,7 @@ class GraphMatchingCPURandom : public GraphMatching
 		GraphMatchingCPURandom(const Graph &);
 		~GraphMatchingCPURandom();
 		
-		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree, const int * edgestatus) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree) const;
 };
 
 class GraphMatchingCPUMinDeg : public GraphMatching
@@ -66,7 +66,7 @@ class GraphMatchingCPUMinDeg : public GraphMatching
 		GraphMatchingCPUMinDeg(const Graph &);
 		~GraphMatchingCPUMinDeg();
 		
-		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree, const int * edgestatus) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree) const;
 };
 
 class GraphMatchingCPUStatMinDeg : public GraphMatching
@@ -75,7 +75,7 @@ class GraphMatchingCPUStatMinDeg : public GraphMatching
 		GraphMatchingCPUStatMinDeg(const Graph &);
 		~GraphMatchingCPUStatMinDeg();
 		
-		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree, const int * edgestatus) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree) const;
 };
 
 class GraphMatchingCPUKarpSipser : public GraphMatching
@@ -84,7 +84,7 @@ class GraphMatchingCPUKarpSipser : public GraphMatching
 		GraphMatchingCPUKarpSipser(const Graph &);
 		~GraphMatchingCPUKarpSipser();
 		
-		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree, const int * edgestatus) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree) const;
 };
 
 class GraphMatchingCPUWeighted : public GraphMatching
@@ -93,7 +93,7 @@ class GraphMatchingCPUWeighted : public GraphMatching
 		GraphMatchingCPUWeighted(const Graph &);
 		~GraphMatchingCPUWeighted();
 		
-		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree, const int * edgestatus) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree) const;
 };
 
 class GraphMatchingCPUWeightedEdge : public GraphMatching
@@ -102,7 +102,7 @@ class GraphMatchingCPUWeightedEdge : public GraphMatching
 		GraphMatchingCPUWeightedEdge(const Graph &);
 		~GraphMatchingCPUWeightedEdge();
 		
-		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree, const int * edgestatus) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree) const;
 };
 
 };
