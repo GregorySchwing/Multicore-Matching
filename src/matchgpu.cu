@@ -1094,6 +1094,26 @@ __global__ void gUncoarsen(int *match, int *fll, int *bll, const int nrVertices)
 	}
 }
 
+__global__ void gSetSearchTreeVertices(int leafIndex, int *match, int2 *searchtree, const int depthOfLeaf)
+{
+	int i = blockIdx.x*blockDim.x + threadIdx.x;
+	if (i >= 2*depthOfLeaf) return;
+	int parentLeafIndex = leafIndex / powf(3.0, i / 2);
+	int2 entry = searchtree[parentLeafIndex];
+	match[entry.x] = 2;
+	match[entry.y] = 2;
+}
+
+__global__ void gSetDynamicVertices(int leafIndex, int *match, int *dynamicallyAddedVertices, const int nrDynamicallyAddedVertices)
+{
+	int i = blockIdx.x*blockDim.x + threadIdx.x;
+
+	if (i >= nrDynamicallyAddedVertices) return;
+
+	match[dynamicallyAddedVertices[i]] = 2;
+}
+ 
+
 //==== Random greedy matching kernels ====
 __global__ void grRequest(int *requests, const int *match, const int nrVertices)
 {
@@ -1582,7 +1602,10 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 			cerr << "Unable to clear matching on device!" << endl;
 			throw exception();
 		}
+		//Indicate the solution by setting to match == 2 for all vertices in curr soln
+
 		//printf("coarsenRounds round %d\n", coarsenRounds);
+		
 
 		for (int i = 0; i < NR_MATCH_ROUNDS; ++i)
 		{
