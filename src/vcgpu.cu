@@ -71,14 +71,14 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         cudaMalloc(&dedges, sizeof(mtc::Edge)*graph.nrEdges) != cudaSuccess || 
         cudaMalloc(&dlength, sizeof(int)*graph.nrVertices) != cudaSuccess || 
         cudaMalloc(&dsearchtree, sizeof(int2)*sizeOfSearchTree) != cudaSuccess || 
-        cudaMalloc(&dfoundSolution, sizeof(int)*1) != cudaSuccess || 
+        cudaMalloc(&duncoverededges, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dremainingedges, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumberofdynamicallyaddedvertices, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&ddynamicallyaddedvertices_csr, sizeof(int)*(depthOfSearchTree+1)) != cudaSuccess || 
         cudaMalloc(&ddynamicallyaddedvertices, sizeof(int)*(k)) != cudaSuccess ||        
-        cudaMalloc(&dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree) != cudaSuccess || 
+        cudaMalloc(&dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree+1) != cudaSuccess || 
         //cudaMalloc(&active_frontier_status, sizeof(int)*depthOfSearchTree) != cudaSuccess || 
         cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
@@ -117,7 +117,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 
 VCGPU::~VCGPU(){
     cudaFree(ddegrees);
-    cudaFree(dfoundSolution);
+    cudaFree(duncoverededges);
 	cudaFree(dlength);
     cudaFree(dsearchtree);
     cudaFree(dedges);
@@ -304,31 +304,41 @@ void VCGPU::FindCover(int root,
 	blocksPerGrid = (graph.nrEdges + threadsPerBlock - 1)/threadsPerBlock;
     depthOfLeaf = ceil(logf(2*newLeaves.y + 1) / logf(3)) - 1;
     while(newLeaves.x < newLeaves.y && newLeaves.x < sizeOfSearchTree){
+        cuMemsetD32(reinterpret_cast<CUdeviceptr>(duncoverededges),  0, size_t(1));
         EvaluateSingleLeafNode<<<blocksPerGrid, threadsPerBlock, 2*depthOfLeaf*sizeof(int)>>>(graph.nrEdges,
                                                                                             newLeaves.x,
                                                                                             dedges, 
                                                                                             dsearchtree,
                                                                                             dnumberofdynamicallyaddedvertices,
                                                                                             ddynamicallyaddedvertices,
-                                                                                            dfoundSolution);
-        cudaMemcpy(&foundSolution, dfoundSolution, sizeof(int)*1, cudaMemcpyDeviceToHost);
-        if (foundSolution)
-            printf("leaf index %d is a solution\n", newLeaves.x);
+                                                                                            duncoverededges);
+        cudaMemcpy(&uncoverededges, duncoverededges, sizeof(int)*1, cudaMemcpyDeviceToHost);
+        if (uncoverededges){
+            //printf("leaf index %d is not a solution :  %d edges are uncovered\n", newLeaves.x, uncoverededges);
+        }else {
+            printf("leaf index %d is a solution :  %d edges are uncovered\n", newLeaves.x, uncoverededges);
+            exit(0);
+        }
         FindCover(newLeaves.x, recursiveStackDepth+1);
         ++newLeaves.x;
     }
     depthOfLeaf = ceil(logf(2*newLeaves.w + 1) / logf(3)) - 1;
     while(newLeaves.z < newLeaves.w && newLeaves.z < sizeOfSearchTree){
+        cuMemsetD32(reinterpret_cast<CUdeviceptr>(duncoverededges),  0, size_t(1));
         EvaluateSingleLeafNode<<<blocksPerGrid, threadsPerBlock, 2*depthOfLeaf*sizeof(int)>>>(graph.nrEdges,
                                                                                             newLeaves.z,
                                                                                             dedges, 
                                                                                             dsearchtree,
                                                                                             dnumberofdynamicallyaddedvertices,
                                                                                             ddynamicallyaddedvertices,
-                                                                                            dfoundSolution);
-        cudaMemcpy(&foundSolution, dfoundSolution, sizeof(int)*1, cudaMemcpyDeviceToHost);
-        if (foundSolution)
-            printf("leaf index %d is a solution\n", newLeaves.z);
+                                                                                            duncoverededges);
+        cudaMemcpy(&uncoverededges, duncoverededges, sizeof(int)*1, cudaMemcpyDeviceToHost);
+        if (uncoverededges){
+            //printf("leaf index %d is not a solution :  %d edges are uncovered\n", newLeaves.z, uncoverededges);
+        }else {
+            printf("leaf index %d is a solution :  %d edges are uncovered\n", newLeaves.z, uncoverededges);
+            exit(0);
+        }
         FindCover(newLeaves.z, recursiveStackDepth+1);
         ++newLeaves.z;
     }
@@ -542,23 +552,28 @@ __global__ void PopulateSearchTree(int nrVertices,
                                                 levelOffset + 1,
                                                 levelOffset + 2);
     #endif
-    // Get depth of highest index leaf
-    int depthOfLeaf = ceil(logf(2*(levelOffset + 2) + 1) / logf(3)) - 1;
-    /*if (depthOfLeaf > depthOfSearchTree){
-        printf("child %d exceeded srch tree depth\n", levelOffset);
-        return;
-    }*/
+
     if (levelOffset + 0 >= sizeOfSearchTree){
         //printf("child %d exceeded srch tree depth\n", levelOffset);
         return;        
     }
 
+    // For some reason this is causing errors.
+    // Get depth of highest index leaf
+    /*
+    int depthOfLeaf = ceil(logf(2*(levelOffset + 2) + 1) / logf(3)) - 1;
+    if (depthOfLeaf >= depthOfSearchTree){
+        printf("child %d exceeded srch tree depth\n", levelOffset);
+        return;
+    }
+    // Add to device pointer of level
+    atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf], 3); 
+    */
     // Test from root for now, this code can have an arbitrary root though
     dsearchtree[levelOffset + 0] = make_int2(first, third);
     dsearchtree[levelOffset + 1] = make_int2(second, third);
     dsearchtree[levelOffset + 2] = make_int2(second, fourth);
-    // Add to device pointer of level
-    atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf], 3); 
+
 }
 
 // Each thread will take an edge.  Each thread will loop through the answer
@@ -572,7 +587,7 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
                                     int2 * dsearchtree,
                                     int * dnumberofdynamicallyaddedvertices,
                                     int * ddynamicallyaddedvertices,
-                                    int * foundSolution){
+                                    int * uncoverededges){
     extern __shared__ int soln[];
 	const int edgeID = blockIdx.x*blockDim.x + threadIdx.x;
     if (edgeID >= nrEdges)
@@ -614,7 +629,8 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
     for (int index = 0; index < UBDyn; ++index){
         covered |= (edge.x == ddynamicallyaddedvertices[index] || edge.y == ddynamicallyaddedvertices[index]);
     }
-    atomicAnd(foundSolution, covered);
+    if (!covered)
+        atomicAdd(uncoverededges, 1);
 }
 // Each block is a leaf node
 // First it loads it's solution into shared memory.

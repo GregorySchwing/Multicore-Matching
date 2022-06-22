@@ -73,7 +73,7 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
                                     int2 * dsearchtree,
                                     int * dnumberofdynamicallyaddedvertices,
                                     int * ddynamicallyaddedvertices,
-                                    int * foundSolution);
+                                    int * uncoverededges);
 
 __global__ void eraseDynVertsOfRecursionLevel(int recursiveStackDepth,
                                               int * dnumberofdynamicallyaddedvertices, 
@@ -147,8 +147,8 @@ class VCGPU
         std::vector<int> edgestatus;
         std::vector<int> newdegrees;
         std::vector<int2> searchtree;
-        int foundSolution;
-        int * dfoundSolution;
+        int uncoverededges;
+        int * duncoverededges;
         // VC arrays
         int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves, *dremainingedges;
         int2 *dsearchtree;

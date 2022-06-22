@@ -756,10 +756,20 @@ __global__ void gLength(int *match, int *requests, int *fll, int *bll, int *leng
 			curr = next;
 			next = fll[curr];
 		}
-		head = i;
-		tail = curr;
-		length[head] = pl;
-		length[tail] = pl;
+		// Used to only set the head and tail lengths
+		//head = i;
+		//tail = curr;
+		//length[head] = pl;
+		//length[tail] = pl;
+
+		// Set length for all verts in a path
+		curr = i;
+		next = fll[curr];
+		while(next != curr) {
+			length[curr] = pl;
+			curr = next;
+			next = fll[curr];
+		}
 	}
 }
 
@@ -1094,6 +1104,33 @@ __global__ void gUncoarsen(int *match, int *fll, int *bll, const int nrVertices)
 	}
 }
 
+// sets neccessarily pendant vertices
+__global__ void gIndicatePendants(int *match, int *dlength, int *forwardlinkedlist, int *backwardlinkedlist,  const int nrVertices)
+{
+	int i = blockIdx.x*blockDim.x + threadIdx.x;
+
+	if (i >= nrVertices) return;
+
+	if (3 == dlength[i]) return;
+
+	const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
+	bool isPendant = true;
+	const int nf = forwardlinkedlist[i];
+	const int nb = backwardlinkedlist[i];
+	for (int j = indices.x; j < indices.y; ++j)
+	{
+		const int ni = tex1Dfetch(neighboursTexture, j);
+		// Skip internal path verts
+		if (nf == ni || nb == ni) continue;
+		// match == 2 indicates a solution vertex
+		if (match[ni] != 2)
+			isPendant = false;
+	}
+	// This vertex has no neighbors which are unmatched.
+	if (isPendant)
+		match[i] = 2;
+}
+
 __global__ void gSetSearchTreeVertices(int leafIndex, int *match, int2 *searchtree, const int depthOfLeaf)
 {
 	int i = blockIdx.x*blockDim.x + threadIdx.x;
@@ -1111,7 +1148,7 @@ __global__ void gSetDynamicVertices(int leafIndex, int *match, int *dynamicallyA
 	if (i >= nrDynamicallyAddedVertices) return;
 
 	match[dynamicallyAddedVertices[i]] = 2;
-	printf("leaf index setting pendant vert %d\n", dynamicallyAddedVertices[i]);
+	//printf("leaf index setting pendant vert %d\n", dynamicallyAddedVertices[i]);
 }
  
 
@@ -1609,8 +1646,8 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 			int blocksPerGridST = (depthOfLeaf + threadsPerBlock - 1)/threadsPerBlock;
 			gSetSearchTreeVertices<<<blocksPerGridST, threadsPerBlock>>>(leafIndex, match, dsearchtree, depthOfLeaf);
 		}
-			cudaDeviceSynchronize();
-			checkLastErrorCUDA(__FILE__, __LINE__);
+		cudaDeviceSynchronize();
+		checkLastErrorCUDA(__FILE__, __LINE__);
 		int numberOfDynamicallyAddedVertices_host;
 		cudaMemcpy(&numberOfDynamicallyAddedVertices_host, numberOfDynamicallyAddedVertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
 		if (numberOfDynamicallyAddedVertices_host > 0){
@@ -1618,8 +1655,8 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 			gSetDynamicVertices<<<blocksPerGridDy, threadsPerBlock>>>(leafIndex, match, dynamicallyAddedVertices, numberOfDynamicallyAddedVertices_host);
 		}
 		//printf("coarsenRounds round %d\n", coarsenRounds);
-					cudaDeviceSynchronize();
-			checkLastErrorCUDA(__FILE__, __LINE__);
+		cudaDeviceSynchronize();
+		checkLastErrorCUDA(__FILE__, __LINE__);
 
 		for (int i = 0; i < NR_MATCH_ROUNDS; ++i)
 		{
@@ -1709,6 +1746,10 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 	gUncoarsen<<<blocksPerGrid, threadsPerBlock>>>(match, dforwardlinkedlist, dbackwardlinkedlist, 
 													graph.nrVertices);
 	#endif
+
+	
+	gIndicatePendants<<<blocksPerGrid, threadsPerBlock>>>(match, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
+	
 
 	//Free memory.
 	cudaUnbindTexture(neighboursTexture);
