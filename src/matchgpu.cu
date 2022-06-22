@@ -1447,8 +1447,7 @@ __global__ void gwRespond(int *requests, const int *match, const int nrVertices)
 	}
 }
 
-void GraphMatchingGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int 
- numberOfDynamicallyAddedVertices, int leafIndex) const
+void GraphMatchingGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//Creates a greedy random matching on the GPU.
 	//Assumes the current matching is empty.
@@ -1547,8 +1546,7 @@ void GraphMatchingGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEv
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int 
- numberOfDynamicallyAddedVertices, int leafIndex) const
+void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//Creates a greedy random matching on the GPU.
 	//Assumes the current matching is empty.
@@ -1605,10 +1603,22 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 			throw exception();
 		}
 		//Indicate the solution by setting to match == 2 for all vertices in curr soln
-		//gSetSearchTreeVertices(leafIndex, match, searchtree, depthOfLeaf);
-		//gSetDynamicVertices(leafIndex, match, dynamicallyAddedVertices, nrDynamicallyAddedVertices);
+		int depthOfLeaf = ceil(logf(2*leafIndex + 1) / logf(3)) - 1;
+		if (depthOfLeaf > 0){
+			int blocksPerGridST = (depthOfLeaf + threadsPerBlock - 1)/threadsPerBlock;
+			gSetSearchTreeVertices<<<blocksPerGridST, threadsPerBlock>>>(leafIndex, match, dsearchtree, depthOfLeaf);
+		}
+			cudaDeviceSynchronize();
+			checkLastErrorCUDA(__FILE__, __LINE__);
+		int numberOfDynamicallyAddedVertices_host;
+		cudaMemcpy(&numberOfDynamicallyAddedVertices_host, numberOfDynamicallyAddedVertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
+		if (numberOfDynamicallyAddedVertices_host > 0){
+			int blocksPerGridDy = (numberOfDynamicallyAddedVertices_host + threadsPerBlock - 1)/threadsPerBlock;
+			gSetDynamicVertices<<<blocksPerGridDy, threadsPerBlock>>>(leafIndex, match, dynamicallyAddedVertices, numberOfDynamicallyAddedVertices_host);
+		}
 		//printf("coarsenRounds round %d\n", coarsenRounds);
-		
+					cudaDeviceSynchronize();
+			checkLastErrorCUDA(__FILE__, __LINE__);
 
 		for (int i = 0; i < NR_MATCH_ROUNDS; ++i)
 		{
@@ -1704,8 +1714,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGPURandomMaximal::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int 
- numberOfDynamicallyAddedVertices, int leafIndex) const
+void GraphMatchingGPURandomMaximal::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//Creates a greedy random maximal matching on the GPU using atomic operations.
 	//Assumes the current matching is empty.
@@ -1796,8 +1805,7 @@ void GraphMatchingGPURandomMaximal::performMatching(int *match, cudaEvent_t &t1,
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGPUWeighted::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int 
- numberOfDynamicallyAddedVertices, int leafIndex) const
+void GraphMatchingGPUWeighted::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//Creates a greedy weighted matching on the GPU.
 	//Assumes the current matching is empty.
@@ -1906,8 +1914,7 @@ void GraphMatchingGPUWeighted::performMatching(int *match, cudaEvent_t &t1, cuda
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGPUWeightedMaximal::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int 
- numberOfDynamicallyAddedVertices, int leafIndex) const
+void GraphMatchingGPUWeightedMaximal::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//Creates a greedy weighted matching on the GPU.
 	//Assumes the current matching is empty.
