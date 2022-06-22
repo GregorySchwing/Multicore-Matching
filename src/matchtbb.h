@@ -31,7 +31,7 @@ class GraphMatchingTBB : public GraphMatching
 		GraphMatchingTBB(const Graph &, const unsigned int &);
 		~GraphMatchingTBB();
 		
-		virtual void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree) const = 0;
+		virtual void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength ) const = 0;
 
 	protected:
 		const uint selectBarrier;
@@ -44,7 +44,7 @@ class GraphMatchingTBBRandom : public GraphMatchingTBB
 		GraphMatchingTBBRandom(const Graph &, const unsigned int &);
 		~GraphMatchingTBBRandom();
 		
-		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength ) const;
 };
 
 class GraphMatchingTBBWeighted : public GraphMatchingTBB
@@ -53,7 +53,7 @@ class GraphMatchingTBBWeighted : public GraphMatchingTBB
 		GraphMatchingTBBWeighted(const Graph &, const unsigned int &);
 		~GraphMatchingTBBWeighted();
 		
-		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength, const int * degree) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist, int * dbackwardlinkedlist, int * dlength ) const;
 };
 
 };
