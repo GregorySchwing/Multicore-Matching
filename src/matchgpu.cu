@@ -1111,6 +1111,7 @@ __global__ void gSetDynamicVertices(int leafIndex, int *match, int *dynamicallyA
 	if (i >= nrDynamicallyAddedVertices) return;
 
 	match[dynamicallyAddedVertices[i]] = 2;
+	printf("leaf index setting pendant vert %d\n", dynamicallyAddedVertices[i]);
 }
  
 

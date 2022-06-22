@@ -257,6 +257,7 @@ void VCGPU::FindCover(int root,
     // and the device search tree.
     //std::vector<int> match;
     //matcher.initialMatching(match);
+    //printf("Called FindCover li %d rl %d \n", root, recursiveStackDepth);
     int depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - 1;
     if (depthOfLeaf > depthOfSearchTree){
         //printf("depthOfLeaf %d depthOfSearchTree %d\n",  depthOfLeaf, depthOfSearchTree);
@@ -313,7 +314,7 @@ void VCGPU::FindCover(int root,
         cudaMemcpy(&foundSolution, dfoundSolution, sizeof(int)*1, cudaMemcpyDeviceToHost);
         if (foundSolution)
             printf("leaf index %d is a solution\n", newLeaves.x);
-        FindCover(newLeaves.x, ++recursiveStackDepth);
+        FindCover(newLeaves.x, recursiveStackDepth+1);
         ++newLeaves.x;
     }
     depthOfLeaf = ceil(logf(2*newLeaves.w + 1) / logf(3)) - 1;
@@ -328,7 +329,7 @@ void VCGPU::FindCover(int root,
         cudaMemcpy(&foundSolution, dfoundSolution, sizeof(int)*1, cudaMemcpyDeviceToHost);
         if (foundSolution)
             printf("leaf index %d is a solution\n", newLeaves.z);
-        FindCover(newLeaves.z, ++recursiveStackDepth);
+        FindCover(newLeaves.z, recursiveStackDepth+1);
         ++newLeaves.z;
     }
     // Wipe away my pendant nodes from shared list
