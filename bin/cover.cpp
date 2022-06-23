@@ -433,7 +433,7 @@ int main(int argc, char **argv)
 				std::string stn = searchTreeName.str();
 				try
 				{
-					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 10);
+					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 30);
 					vc.matcher.initialMatching(match);
 					//initscr ();
 					vc.FindCover(0, 0);

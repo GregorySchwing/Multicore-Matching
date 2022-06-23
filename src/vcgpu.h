@@ -147,6 +147,7 @@ class VCGPU
         std::vector<int> edgestatus;
         std::vector<int> newdegrees;
         std::vector<int2> searchtree;
+        std::vector<int> solution;
         int uncoverededges;
         int * duncoverededges;
         // VC arrays
@@ -156,6 +157,8 @@ class VCGPU
         int *ddynamicallyaddedvertices_csr;
         int *ddynamicallyaddedvertices;
         int *dnumberofdynamicallyaddedvertices;
+
+        int *dsolution;
 
         int numberofdynamicallyaddedvertices;
         int numberofdynamicallyaddedverticesLB, numberofdynamicallyaddedverticesUB;

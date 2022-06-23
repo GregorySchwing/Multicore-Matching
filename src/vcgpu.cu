@@ -79,7 +79,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         cudaMalloc(&ddynamicallyaddedvertices_csr, sizeof(int)*(depthOfSearchTree+1)) != cudaSuccess || 
         cudaMalloc(&ddynamicallyaddedvertices, sizeof(int)*(k)) != cudaSuccess ||        
         cudaMalloc(&dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree+1) != cudaSuccess || 
-        //cudaMalloc(&active_frontier_status, sizeof(int)*depthOfSearchTree) != cudaSuccess || 
+        cudaMalloc(&dsolution, sizeof(int)*2*k) != cudaSuccess || 
         cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
@@ -117,6 +117,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 
 VCGPU::~VCGPU(){
     cudaFree(ddegrees);
+    cudaFree(dsolution);
     cudaFree(duncoverededges);
 	cudaFree(dlength);
     cudaFree(dsearchtree);
@@ -317,6 +318,13 @@ void VCGPU::FindCover(int root,
             //printf("leaf index %d is not a solution :  %d edges are uncovered\n", newLeaves.x, uncoverededges);
         }else {
             printf("leaf index %d is a solution :  %d edges are uncovered\n", newLeaves.x, uncoverededges);
+            FillSolutionArray<<<1,1>>>(newLeaves.z,
+                    dsolution,
+                    dsearchtree,
+                    dnumberofdynamicallyaddedvertices,
+                    ddynamicallyaddedvertices);
+            cudaMemcpy(&solution[0], dsolution, sizeof(int)*solution.size(), cudaMemcpyDeviceToHost);
+            
             exit(0);
         }
         FindCover(newLeaves.x, recursiveStackDepth+1);
@@ -337,6 +345,12 @@ void VCGPU::FindCover(int root,
             //printf("leaf index %d is not a solution :  %d edges are uncovered\n", newLeaves.z, uncoverededges);
         }else {
             printf("leaf index %d is a solution :  %d edges are uncovered\n", newLeaves.z, uncoverededges);
+            FillSolutionArray<<<1,1>>>(newLeaves.z,
+                                dsolution,
+                                dsearchtree,
+                                dnumberofdynamicallyaddedvertices,
+                                ddynamicallyaddedvertices);
+            cudaMemcpy(&solution[0], dsolution, sizeof(int)*solution.size(), cudaMemcpyDeviceToHost);
             exit(0);
         }
         FindCover(newLeaves.z, recursiveStackDepth+1);
@@ -631,6 +645,31 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
     }
     if (!covered)
         atomicAdd(uncoverededges, 1);
+}
+
+// Single threaded; could accelerate eventually.
+__global__ void FillSolutionArray(int leafIndex,
+                                int * dsolution,
+                                int2 * dsearchtree,
+                                int * dnumberofdynamicallyaddedvertices,
+                                int * ddynamicallyaddedvertices){
+	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+    int leafIndexSoln = leafIndex;
+    int2 nodeEntry;
+    int counter = 0;
+    int UBDyn = dnumberofdynamicallyaddedvertices[0];
+    if (threadID == 0){
+        while(leafIndexSoln != 0){
+            nodeEntry = dsearchtree[leafIndexSoln];
+            dsolution[counter] = nodeEntry.x;
+            dsolution[counter + 1] = nodeEntry.y;
+            leafIndexSoln = leafIndexSoln / 3;
+            counter += 2;
+        }
+        for (int index = 0; index < UBDyn; ++index){
+            dsolution[counter + index] = ddynamicallyaddedvertices[index];
+        }
+    }
 }
 // Each block is a leaf node
 // First it loads it's solution into shared memory.
