@@ -374,6 +374,7 @@ int main(int argc, char **argv)
 	std::vector<int> lengthOfPath(graph.nrVertices);
 	std::vector<int> degrees(graph.nrVertices);
 	std::vector<int> edgestatus(graph.nrEdges);
+	bool foundSolution = false;
 	//Perform all desired greedy matchings.
 	for (set<int>::const_iterator i = matchTypes.begin(); i != matchTypes.end(); ++i)
 	{
@@ -436,8 +437,14 @@ int main(int argc, char **argv)
 					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 30);
 					vc.matcher.initialMatching(match);
 					//initscr ();
-					vc.FindCover(0, 0);
+					vc.FindCover(0, 0, foundSolution);
 					vc.CallDrawSearchTree(stn);
+					if (foundSolution){
+						for (int i = 0; i < vc.solution.size(); ++i)
+							printf("%d ",vc.solution[i]);
+					} else {
+						printf("No solution found.\n");
+					}
 				    //endwin();
 					vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);
 					vc.CopyMatchingBackToHost(match);
