@@ -1612,6 +1612,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 	// dtails - to quickly flip sense of strand
 	// dmatch - same as singleton implementation
 	// dsense - indicates directionality of strand
+	srand(12345);
 
 	bool useMaxLength = true;
 	//Perform matching.

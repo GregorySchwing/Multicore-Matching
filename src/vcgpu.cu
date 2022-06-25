@@ -60,7 +60,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 {
     finishedLeavesPerLevel.resize(depthOfSearchTree+1);
     totalLeavesPerLevel.resize(depthOfSearchTree+1);
-
+    solution.resize(2*k);
     sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(depthOfSearchTree);
     printf("SIZE OF SEARCH TREE %lld\n", sizeOfSearchTree);
     searchtree.resize(sizeOfSearchTree);
@@ -252,7 +252,11 @@ void VCGPU::eraseDynVertsOfRecursionLevel(int recursiveStackDepth){
 // nodes, but that number of new leaves == 0
 // so the pendant paths are found if any remain.
 void VCGPU::FindCover(int root,
-                      int recursiveStackDepth){
+                      int recursiveStackDepth,
+                      bool & foundSolution){
+    if (foundSolution)
+        return;
+
     // If you want to check the quality of each match, uncomment
     // Else, the only noticable changes will be in the recursion stack 
     // and the device search tree.
@@ -317,17 +321,17 @@ void VCGPU::FindCover(int root,
         if (uncoverededges){
             //printf("leaf index %d is not a solution :  %d edges are uncovered\n", newLeaves.x, uncoverededges);
         }else {
-            printf("leaf index %d is a solution :  %d edges are uncovered\n", newLeaves.x, uncoverededges);
+            printf("leaf index in incomplete level %d is a solution :  %d edges are uncovered\n", newLeaves.x, uncoverededges);
             FillSolutionArray<<<1,1>>>(newLeaves.z,
                     dsolution,
                     dsearchtree,
                     dnumberofdynamicallyaddedvertices,
                     ddynamicallyaddedvertices);
             cudaMemcpy(&solution[0], dsolution, sizeof(int)*solution.size(), cudaMemcpyDeviceToHost);
-            
-            exit(0);
+            foundSolution = true;
+            return;
         }
-        FindCover(newLeaves.x, recursiveStackDepth+1);
+        FindCover(newLeaves.x, recursiveStackDepth+1, foundSolution);
         ++newLeaves.x;
     }
     depthOfLeaf = ceil(logf(2*newLeaves.w + 1) / logf(3)) - 1;
@@ -344,16 +348,17 @@ void VCGPU::FindCover(int root,
         if (uncoverededges){
             //printf("leaf index %d is not a solution :  %d edges are uncovered\n", newLeaves.z, uncoverededges);
         }else {
-            printf("leaf index %d is a solution :  %d edges are uncovered\n", newLeaves.z, uncoverededges);
+            printf("leaf index %d in complete level is a solution :  %d edges are uncovered\n", newLeaves.z, uncoverededges);
             FillSolutionArray<<<1,1>>>(newLeaves.z,
                                 dsolution,
                                 dsearchtree,
                                 dnumberofdynamicallyaddedvertices,
                                 ddynamicallyaddedvertices);
             cudaMemcpy(&solution[0], dsolution, sizeof(int)*solution.size(), cudaMemcpyDeviceToHost);
-            exit(0);
+            foundSolution = true;
+            return;
         }
-        FindCover(newLeaves.z, recursiveStackDepth+1);
+        FindCover(newLeaves.z, recursiveStackDepth+1, foundSolution);
         ++newLeaves.z;
     }
     // Wipe away my pendant nodes from shared list
@@ -663,11 +668,14 @@ __global__ void FillSolutionArray(int leafIndex,
             nodeEntry = dsearchtree[leafIndexSoln];
             dsolution[counter] = nodeEntry.x;
             dsolution[counter + 1] = nodeEntry.y;
+            printf("Search tree vertex %d\n", dsolution[counter]);
+            printf("Search tree vertex %d\n", dsolution[counter+1]);
             leafIndexSoln = leafIndexSoln / 3;
             counter += 2;
         }
         for (int index = 0; index < UBDyn; ++index){
             dsolution[counter + index] = ddynamicallyaddedvertices[index];
+            //printf("Dynamic vertex %d\n", dsolution[counter+index]);
         }
     }
 }
@@ -983,6 +991,9 @@ __global__ void CalculateNumberOfLeaves(int *dfullpathcount){
 // currently a single root is expanded in gpu memory at a time. 
 // efforts were made in the FPT-kVC "done" branch to maintain multiple copies of the graph
 // and explore the search tree in parallel.
+
+// Template this to do any type of tree
+// binary, ternary, quaternary, ...
 int4 CalculateLeafOffsets(              int leafIndex,
                                         int fullpathcount){
     int arbitraryParameter;
@@ -1001,23 +1012,23 @@ int4 CalculateLeafOffsets(              int leafIndex,
     // LTP = 2
     // CL = 1
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
-    int completeLevel = floor(logf(2*leavesToProcess + 1) / logf(3)) - (int)(leavesToProcess==0);
+    int completeLevel = floor(logf(2*leavesToProcess + 1) / logf(3));
     // If LTP == 0, we dont want to create any new leaves
     // Therefore, we dont want to enter the for loops.
     // The active leaf writes itself as it's parent before the for loops
     // This is overwritten within the for loops if LTP > 0
     // CLL = 3
-    int leavesFromCompleteLvl = powf(3.0, completeLevel) - (int)(leavesToProcess == 0);
+    int leavesFromCompleteLvl = powf(3.0, completeLevel);
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Solved for closed form < leavesToProcess
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
     // IL = 1
-    int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3)) - (int)(leavesToProcess==0);
+    int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3));
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Add 1 when leavesToProcess isn't 0, so we start counting from level 1
     // Also subtract the root, so we start counting from level 1
     // TSC = 3
-    int treeSizeComplete = (1.0 - powf(3.0, completeLevel+(int)(leavesToProcess != 0)))/(1.0 - 3.0) - (int)(leavesToProcess != 0);
+    int treeSizeComplete = (1.0 - powf(3.0, completeLevel+1))/(1.0 - 3.0);
     // How many internal leaves to skip in complete level
     // RFC = 1
     int removeFromComplete = ((3*leavesToProcess - treeSizeComplete) + 3 - 1) / 3;

@@ -80,9 +80,6 @@ __global__ void eraseDynVertsOfRecursionLevel(int recursiveStackDepth,
                                               int * ddynamicallyaddedvertices_csr, 
                                               int * ddynamicallyaddedvertices);
 
-int4 CalculateLeafOffsets(  int leafIndex,
-                            int fullpathcount);
-
 __global__ void CalculateDegrees(
                         int nrVertices,
                         int * dedgestatus,
@@ -106,9 +103,17 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
                                                 int *dnumberofdynamicallyaddedvertices,
                                                 int *ddynamicallyaddedvertices);                        
 
-                             
+__global__ void FillSolutionArray(int leafIndex,
+                                int * dsolution,
+                                int2 * dsearchtree,
+                                int * dnumberofdynamicallyaddedvertices,
+                                int * ddynamicallyaddedvertices);
+
 __device__ void SetEdges(   int vertexToInclude,
                             int * dedgestatus);
+
+__host__ __device__  int4 CalculateLeafOffsets(  int leafIndex,
+                                                int fullpathcount);
 
 class VCGPU
 {
@@ -134,7 +139,7 @@ class VCGPU
         
         void SetEdgesOfLeaf(int leafIndex);
         void Match(int leafIndex);
-        void FindCover(int root, int recursiveStackDepth);
+        void FindCover(int root, int recursiveStackDepth, bool & foundSolution);
         void ReinitializeArrays();
         void PrintData ();
         void CopyMatchingBackToHost(std::vector<int> & match);
