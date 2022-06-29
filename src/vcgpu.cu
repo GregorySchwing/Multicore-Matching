@@ -14,7 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "vcgpu.h"
+#include "vcgpu.cuh"
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
@@ -547,7 +547,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     // LTP = 2
     // CL = 1
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
-    int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3)) - (int)(leavesToProcess==0);
+    int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3));
     int arbitraryParameter = 3*((3*leafIndex)+1);
     int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
 
@@ -557,7 +557,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     //leafIndex = global_active_leaves[globalIndex];
 //    leafIndex = 0;
     // Closed form solution of recurrence relation shown in comment above method
-    // Subtract 1 because reasons
+    // Subtract 1 because reasons???
     int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
     int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
     #ifndef NDEBUG
