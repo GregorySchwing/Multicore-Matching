@@ -1,8 +1,67 @@
 #include <math.h>       /* log */
 
+long long CalculateSpaceForDesiredNumberOfLevels(int levels){
+    long long summand= 0;
+    // ceiling(vertexCount/2) loops
+    for (int i = 0; i <= levels; ++i){
+        summand += pow (3.0, i);
+        finishedLeavesPerLevel[i] = 0;
+        totalLeavesPerLevel[i] = pow (3.0, i);
+    }
+    return summand;
+}
+
+void RecursivelyCallFillTree(int leafIndex,
+                            int * searchTree){
+    // Random number between 1 and N
+    int numLeavesToFill = rand();
+    std::array<int, 4> newLeaves = CalculateLeafOffsets(leafIndex,numLeavesToFill);
+    int lb = newLeaves[0];
+    int ub = newLeaves[1];
+    while(lb < ub && lb < sizeOfSearchTree){
+        RecursivelyCallFillTree(lb, searchTree);
+        ++lb;
+    }
+    depthOfLeaf = ceil(logf(2*newLeaves.w + 1) / logf(3)) - 1;
+    lb = newLeaves[2];
+    ub = newLeaves[3];
+    while(lb < ub && lb < sizeOfSearchTree){
+        RecursivelyCallFillTree(lb, searchTree);
+        ++lb;
+    }
+}
+
+void FillTree(int leafIndex,
+              int fullpathcount,
+              int * searchTree){
+    int leavesToProcess = fullpathcount;
+    int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3));
+    int arbitraryParameter = 3*((3*leafIndex)+1);
+    int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
+
+    int leavesFromIncompleteLevelLvl = powf(3.0, incompleteLevel); 
+    int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, (incompleteLevel-1)))/(1.0 - 3.0);  
+    // Test from root for now, this code can have an arbitrary root though
+    //leafIndex = global_active_leaves[globalIndex];
+//    leafIndex = 0;
+    // Closed form solution of recurrence relation shown in comment above method
+    // Subtract 1 because reasons???
+    int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
+    int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
+
+    if (levelOffset + 0 >= sizeOfSearchTree){
+        //printf("child %d exceeded srch tree depth\n", levelOffset);
+        return;        
+    }
+
+    searchTree[levelOffset + 0] = levelOffset + 0;
+    searchTree[levelOffset + 1] = levelOffset + 1;
+    searchTree[levelOffset + 2] = levelOffset + 2;
+}
+
 // Template this to do any type of tree
 // binary, ternary, quaternary, ...
-std::array<int, 4> CalculateLeafOffsets(              int leafIndex,
+std::array<int, 4> CalculateLeafOffsets(int leafIndex,
                                         int fullpathcount){
     int arbitraryParameter;
     int leftMostLeafIndexOfFullLevel;
@@ -86,6 +145,8 @@ std::array<int, 4> CalculateLeafOffsets(              int leafIndex,
     return myarray;
 
 }
+
+
 
 
 // Template this to do any type of tree
