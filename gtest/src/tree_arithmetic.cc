@@ -4,15 +4,16 @@
 #include "addressUtils.h"
 
 TEST(DeepgreenMatrix, BasicConstructor) {
-  int depthOfSearchTree = 10;
+  int depthOfSearchTree = 13;
   long long sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(depthOfSearchTree);
+  printf("sizeOfSearchTree %lld\n", sizeOfSearchTree);
+
   std::vector<int> searchTree(sizeOfSearchTree);
-  RecursivelyCallFillTree(0,sizeOfSearchTree);
-  /*
-  std::array<int, 4> myArray = CalculateLeafOffsets(3,1);
-  for (auto & a : myArray)
-    std::cout <<  a << " ";
-  */
-  EXPECT_FLOAT_EQ(11.0f, 11.0f);
+  RecursivelyCallFillTree(0, sizeOfSearchTree, &searchTree[0]);
+  for (long long start = 0; start < sizeOfSearchTree; ++start){
+      if (start != searchTree[start])
+        printf("FAILED %lld\n", start);
+      //EXPECT_EQ(start, searchTree[start]);
+  }
 
 }

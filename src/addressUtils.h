@@ -1,62 +1,156 @@
 #include <math.h>       /* log */
 
+std::array<int, 4> CalculateLeafOffsets(int leafIndex,
+                                        int fullpathcount);
+void FillTree(int leafIndex,
+              int fullpathcount,
+              int sizeOfSearchTree,
+              int * searchTree);
 long long CalculateSpaceForDesiredNumberOfLevels(int levels){
     long long summand= 0;
     // ceiling(vertexCount/2) loops
     for (int i = 0; i <= levels; ++i){
         summand += pow (3.0, i);
-        finishedLeavesPerLevel[i] = 0;
-        totalLeavesPerLevel[i] = pow (3.0, i);
     }
     return summand;
 }
 
 void RecursivelyCallFillTree(int leafIndex,
+                            long long sizeOfSearchTree,
                             int * searchTree){
+    if(leafIndex >= sizeOfSearchTree)
+        return;
     // Random number between 1 and N
-    int numLeavesToFill = rand();
+    //int numLeavesToFill = 1+rand()%20;
+    int numLeavesToFill = sizeOfSearchTree;
+
     std::array<int, 4> newLeaves = CalculateLeafOffsets(leafIndex,numLeavesToFill);
+
     int lb = newLeaves[0];
     int ub = newLeaves[1];
+    //printf("Root %d new leaves %d IL LB %d UB %d\n",leafIndex,numLeavesToFill,lb, ub);
+
+    FillTree(   leafIndex, 
+                numLeavesToFill,
+                sizeOfSearchTree,
+                searchTree);
+/*
     while(lb < ub && lb < sizeOfSearchTree){
-        RecursivelyCallFillTree(lb, searchTree);
+        RecursivelyCallFillTree(lb, sizeOfSearchTree, searchTree);
         ++lb;
     }
-    depthOfLeaf = ceil(logf(2*newLeaves.w + 1) / logf(3)) - 1;
+    //int depthOfLeaf = ceil(logf(2*newLeaves.w + 1) / logf(3)) - 1;
     lb = newLeaves[2];
     ub = newLeaves[3];
+    // %d CL LB %d UB %d\n",leafIndex,numLeavesToFill,lb, ub);
     while(lb < ub && lb < sizeOfSearchTree){
-        RecursivelyCallFillTree(lb, searchTree);
+        RecursivelyCallFillTree(lb, sizeOfSearchTree, searchTree);
         ++lb;
     }
+*/
 }
 
 void FillTree(int leafIndex,
               int fullpathcount,
+              int sizeOfSearchTree,
               int * searchTree){
     int leavesToProcess = fullpathcount;
-    int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3));
-    int arbitraryParameter = 3*((3*leafIndex)+1);
-    int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
 
-    int leavesFromIncompleteLevelLvl = powf(3.0, incompleteLevel); 
-    int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, (incompleteLevel-1)))/(1.0 - 3.0);  
-    // Test from root for now, this code can have an arbitrary root though
-    //leafIndex = global_active_leaves[globalIndex];
-//    leafIndex = 0;
-    // Closed form solution of recurrence relation shown in comment above method
-    // Subtract 1 because reasons???
-    int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
-    int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
+    // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
+    // r = 3, a = 1, solve for n given s_n = leavesToProcess ∈ [1,m/4]
+    // where m = number of vertices.
+    // s_n = (1-r^(n+1))/(1-r)
+    // s_n * (1-3) = -2*s_n = (1-r^(n+1))
+    //     = -2*s_n - 1 = -3^(n+1)
+    //     = 2*s_n + 1  =  3^(n+1)
+    //     = log(2*s_n + 1) = n+1*log(3)
+    //     = log(2*s_n + 1)/log(3) = n + 1
+    //     = log(2*s_n + 1)/log(3) - 1 = n
+    // n is the number of terms in the closed form solution.
+    // Alternatively, n is the number of levels in the search tree.
+    for (int leavesToProcess = 1; leavesToProcess < fullpathcount+1; ++leavesToProcess){
+        int n = ceil(logf(2*leavesToProcess + 1) / logf(3));
+        int arbitraryParameter = 3*((3*leafIndex)+1);
+        int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, n-1) - 3)/6;
 
-    if (levelOffset + 0 >= sizeOfSearchTree){
-        //printf("child %d exceeded srch tree depth\n", levelOffset);
-        return;        
+        int leavesFromIncompleteLevelLvl = powf(3.0, n); 
+        int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, (n-1)))/(1.0 - 3.0);  
+        // Test from root for now, this code can have an arbitrary root though
+        //leafIndex = global_active_leaves[globalIndex];
+    //    leafIndex = 0;
+        // Closed form solution of recurrence relation shown in comment above method
+        // Subtract 1 because reasons???
+        int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
+        //int internalLeafIndex = leavesToProcess - treeSizeNotIncludingThisLevel;
+        int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
+
+        if (levelOffset + 0 >= sizeOfSearchTree){
+            //printf("child %d exceeded srch tree depth\n", levelOffset);
+            return;        
+        }
+        
+        searchTree[levelOffset + 0] = levelOffset + 0;
+        searchTree[levelOffset + 1] = levelOffset + 1;
+        searchTree[levelOffset + 2] = levelOffset + 2;
+    /*
+        if (9841 == levelOffset || levelOffset+1 == 9841 || levelOffset+2 == 9841){
+            printf("Level Depth %d\n", n);
+            printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
+            printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
+            printf("Global level left offset (GLLO) %d\n", leftMostLeafIndexOfIncompleteLevel);
+            printf("internalLeafIndex %d\n", internalLeafIndex);
+            printf("parent (%d)'s child indices %d %d %d \n", levelOffset/3, 
+                                                        levelOffset,
+                                                        levelOffset + 1,
+                                                        levelOffset + 2);
+        }
+
+        if (29523 == levelOffset || levelOffset+1 == 29523 || levelOffset+2 == 29523){
+            printf("Level Depth %d\n", n);
+            printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
+            printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
+            printf("Global level left offset (GLLO) %d\n", leftMostLeafIndexOfIncompleteLevel);
+            printf("internalLeafIndex %d\n", internalLeafIndex);
+            printf("parent (%d)'s child indices %d %d %d \n", levelOffset/3, 
+                                                        levelOffset,
+                                                        levelOffset + 1,
+                                                        levelOffset + 2);
+        }
+        */
+        if (9839 == levelOffset/3 || (levelOffset+1)/3 == 9839 || (levelOffset+2)/3  == 9839){
+            printf("LO %d P %d\n", levelOffset, levelOffset/3);
+            printf("LO %d P %d\n", levelOffset+1,(levelOffset+1)/3);
+            printf("LO %d P %d\n", levelOffset+2,(levelOffset+2)/3);
+
+            printf("Level Depth %d\n", n);
+            printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
+            printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
+            printf("Global level left offset (GLLO) %d\n", leftMostLeafIndexOfIncompleteLevel);
+            printf("internalLeafIndex %d\n", internalLeafIndex);
+            printf("parent (%d)'s child indices %d %d %d \n", levelOffset/3, 
+                                                        levelOffset,
+                                                        levelOffset + 1,
+                                                        levelOffset + 2);
+        }     
+        if (9841 == levelOffset/3 || (levelOffset+1)/3 == 9841 || (levelOffset+2)/3  == 9841){
+            printf("LO %d P %d\n", levelOffset, levelOffset/3);
+            printf("LO %d P %d\n", levelOffset+1,(levelOffset+1)/3);
+            printf("LO %d P %d\n", levelOffset+2,(levelOffset+2)/3);
+
+            printf("Level Depth %d\n", n);
+            printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
+            printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
+            printf("Global level left offset (GLLO) %d\n", leftMostLeafIndexOfIncompleteLevel);
+            printf("internalLeafIndex %d\n", internalLeafIndex);
+            printf("parent (%d)'s child indices %d %d %d \n", levelOffset/3, 
+                                                        levelOffset,
+                                                        levelOffset + 1,
+                                                        levelOffset + 2);
+        }     
+
+
+
     }
-
-    searchTree[levelOffset + 0] = levelOffset + 0;
-    searchTree[levelOffset + 1] = levelOffset + 1;
-    searchTree[levelOffset + 2] = levelOffset + 2;
 }
 
 // Template this to do any type of tree
@@ -98,7 +192,7 @@ std::array<int, 4> CalculateLeafOffsets(int leafIndex,
     // Solved for closed form < leavesToProcess
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
     // IL = 1
-    int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3));
+    int n = ceil(logf(2*leavesToProcess + 1) / logf(3));
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Add 1 when leavesToProcess isn't 0, so we start counting from level 1
     // Also subtract the root, so we start counting from level 1
@@ -115,12 +209,12 @@ std::array<int, 4> CalculateLeafOffsets(int leafIndex,
     // Closed form solution of recurrence relation shown in comment above method
     // Subtract 1 because reasons
     leftMostLeafIndexOfFullLevel = ((2*arbitraryParameter+3)*powf(3.0, completeLevel-1) - 3)/6;
-    leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
+    leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, n-1) - 3)/6;
 
     int totalNewActive = (leavesFromCompleteLvl - removeFromComplete) + leavesFromIncompleteLvl;
     #ifndef NDEBUG
     printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, completeLevel);
-    printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, incompleteLevel);
+    printf("Leaves %d, n Level Depth %d\n",leavesToProcess, n);
     printf("Leaves %d, treeSizeComplete %d\n",leavesToProcess, treeSizeComplete);
     printf("Leaves %d, totalNewActive %d\n",leavesToProcess, totalNewActive);
     printf("Leaves %d, leavesFromCompleteLvl %d\n",leavesToProcess, leavesFromCompleteLvl);
@@ -164,12 +258,12 @@ std::array<int, 3> PopulateTreeArithmetic(int leafIndex,
     // LTP = 2
     // CL = 1
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
-    int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3));
+    int n = ceil(logf(2*leavesToProcess + 1) / logf(3));
     int arbitraryParameter = 3*((3*leafIndex)+1);
-    int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
+    int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, n-1) - 3)/6;
 
-    int leavesFromIncompleteLevelLvl = powf(3.0, incompleteLevel); 
-    int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, (incompleteLevel-1)))/(1.0 - 3.0);  
+    int leavesFromIncompleteLevelLvl = powf(3.0, n); 
+    int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, (n-1)))/(1.0 - 3.0);  
     // Test from root for now, this code can have an arbitrary root though
     //leafIndex = global_active_leaves[globalIndex];
 //    leafIndex = 0;
@@ -178,7 +272,7 @@ std::array<int, 3> PopulateTreeArithmetic(int leafIndex,
     int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
     int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
     #ifndef NDEBUG
-    printf("Level Depth %d\n", incompleteLevel);
+    printf("Level Depth %d\n", n);
     printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
     printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
     printf("Global level left offset (GLLO) %d\n", leftMostLeafIndexOfIncompleteLevel);

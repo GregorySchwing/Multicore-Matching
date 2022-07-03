@@ -541,13 +541,25 @@ __global__ void PopulateSearchTree(int nrVertices,
 
     int leavesToProcess = atomicAdd(&dfullpathcount[0], 1) + 1;
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
+    // r = 3, a = 1, solve for n given s_n = leavesToProcess ∈ [1,m/4]
+    // where m = number of vertices.
+    // s_n = (1-r^(n+1))/(1-r)
+    // s_n * (1-3) = -2*s_n = (1-r^(n+1))
+    //     = -2*s_n - 1 = -3^(n+1)
+    //     = 2*s_n + 1  =  3^(n+1)
+    //     = log(2*s_n + 1) = n+1*log(3)
+    //     = log(2*s_n + 1)/log(3) = n + 1
+    //     = log(2*s_n + 1)/log(3) - 1 = n
+    // n is the number of terms in the closed form solution.
+    // Alternatively, n is the number of levels in the search tree.
+    int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3));
+
     // Solved for leavesToProcess < closed form
     // start from level 1, hence add a level if LTP > 0, 1 complete level 
     // Add 1 if LTP == 0 to prevent runtime error
     // LTP = 2
     // CL = 1
-    // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
-    int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3));
+    // start counting at level 1 not level 0
     int arbitraryParameter = 3*((3*leafIndex)+1);
     int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
 
