@@ -4,7 +4,7 @@
 #include "addressUtils.h"
 
 TEST(DeepgreenMatrix, BasicConstructor) {
-  int depthOfSearchTree = 13;
+  int depthOfSearchTree = 5;
   long long sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(depthOfSearchTree);
   std::vector<int> searchTree(sizeOfSearchTree);
   RecursivelyCallFillTree(0, sizeOfSearchTree, &searchTree[0]);

@@ -21,33 +21,34 @@ void RecursivelyCallFillTree(int leafIndex,
     if(leafIndex >= sizeOfSearchTree)
         return;
     // Random number between 1 and N
-    //int numLeavesToFill = 1+rand()%20;
-    int numLeavesToFill = sizeOfSearchTree;
+    int numLeavesToFill = 1+rand()%20;
+    //int numLeavesToFill = sizeOfSearchTree;
 
     std::array<int, 4> newLeaves = CalculateLeafOffsets(leafIndex,numLeavesToFill);
 
-    int lb = newLeaves[0];
-    int ub = newLeaves[1];
-    //printf("Root %d new leaves %d IL LB %d UB %d\n",leafIndex,numLeavesToFill,lb, ub);
+    int ilb = newLeaves[0];
+    int iub = newLeaves[1];
+    int clb = newLeaves[2];
+    int cub = newLeaves[3];
+    printf("Root %d new leaves %d IL LB %d UB %d\n",leafIndex,numLeavesToFill,ilb, iub);
+    printf("Root %d new leaves %d CL LB %d UB %d\n",leafIndex,numLeavesToFill,clb, cub);
 
     FillTree(   leafIndex, 
                 numLeavesToFill,
                 sizeOfSearchTree,
                 searchTree);
-/*
-    while(lb < ub && lb < sizeOfSearchTree){
-        RecursivelyCallFillTree(lb, sizeOfSearchTree, searchTree);
-        ++lb;
+
+    while(ilb < iub && ilb < sizeOfSearchTree){
+        RecursivelyCallFillTree(ilb, sizeOfSearchTree, searchTree);
+        ++ilb;
     }
     //int depthOfLeaf = ceil(logf(2*newLeaves.w + 1) / logf(3)) - 1;
-    lb = newLeaves[2];
-    ub = newLeaves[3];
     // %d CL LB %d UB %d\n",leafIndex,numLeavesToFill,lb, ub);
-    while(lb < ub && lb < sizeOfSearchTree){
-        RecursivelyCallFillTree(lb, sizeOfSearchTree, searchTree);
-        ++lb;
+    while(clb < cub && clb < sizeOfSearchTree){
+        RecursivelyCallFillTree(clb, sizeOfSearchTree, searchTree);
+        ++clb;
     }
-*/
+
 }
 
 void FillTree(int leafIndex,
@@ -137,12 +138,20 @@ std::array<int, 4> CalculateLeafOffsets(int leafIndex,
     // CL = 1
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
     int completeLevel = floor(logf(2*leavesToProcess + 1) / logf(3));
+
+
     // If LTP == 0, we dont want to create any new leaves
     // Therefore, we dont want to enter the for loops.
     // The active leaf writes itself as it's parent before the for loops
     // This is overwritten within the for loops if LTP > 0
     // CLL = 3
-    int leavesFromCompleteLvl = powf(3.0, completeLevel);
+
+    // At high powers, the error of transendental powf causes bugs. 
+    //int leavesFromCompleteLvl = powf(3.0, completeLevel);
+    int multiplicand = 1;
+    for (int i = 1; i < completeLevel; ++i)
+        multiplicand*=3;
+    int leavesFromCompleteLvl = multiplicand;
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Solved for closed form < leavesToProcess
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
@@ -152,7 +161,10 @@ std::array<int, 4> CalculateLeafOffsets(int leafIndex,
     // Add 1 when leavesToProcess isn't 0, so we start counting from level 1
     // Also subtract the root, so we start counting from level 1
     // TSC = 3
-    int treeSizeComplete = (1.0 - powf(3.0, completeLevel+1))/(1.0 - 3.0);
+
+    // At high powers, the error of transendental powf causes bugs. 
+    //int treeSizeComplete = (1.0 - powf(3.0, completeLevel+1))/(1.0 - 3.0);
+    int treeSizeComplete = (1.0 - 3*multiplicand)/(1.0 - 3.0);
     // How many internal leaves to skip in complete level
     // RFC = 1
     int removeFromComplete = ((3*leavesToProcess - treeSizeComplete) + 3 - 1) / 3;
