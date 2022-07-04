@@ -102,9 +102,9 @@ void FillTree(int leafIndex,
             return;        
         }
         
-        searchTree[levelOffset + 0] = levelOffset + 0;
-        searchTree[levelOffset + 1] = levelOffset + 1;
-        searchTree[levelOffset + 2] = levelOffset + 2;
+        searchTree[levelOffset + 0] += levelOffset + 0;
+        searchTree[levelOffset + 1] += levelOffset + 1;
+        searchTree[levelOffset + 2] += levelOffset + 2;
 
     }
 }
