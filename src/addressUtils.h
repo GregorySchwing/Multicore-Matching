@@ -70,11 +70,23 @@ void FillTree(int leafIndex,
     // Alternatively, n is the number of levels in the search tree.
     for (int leavesToProcess = 1; leavesToProcess < fullpathcount+1; ++leavesToProcess){
         int n = ceil(logf(2*leavesToProcess + 1) / logf(3));
+        float nf = logf(2*leavesToProcess + 1) / logf(3);
         int arbitraryParameter = 3*((3*leafIndex)+1);
-        int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, n-1) - 3)/6;
+        // At high powers, the error of transendental powf causes bugs.
+        //int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, n-1) - 3)/6;
 
-        int leavesFromIncompleteLevelLvl = powf(3.0, n); 
-        int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, (n-1)))/(1.0 - 3.0);  
+        // Discrete calculation without trancendentals
+        int leftMostLeafIndexOfIncompleteLevel = (2*arbitraryParameter+3);
+        int multiplicand = 1;
+        for (int i = 1; i < n; ++i)
+            multiplicand*=3;
+        leftMostLeafIndexOfIncompleteLevel*=multiplicand;
+        leftMostLeafIndexOfIncompleteLevel-=3;
+        leftMostLeafIndexOfIncompleteLevel/=6;
+
+        int treeSizeNotIncludingThisLevel = (1.0 - multiplicand)/(1.0 - 3.0); 
+        // At high powers, the error of transendental powf causes bugs. 
+        //int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, ((n+1)-1)))/(1.0 - 3.0);  
         // Test from root for now, this code can have an arbitrary root though
         //leafIndex = global_active_leaves[globalIndex];
     //    leafIndex = 0;
@@ -92,63 +104,6 @@ void FillTree(int leafIndex,
         searchTree[levelOffset + 0] = levelOffset + 0;
         searchTree[levelOffset + 1] = levelOffset + 1;
         searchTree[levelOffset + 2] = levelOffset + 2;
-    /*
-        if (9841 == levelOffset || levelOffset+1 == 9841 || levelOffset+2 == 9841){
-            printf("Level Depth %d\n", n);
-            printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
-            printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
-            printf("Global level left offset (GLLO) %d\n", leftMostLeafIndexOfIncompleteLevel);
-            printf("internalLeafIndex %d\n", internalLeafIndex);
-            printf("parent (%d)'s child indices %d %d %d \n", levelOffset/3, 
-                                                        levelOffset,
-                                                        levelOffset + 1,
-                                                        levelOffset + 2);
-        }
-
-        if (29523 == levelOffset || levelOffset+1 == 29523 || levelOffset+2 == 29523){
-            printf("Level Depth %d\n", n);
-            printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
-            printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
-            printf("Global level left offset (GLLO) %d\n", leftMostLeafIndexOfIncompleteLevel);
-            printf("internalLeafIndex %d\n", internalLeafIndex);
-            printf("parent (%d)'s child indices %d %d %d \n", levelOffset/3, 
-                                                        levelOffset,
-                                                        levelOffset + 1,
-                                                        levelOffset + 2);
-        }
-        */
-        if (9839 == levelOffset/3 || (levelOffset+1)/3 == 9839 || (levelOffset+2)/3  == 9839){
-            printf("LO %d P %d\n", levelOffset, levelOffset/3);
-            printf("LO %d P %d\n", levelOffset+1,(levelOffset+1)/3);
-            printf("LO %d P %d\n", levelOffset+2,(levelOffset+2)/3);
-
-            printf("Level Depth %d\n", n);
-            printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
-            printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
-            printf("Global level left offset (GLLO) %d\n", leftMostLeafIndexOfIncompleteLevel);
-            printf("internalLeafIndex %d\n", internalLeafIndex);
-            printf("parent (%d)'s child indices %d %d %d \n", levelOffset/3, 
-                                                        levelOffset,
-                                                        levelOffset + 1,
-                                                        levelOffset + 2);
-        }     
-        if (9841 == levelOffset/3 || (levelOffset+1)/3 == 9841 || (levelOffset+2)/3  == 9841){
-            printf("LO %d P %d\n", levelOffset, levelOffset/3);
-            printf("LO %d P %d\n", levelOffset+1,(levelOffset+1)/3);
-            printf("LO %d P %d\n", levelOffset+2,(levelOffset+2)/3);
-
-            printf("Level Depth %d\n", n);
-            printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
-            printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
-            printf("Global level left offset (GLLO) %d\n", leftMostLeafIndexOfIncompleteLevel);
-            printf("internalLeafIndex %d\n", internalLeafIndex);
-            printf("parent (%d)'s child indices %d %d %d \n", levelOffset/3, 
-                                                        levelOffset,
-                                                        levelOffset + 1,
-                                                        levelOffset + 2);
-        }     
-
-
 
     }
 }
@@ -262,7 +217,6 @@ std::array<int, 3> PopulateTreeArithmetic(int leafIndex,
     int arbitraryParameter = 3*((3*leafIndex)+1);
     int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, n-1) - 3)/6;
 
-    int leavesFromIncompleteLevelLvl = powf(3.0, n); 
     int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, (n-1)))/(1.0 - 3.0);  
     // Test from root for now, this code can have an arbitrary root though
     //leafIndex = global_active_leaves[globalIndex];
@@ -273,7 +227,6 @@ std::array<int, 3> PopulateTreeArithmetic(int leafIndex,
     int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
     #ifndef NDEBUG
     printf("Level Depth %d\n", n);
-    printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
     printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
     printf("Global level left offset (GLLO) %d\n", leftMostLeafIndexOfIncompleteLevel);
     printf("internalLeafIndex %d\n", internalLeafIndex);
