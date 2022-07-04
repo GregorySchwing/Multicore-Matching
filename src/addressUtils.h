@@ -30,8 +30,8 @@ void RecursivelyCallFillTree(int leafIndex,
     int iub = newLeaves[1];
     int clb = newLeaves[2];
     int cub = newLeaves[3];
-    printf("Root %d new leaves %d IL LB %d UB %d\n",leafIndex,numLeavesToFill,ilb, iub);
-    printf("Root %d new leaves %d CL LB %d UB %d\n",leafIndex,numLeavesToFill,clb, cub);
+    //printf("Root %d new leaves %d IL LB %d UB %d\n",leafIndex,numLeavesToFill,ilb, iub);
+    //printf("Root %d new leaves %d CL LB %d UB %d\n",leafIndex,numLeavesToFill,clb, cub);
 
     FillTree(   leafIndex, 
                 numLeavesToFill,
@@ -129,8 +129,7 @@ std::array<int, 4> CalculateLeafOffsets(int leafIndex,
         std::copy(std::begin(arr), std::end(arr), myarray.begin());
         return myarray;
     }
-    
-    // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
+        // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Solved for leavesToProcess < closed form
     // start from level 1, hence add a level if LTP > 0, 1 complete level 
     // Add 1 if LTP == 0 to prevent runtime error
@@ -138,33 +137,22 @@ std::array<int, 4> CalculateLeafOffsets(int leafIndex,
     // CL = 1
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
     int completeLevel = floor(logf(2*leavesToProcess + 1) / logf(3));
-
-
     // If LTP == 0, we dont want to create any new leaves
     // Therefore, we dont want to enter the for loops.
     // The active leaf writes itself as it's parent before the for loops
     // This is overwritten within the for loops if LTP > 0
     // CLL = 3
-
-    // At high powers, the error of transendental powf causes bugs. 
-    //int leavesFromCompleteLvl = powf(3.0, completeLevel);
-    int multiplicand = 1;
-    for (int i = 1; i < completeLevel; ++i)
-        multiplicand*=3;
-    int leavesFromCompleteLvl = multiplicand;
+    int leavesFromCompleteLvl = powf(3.0, completeLevel);
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Solved for closed form < leavesToProcess
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
     // IL = 1
-    int n = ceil(logf(2*leavesToProcess + 1) / logf(3));
+    int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3));
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Add 1 when leavesToProcess isn't 0, so we start counting from level 1
     // Also subtract the root, so we start counting from level 1
     // TSC = 3
-
-    // At high powers, the error of transendental powf causes bugs. 
-    //int treeSizeComplete = (1.0 - powf(3.0, completeLevel+1))/(1.0 - 3.0);
-    int treeSizeComplete = (1.0 - 3*multiplicand)/(1.0 - 3.0);
+    int treeSizeComplete = (1.0 - powf(3.0, completeLevel+1))/(1.0 - 3.0);
     // How many internal leaves to skip in complete level
     // RFC = 1
     int removeFromComplete = ((3*leavesToProcess - treeSizeComplete) + 3 - 1) / 3;
@@ -175,13 +163,21 @@ std::array<int, 4> CalculateLeafOffsets(int leafIndex,
     arbitraryParameter = 3*((3*leafIndex)+1);
     // Closed form solution of recurrence relation shown in comment above method
     // Subtract 1 because reasons
-    leftMostLeafIndexOfFullLevel = ((2*arbitraryParameter+3)*powf(3.0, completeLevel-1) - 3)/6;
-    leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, n-1) - 3)/6;
+    int multiplicandIL = 1;
+    for (int i = 1; i < incompleteLevel; ++i)
+        multiplicandIL*=3;
+
+    int multiplicandFL = 1;
+    for (int i = 1; i < completeLevel; ++i)
+        multiplicandFL*=3;        
+
+    leftMostLeafIndexOfFullLevel = ((2*arbitraryParameter+3)*multiplicandFL - 3)/6;
+    leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*multiplicandIL - 3)/6;
 
     int totalNewActive = (leavesFromCompleteLvl - removeFromComplete) + leavesFromIncompleteLvl;
     #ifndef NDEBUG
     printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, completeLevel);
-    printf("Leaves %d, n Level Depth %d\n",leavesToProcess, n);
+    printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, incompleteLevel);
     printf("Leaves %d, treeSizeComplete %d\n",leavesToProcess, treeSizeComplete);
     printf("Leaves %d, totalNewActive %d\n",leavesToProcess, totalNewActive);
     printf("Leaves %d, leavesFromCompleteLvl %d\n",leavesToProcess, leavesFromCompleteLvl);
@@ -193,7 +189,6 @@ std::array<int, 4> CalculateLeafOffsets(int leafIndex,
     // Shape of leaves
     //CL    -     -    o o o 
     //IL  o o o o o o
-    
 
     int arr[] = {
         leftMostLeafIndexOfIncompleteLevel,
