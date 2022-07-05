@@ -17,12 +17,14 @@ long long CalculateSpaceForDesiredNumberOfLevels(int levels){
 
 void RecursivelyCallFillTree(int leafIndex,
                             long long sizeOfSearchTree,
-                            int * searchTree){
+                            int * searchTree,
+                            std::string label){
     if(leafIndex >= sizeOfSearchTree)
         return;
     // Random number between 1 and N
-    int numLeavesToFill = 1+rand()%20;
+    //int numLeavesToFill = 1+rand()%20;
     //int numLeavesToFill = sizeOfSearchTree;
+    int numLeavesToFill = 5;
 
     std::array<int, 4> newLeaves = CalculateLeafOffsets(leafIndex,numLeavesToFill);
 
@@ -32,6 +34,7 @@ void RecursivelyCallFillTree(int leafIndex,
     int cub = newLeaves[3];
     //printf("Root %d new leaves %d IL LB %d UB %d\n",leafIndex,numLeavesToFill,ilb, iub);
     //printf("Root %d new leaves %d CL LB %d UB %d\n",leafIndex,numLeavesToFill,clb, cub);
+    //std::cout << label << std::endl;
 
     FillTree(   leafIndex, 
                 numLeavesToFill,
@@ -39,13 +42,13 @@ void RecursivelyCallFillTree(int leafIndex,
                 searchTree);
 
     while(ilb < iub && ilb < sizeOfSearchTree){
-        RecursivelyCallFillTree(ilb, sizeOfSearchTree, searchTree);
+        RecursivelyCallFillTree(ilb, sizeOfSearchTree, searchTree, "incomplete");
         ++ilb;
     }
     //int depthOfLeaf = ceil(logf(2*newLeaves.w + 1) / logf(3)) - 1;
     // %d CL LB %d UB %d\n",leafIndex,numLeavesToFill,lb, ub);
     while(clb < cub && clb < sizeOfSearchTree){
-        RecursivelyCallFillTree(clb, sizeOfSearchTree, searchTree);
+        RecursivelyCallFillTree(clb, sizeOfSearchTree, searchTree, "complete");
         ++clb;
     }
 
@@ -101,7 +104,27 @@ void FillTree(int leafIndex,
             //printf("child %d exceeded srch tree depth\n", levelOffset);
             return;        
         }
-        
+        if (searchTree[levelOffset] != 0){
+        printf("Leaves %d, leafIndex %d\n",leavesToProcess, leafIndex);
+        printf("Leaves %d, internalLeafIndex %d\n",leavesToProcess, internalLeafIndex);
+        printf("Leaves %d, leftMostLeafIndexOfIncompleteLevel %d\n",leavesToProcess, leftMostLeafIndexOfIncompleteLevel);
+        printf("Leaves %d, treeSizeNotIncludingThisLevel %d\n",leavesToProcess, treeSizeNotIncludingThisLevel);
+        printf("Leaves %d, n %d\n",leavesToProcess, n);
+        }
+        if (searchTree[levelOffset + 1] != 0){
+        printf("Leaves %d, leafIndex %d\n",leavesToProcess, leafIndex);
+        printf("Leaves %d, internalLeafIndex %d\n",leavesToProcess, internalLeafIndex);
+        printf("Leaves %d, leftMostLeafIndexOfIncompleteLevel %d\n",leavesToProcess, leftMostLeafIndexOfIncompleteLevel);
+        printf("Leaves %d, treeSizeNotIncludingThisLevel %d\n",leavesToProcess, treeSizeNotIncludingThisLevel);
+        printf("Leaves %d, n %d\n",leavesToProcess, n);
+        }
+        if (searchTree[levelOffset + 2] != 0){
+        printf("Leaves %d, leafIndex %d\n",leavesToProcess, leafIndex);
+        printf("Leaves %d, internalLeafIndex %d\n",leavesToProcess, internalLeafIndex);
+        printf("Leaves %d, leftMostLeafIndexOfIncompleteLevel %d\n",leavesToProcess, leftMostLeafIndexOfIncompleteLevel);
+        printf("Leaves %d, treeSizeNotIncludingThisLevel %d\n",leavesToProcess, treeSizeNotIncludingThisLevel);
+        printf("Leaves %d, n %d\n",leavesToProcess, n);
+        }
         searchTree[levelOffset + 0] += levelOffset + 0;
         searchTree[levelOffset + 1] += levelOffset + 1;
         searchTree[levelOffset + 2] += levelOffset + 2;
@@ -179,6 +202,7 @@ std::array<int, 4> CalculateLeafOffsets(int leafIndex,
     printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, completeLevel);
     printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, incompleteLevel);
     printf("Leaves %d, treeSizeComplete %d\n",leavesToProcess, treeSizeComplete);
+    printf("Leaves %d, removeFromComplete %d\n",leavesToProcess, removeFromComplete);
     printf("Leaves %d, totalNewActive %d\n",leavesToProcess, totalNewActive);
     printf("Leaves %d, leavesFromCompleteLvl %d\n",leavesToProcess, leavesFromCompleteLvl);
     printf("Leaves %d, leavesFromIncompleteLvl %d\n",leavesToProcess, leavesFromIncompleteLvl);
@@ -193,7 +217,7 @@ std::array<int, 4> CalculateLeafOffsets(int leafIndex,
     int arr[] = {
         leftMostLeafIndexOfIncompleteLevel,
         leftMostLeafIndexOfIncompleteLevel + leavesFromIncompleteLvl,
-        leftMostLeafIndexOfFullLevel,
+        leftMostLeafIndexOfFullLevel + removeFromComplete,
         leftMostLeafIndexOfFullLevel + leavesFromCompleteLvl
     };
     std::array<int,4> myarray;
