@@ -520,13 +520,13 @@ __global__ void eraseDynVertsOfRecursionLevel(int recursiveStackDepth,
 __global__ void PopulateSearchTree(int nrVertices, 
                                     int sizeOfSearchTree,
                                     int depthOfSearchTree,
-                                                int leafIndex,
-                                                float * dfinishedLeavesPerLevel,
-                                                int *dforwardlinkedlist, 
-                                                int *dbackwardlinkedlist, 
-                                                int *dlength, 
-                                                int *dfullpathcount,
-                                                int2* dsearchtree){
+                                    int leafIndex,
+                                    float * dfinishedLeavesPerLevel,
+                                    int *dforwardlinkedlist, 
+                                    int *dbackwardlinkedlist, 
+                                    int *dlength, 
+                                    int *dfullpathcount,
+                                    int2* dsearchtree){
 	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
 	// If not a head to a path of length 4, return (leaving the headindex == -1)
     if (threadID >= nrVertices || 
@@ -561,20 +561,26 @@ __global__ void PopulateSearchTree(int nrVertices,
     // CL = 1
     // start counting at level 1 not level 0
     int arbitraryParameter = 3*((3*leafIndex)+1);
-    int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
+    // At high powers, the error of transendental powf causes bugs.
+    //int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, n-1) - 3)/6;
 
-    int leavesFromIncompleteLevelLvl = powf(3.0, incompleteLevel); 
-    int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, (incompleteLevel-1)))/(1.0 - 3.0);  
-    // Test from root for now, this code can have an arbitrary root though
-    //leafIndex = global_active_leaves[globalIndex];
-//    leafIndex = 0;
-    // Closed form solution of recurrence relation shown in comment above method
-    // Subtract 1 because reasons???
+    // Discrete calculation without trancendentals
+    int leftMostLeafIndexOfIncompleteLevel = (2*arbitraryParameter+3);
+    int multiplicand = 1;
+    for (int i = 1; i < incompleteLevel; ++i)
+        multiplicand*=3;
+    leftMostLeafIndexOfIncompleteLevel*=multiplicand;
+    leftMostLeafIndexOfIncompleteLevel-=3;
+    leftMostLeafIndexOfIncompleteLevel/=6;
+
+    int treeSizeNotIncludingThisLevel = (1.0 - multiplicand)/(1.0 - 3.0); 
+    // At high powers, the error of transendental powf causes bugs.
+    //int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, (incompleteLevel-1)))/(1.0 - 3.0);  
+
     int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
     int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
     #ifndef NDEBUG
     printf("Level Depth %d\n", incompleteLevel);
-    printf("Level Width  %d\n", leavesFromIncompleteLevelLvl);
     printf("Size of Tree %d\n", treeSizeNotIncludingThisLevel);
     printf("Global level left offset (GLLO) %d\n", leftMostLeafIndexOfIncompleteLevel);
     printf("internalLeafIndex %d\n", internalLeafIndex);
