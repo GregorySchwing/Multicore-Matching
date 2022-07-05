@@ -1030,7 +1030,11 @@ int4 CalculateLeafOffsets(              int leafIndex,
     // The active leaf writes itself as it's parent before the for loops
     // This is overwritten within the for loops if LTP > 0
     // CLL = 3
-    int leavesFromCompleteLvl = powf(3.0, completeLevel);
+    // At high powers, the error of transendental powf causes bugs.
+    //int leavesFromCompleteLvlTest = powf(3.0, completeLevel);
+    int leavesFromCompleteLvl = 1;
+    for (int i = 1; i <= completeLevel; ++i)
+        leavesFromCompleteLvl*=3;
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // Solved for closed form < leavesToProcess
     // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
@@ -1040,7 +1044,9 @@ int4 CalculateLeafOffsets(              int leafIndex,
     // Add 1 when leavesToProcess isn't 0, so we start counting from level 1
     // Also subtract the root, so we start counting from level 1
     // TSC = 3
-    int treeSizeComplete = (1.0 - powf(3.0, completeLevel+1))/(1.0 - 3.0);
+    // At high powers, the error of transendental powf causes bugs.
+    //int treeSizeCompleteTest = (1.0 - powf(3.0, completeLevel+1))/(1.0 - 3.0);
+    int treeSizeComplete = (1.0 - 3*leavesFromCompleteLvl)/(1.0 - 3.0);
     // How many internal leaves to skip in complete level
     // RFC = 1
     int removeFromComplete = ((3*leavesToProcess - treeSizeComplete) + 3 - 1) / 3;
@@ -1050,9 +1056,19 @@ int4 CalculateLeafOffsets(              int leafIndex,
     // Test from root for now, this code can have an arbitrary root though
     arbitraryParameter = 3*((3*leafIndex)+1);
     // Closed form solution of recurrence relation shown in comment above method
-    // Subtract 1 because reasons
-    leftMostLeafIndexOfFullLevel = ((2*arbitraryParameter+3)*powf(3.0, completeLevel-1) - 3)/6;
-    leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
+    // At high powers, the error of transendental powf causes bugs.
+    //leftMostLeafIndexOfFullLevel = ((2*arbitraryParameter+3)*powf(3.0, completeLevel-1) - 3)/6;
+    //leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, incompleteLevel-1) - 3)/6;
+    int multiplicandIL = 1;
+    for (int i = 1; i < incompleteLevel; ++i)
+        multiplicandIL*=3;
+
+    int multiplicandFL = 1;
+    for (int i = 1; i < completeLevel; ++i)
+        multiplicandFL*=3;  
+
+    leftMostLeafIndexOfFullLevel = ((2*arbitraryParameter+3)*multiplicandFL - 3)/6;
+    leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*multiplicandIL - 3)/6;
 
     int totalNewActive = (leavesFromCompleteLvl - removeFromComplete) + leavesFromIncompleteLvl;
     #ifndef NDEBUG
@@ -1071,7 +1087,7 @@ int4 CalculateLeafOffsets(              int leafIndex,
     //IL  o o o o o o
     return make_int4( leftMostLeafIndexOfIncompleteLevel,
                         leftMostLeafIndexOfIncompleteLevel + leavesFromIncompleteLvl,
-                        leftMostLeafIndexOfFullLevel,
+                        leftMostLeafIndexOfFullLevel + removeFromComplete,
                         leftMostLeafIndexOfFullLevel + leavesFromCompleteLvl);
 
 }
