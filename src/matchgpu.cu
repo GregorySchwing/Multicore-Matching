@@ -1133,12 +1133,14 @@ __global__ void gIndicatePendants(int *match, int *dlength, int *forwardlinkedli
 
 __global__ void gSetSearchTreeVertices(int leafIndex, int *match, int2 *searchtree, const int depthOfLeaf)
 {
-	int i = blockIdx.x*blockDim.x + threadIdx.x;
-	if (i >= depthOfLeaf) return;
-	int parentLeafIndex = leafIndex / powf(3.0, i / 2);
-	int2 entry = searchtree[parentLeafIndex];
-	match[entry.x] = 2;
-	match[entry.y] = 2;
+	//int i = blockIdx.x*blockDim.x + threadIdx.x;
+	//if (i >= depthOfLeaf) return;
+	while (leafIndex != 0){
+		int2 entry = searchtree[leafIndex];
+		match[entry.x] = 2;
+		match[entry.y] = 2;
+		leafIndex /= 3;
+	}
 }
 
 __global__ void gSetDynamicVertices(int leafIndex, int *match, int *dynamicallyAddedVertices, const int nrDynamicallyAddedVertices)
@@ -1645,8 +1647,9 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 		int depthOfLeaf = ceil(logf(2*leafIndex + 1) / logf(3)) - 1;
 		if (depthOfLeaf > 0){
 			int blocksPerGridST = (depthOfLeaf + threadsPerBlock - 1)/threadsPerBlock;
-			gSetSearchTreeVertices<<<blocksPerGridST, threadsPerBlock>>>(leafIndex, match, dsearchtree, depthOfLeaf);
+			gSetSearchTreeVertices<<<1, 1>>>(leafIndex, match, dsearchtree, depthOfLeaf);
 		}
+
 		cudaDeviceSynchronize();
 		checkLastErrorCUDA(__FILE__, __LINE__);
 		int numberOfDynamicallyAddedVertices_host;
@@ -1663,35 +1666,18 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 		{
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
-			//printf("Match round %d\n", i);
-			//if (useMoreMemory){
-			//	gSelect<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dsense, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices, rand());
-			//}else{
 			gSelect<<<blocksPerGrid, threadsPerBlock>>>(match, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices, rand());
-			//}
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
-			//printf("gSelect done\n");
 			if (useMaxLength)
 				grRequest<<<blocksPerGrid, threadsPerBlock>>>(drequests, match, dsense, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
 			else 
 				grRequest<<<blocksPerGrid, threadsPerBlock>>>(drequests, match, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
 			cudaDeviceSynchronize();
-			checkLastErrorCUDA(__FILE__, __LINE__);
-			//printf("grRequest done\n");
-			
+			checkLastErrorCUDA(__FILE__, __LINE__);			
 			grRespond<<<blocksPerGrid, threadsPerBlock>>>(drequests, match, dsense, graph.nrVertices);
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
-			//printf("grRespond done\n");
-			/*
-			if (useMoreMemory){
-				gReverseLL<<<blocksPerGrid, threadsPerBlock>>>(match, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, 
-					drequests, graph.nrVertices);
-				gMatch<<<blocksPerGrid, threadsPerBlock>>>(match, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, 
-					drequests, graph.nrVertices);
-			}else{
-			*/
 			gReverseLL<<<blocksPerGrid, threadsPerBlock>>>(match, dforwardlinkedlist, dbackwardlinkedlist, 
 														drequests, graph.nrVertices);
 			cudaDeviceSynchronize();
@@ -1703,10 +1689,8 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 			if (useMaxLength)
 				gLength<<<blocksPerGrid, threadsPerBlock>>>(match, drequests, dforwardlinkedlist, dbackwardlinkedlist, 
 															dlength, graph.nrVertices);
-			//}
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);													
-			//printf("gMatch done\n");
 
 	#ifdef MATCH_INTERMEDIATE_COUNT
 			cudaMemcpy(&match[0], match, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
