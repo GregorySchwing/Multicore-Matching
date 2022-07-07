@@ -321,7 +321,7 @@ void VCGPU::FindCover(int root,
         cudaMemcpy(&uncoverededges, duncoverededges, sizeof(int)*1, cudaMemcpyDeviceToHost);
         if (uncoverededges){
             //printf("leaf index %d is not a solution :  %d edges are uncovered\n", newLeaves.x, uncoverededges);
-        }else {
+        } else {
             printf("leaf index in incomplete level %d is a solution :  %d edges are uncovered\n", newLeaves.x, uncoverededges);
             FillSolutionArray<<<1,1>>>(newLeaves.z,
                     dsolution,
@@ -555,7 +555,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     // n is the number of terms in the closed form solution.
     // Alternatively, n is the number of levels in the search tree.
     int n = ceil(logf(2*leavesToProcess + 1) / logf(3));
-    float nf = logf(2*leavesToProcess + 1) / logf(3);
+    //float nf = logf(2*leavesToProcess + 1) / logf(3);
     int arbitraryParameter = 3*((3*leafIndex)+1);
     // At high powers, the error of transendental powf causes bugs.
     //int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, n-1) - 3)/6;
@@ -591,14 +591,7 @@ __global__ void PopulateSearchTree(int nrVertices,
     // Test from root for now, this code can have an arbitrary root though
     dsearchtree[levelOffset + 0] = make_int2(first, third);
     dsearchtree[levelOffset + 1] = make_int2(second, third);
-    dsearchtree[levelOffset + 2] = make_int2(second, fourth);
-
-    // Test tree writing logic
-    /*
-    searchTree[levelOffset + 0] += levelOffset + 0;
-    searchTree[levelOffset + 1] += levelOffset + 1;
-    searchTree[levelOffset + 2] += levelOffset + 2;
-    */
+    dsearchtree[levelOffset + 2] = make_int2(second, fourth);   
 }
 
 // Each thread will take an edge.  Each thread will loop through the answer

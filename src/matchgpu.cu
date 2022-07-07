@@ -1139,6 +1139,7 @@ __global__ void gSetSearchTreeVertices(int leafIndex, int *match, int2 *searchtr
 		int2 entry = searchtree[leafIndex];
 		match[entry.x] = 2;
 		match[entry.y] = 2;
+		//printf("LEAF %d %d %d\n", leafIndex, entry.x, entry.y);
 		leafIndex /= 3;
 	}
 }
