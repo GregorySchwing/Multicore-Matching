@@ -51,8 +51,7 @@ void RecursivelyCallFillTree(unsigned int leafIndex,
     unsigned int iub = newLeaves[1];
     unsigned int clb = newLeaves[2];
     unsigned int cub = newLeaves[3];
-    //printf("Root %d new leaves %d IL LB %d UB %d\n",leafIndex,numLeavesToFill,ilb, iub);
-    //printf("Root %d new leaves %d CL LB %d UB %d\n",leafIndex,numLeavesToFill,clb, cub);
+
     while(ilb < iub && ilb < sizeOfSearchTree){
         RecursivelyCallFillTree(ilb, leafIndex, sizeOfSearchTree, searchTree, "incomplete");
         ++ilb;
@@ -66,6 +65,9 @@ void RecursivelyCallFillTree(unsigned int leafIndex,
 
 }
 
+// This method depends on being able to change the number of fullpathcounts.
+// This can be accomplished by either an atomic locking variable
+// or possible some logic to handle the leaf nodes.
 void FillTree(unsigned int leafIndex,
               unsigned int & fullpathcount,
               unsigned int sizeOfSearchTree,
