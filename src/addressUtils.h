@@ -2,6 +2,10 @@
 
 std::array<unsigned int, 4> CalculateLeafOffsets(unsigned int leafIndex,
                                         unsigned int fullpathcount);
+
+
+std::array<unsigned int, 4> CalculateLeafOffsets2(unsigned int leafIndex,
+                                        unsigned int fullpathcount);                                        
 void FillTree(unsigned int leafIndex,
               unsigned int fullpathcount,
               unsigned int sizeOfSearchTree,
@@ -21,12 +25,15 @@ void RecursivelyCallFillTree(unsigned int leafIndex,
                             std::string label){
     if(leafIndex >= sizeOfSearchTree)
         return;
+    else
+        printf("LI %d\n", leafIndex);
     // Random number between 1 and N
-    //unsigned int numLeavesToFill = 1+rand()%20;
-    unsigned int numLeavesToFill = sizeOfSearchTree;
+    unsigned int numLeavesToFill = 1+rand()%20;
+    //unsigned int numLeavesToFill = sizeOfSearchTree;
     //unsigned int numLeavesToFill = 1;
+    //std::array<unsigned int, 4> newLeaves = CalculateLeafOffsets(leafIndex,numLeavesToFill);
 
-    std::array<unsigned int, 4> newLeaves = CalculateLeafOffsets(leafIndex,numLeavesToFill);
+    std::array<unsigned int, 4> newLeaves = CalculateLeafOffsets2(leafIndex,numLeavesToFill);
 
     unsigned int ilb = newLeaves[0];
     unsigned int iub = newLeaves[1];
@@ -55,10 +62,9 @@ void RecursivelyCallFillTree(unsigned int leafIndex,
 }
 
 void FillTree(unsigned int leafIndex,
-              unsigned int fullpathcount,
+              unsigned int & fullpathcount,
               unsigned int sizeOfSearchTree,
               unsigned int * searchTree){
-    unsigned int leavesToProcess = fullpathcount;
 
     // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
     // r = 3, a = 1, solve for n given s_n = leavesToProcess ∈ [1,m/4]
@@ -105,8 +111,10 @@ void FillTree(unsigned int leafIndex,
         sizeOfSearchTree <= (levelOffset +2)||
         levelOffset< 0 ||
         (levelOffset+1) < 0 ||
-        (levelOffset + 2)< 0)
+        (levelOffset + 2)< 0){
+            fullpathcount = leavesToProcess;
             return;
+        }
         if (searchTree[levelOffset] != 0){
         printf("Leaves %d, leafIndex %d\n",leavesToProcess, leafIndex);
         printf("Leaves %d, multiplicand %d\n",leavesToProcess, multiplicand);
@@ -239,7 +247,95 @@ std::array<unsigned int, 4> CalculateLeafOffsets(unsigned int leafIndex,
 
 }
 
+// Template this to do any type of tree
+// binary, ternary, quaternary, ...
+std::array<unsigned int, 4> CalculateLeafOffsets2(unsigned int leafIndex,
+                                        unsigned int fullpathcount){
 
+    unsigned int leavesToProcess = fullpathcount;
+    unsigned int leavesFromIncompleteLvl = 1;
+    unsigned int leavesFromCompleteLvl = 1;
+
+    if (leavesToProcess == 0){
+        unsigned int arr[] = {
+            leafIndex,
+            leafIndex,
+            leafIndex,
+            leafIndex
+        };
+        std::array<unsigned int,4> myarray;
+        std::copy(std::begin(arr), std::end(arr), myarray.begin());
+        return myarray;
+    }
+    unsigned int n_com = floor(logf(2*leavesToProcess + 1) / logf(3));
+    unsigned int n_inc = ceil(logf(2*leavesToProcess + 1) / logf(3));
+
+    for (unsigned int i = 1; i <= n_inc; ++i)
+        leavesFromIncompleteLvl*=3;
+
+    for (unsigned int i = 1; i <= n_com; ++i)
+        leavesFromCompleteLvl*=3;
+    //float nf = logf(2*leavesToProcess + 1) / logf(3);
+    unsigned int arbitraryParameter = 3*((3*leafIndex)+1);
+    // At high powers, the error of transendental powf causes bugs.
+    //unsigned int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, n-1) - 3)/6;
+
+    // Discrete calculation without trancendentals
+    unsigned int leftMostLeafIndexOfIncompleteLevel = (2*arbitraryParameter+3);
+    unsigned int multiplicandn_inc = 1;
+    for (unsigned int i = 1; i < n_inc; ++i)
+        multiplicandn_inc*=3;
+    leftMostLeafIndexOfIncompleteLevel*=multiplicandn_inc;
+    leftMostLeafIndexOfIncompleteLevel-=3;
+    leftMostLeafIndexOfIncompleteLevel/=6;
+
+    unsigned int leftMostLeafIndexOfCompleteLevel = (2*arbitraryParameter+3);
+    unsigned int multiplicandn_com = 1;
+    for (unsigned int i = 1; i < n_com; ++i)
+        multiplicandn_com*=3;
+    leftMostLeafIndexOfCompleteLevel*=multiplicandn_com;
+    leftMostLeafIndexOfCompleteLevel-=3;
+    leftMostLeafIndexOfCompleteLevel/=6;
+
+    unsigned int treeSizeNotIncludingThisLevel = (1.0 - multiplicandn_inc)/(1.0 - 3.0); 
+    // At high powers, the error of transendental powf causes bugs. 
+    //unsigned int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, ((n+1)-1)))/(1.0 - 3.0);  
+    // Test from root for now, this code can have an arbitrary root though
+    //leafIndex = global_active_leaves[globalIndex];
+//    leafIndex = 0;
+    // Closed form solution of recurrence relation shown in comment above method
+    // Subtract 1 because reasons???
+    unsigned int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
+    //unsigned int internalLeafIndex = leavesToProcess - treeSizeNotIncludingThisLevel;
+    unsigned int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
+
+    #ifndef NDEBUG
+    printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, completeLevel);
+    printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, incompleteLevel);
+    printf("Leaves %d, treeSizeComplete %d\n",leavesToProcess, treeSizeComplete);
+    printf("Leaves %d, removeFromComplete %d\n",leavesToProcess, removeFromComplete);
+    printf("Leaves %d, totalNewActive %d\n",leavesToProcess, totalNewActive);
+    printf("Leaves %d, leavesFromCompleteLvl %d\n",leavesToProcess, leavesFromCompleteLvl);
+    printf("Leaves %d, leavesFromIncompleteLvl %d\n",leavesToProcess, leavesFromIncompleteLvl);
+    printf("Leaves %d, leftMostLeafIndexOfFullLevel %d\n",leavesToProcess, leftMostLeafIndexOfFullLevel);
+    printf("Leaves %d, leftMostLeafIndexOfIncompleteLevel %d\n",leavesToProcess, leftMostLeafIndexOfIncompleteLevel);
+    #endif
+    // Grow tree leftmost first, so put the incomplete level first.
+    // Shape of leaves
+    //CL    -     -    o o o 
+    //IL  o o o o o o
+
+    unsigned int arr[] = {
+        leftMostLeafIndexOfIncompleteLevel,
+        levelOffset + 3,
+        ((levelOffset + 1)/3) + 1,
+        leftMostLeafIndexOfCompleteLevel + leavesFromCompleteLvl
+    };
+    std::array<unsigned int,4> myarray;
+    std::copy(std::begin(arr), std::end(arr), myarray.begin());
+    return myarray;
+
+}
 
 
 // Template this to do any type of tree
