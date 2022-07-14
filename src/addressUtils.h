@@ -7,7 +7,7 @@ std::array<unsigned int, 4> CalculateLeafOffsets(unsigned int leafIndex,
 std::array<unsigned int, 4> CalculateLeafOffsets2(unsigned int leafIndex,
                                         unsigned int fullpathcount);                                        
 void FillTree(unsigned int leafIndex,
-              unsigned int fullpathcount,
+              unsigned int & fullpathcount,
               unsigned int sizeOfSearchTree,
               unsigned int * searchTree);
 long long CalculateSpaceForDesiredNumberOfLevels(unsigned int levels){
@@ -20,18 +20,30 @@ long long CalculateSpaceForDesiredNumberOfLevels(unsigned int levels){
 }
 
 void RecursivelyCallFillTree(unsigned int leafIndex,
+                            unsigned int parentLeafIndex,
                             long long sizeOfSearchTree,
                             unsigned int * searchTree,
                             std::string label){
     if(leafIndex >= sizeOfSearchTree)
         return;
-    else
-        printf("LI %d\n", leafIndex);
+    //else
+    //    printf("LI %d PLI %d\n", leafIndex, parentLeafIndex);
+    //    std::cout << label << std::endl;
+
     // Random number between 1 and N
     unsigned int numLeavesToFill = 1+rand()%20;
     //unsigned int numLeavesToFill = sizeOfSearchTree;
     //unsigned int numLeavesToFill = 1;
     //std::array<unsigned int, 4> newLeaves = CalculateLeafOffsets(leafIndex,numLeavesToFill);
+
+
+
+    //std::cout << label << std::endl;
+
+    FillTree(   leafIndex, 
+                numLeavesToFill,
+                sizeOfSearchTree,
+                searchTree);
 
     std::array<unsigned int, 4> newLeaves = CalculateLeafOffsets2(leafIndex,numLeavesToFill);
 
@@ -41,21 +53,14 @@ void RecursivelyCallFillTree(unsigned int leafIndex,
     unsigned int cub = newLeaves[3];
     //printf("Root %d new leaves %d IL LB %d UB %d\n",leafIndex,numLeavesToFill,ilb, iub);
     //printf("Root %d new leaves %d CL LB %d UB %d\n",leafIndex,numLeavesToFill,clb, cub);
-    //std::cout << label << std::endl;
-
-    FillTree(   leafIndex, 
-                numLeavesToFill,
-                sizeOfSearchTree,
-                searchTree);
-
     while(ilb < iub && ilb < sizeOfSearchTree){
-        RecursivelyCallFillTree(ilb, sizeOfSearchTree, searchTree, "incomplete");
+        RecursivelyCallFillTree(ilb, leafIndex, sizeOfSearchTree, searchTree, "incomplete");
         ++ilb;
     }
     //unsigned int depthOfLeaf = ceil(logf(2*newLeaves.w + 1) / logf(3)) - 1;
     // %d CL LB %d UB %d\n",leafIndex,numLeavesToFill,lb, ub);
     while(clb < cub && clb < sizeOfSearchTree){
-        RecursivelyCallFillTree(clb, sizeOfSearchTree, searchTree, "complete");
+        RecursivelyCallFillTree(clb, leafIndex, sizeOfSearchTree, searchTree, "complete");
         ++clb;
     }
 
@@ -324,12 +329,21 @@ std::array<unsigned int, 4> CalculateLeafOffsets2(unsigned int leafIndex,
     // Shape of leaves
     //CL    -     -    o o o 
     //IL  o o o o o o
+    unsigned int clb;
+    unsigned int cub;
 
+    if (n_com == n_inc){
+        clb = levelOffset + 3;
+        cub = levelOffset + 3;
+    } else {
+        clb = (levelOffset + 2)/3;
+        cub = leftMostLeafIndexOfCompleteLevel + leavesFromCompleteLvl;
+    }
     unsigned int arr[] = {
         leftMostLeafIndexOfIncompleteLevel,
         levelOffset + 3,
-        ((levelOffset + 1)/3) + 1,
-        leftMostLeafIndexOfCompleteLevel + leavesFromCompleteLvl
+        clb,
+        cub
     };
     std::array<unsigned int,4> myarray;
     std::copy(std::begin(arr), std::end(arr), myarray.begin());
