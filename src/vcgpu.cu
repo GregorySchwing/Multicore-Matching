@@ -311,6 +311,8 @@ void VCGPU::FindCover(int root,
     depthOfLeaf = ceil(logf(2*newLeaves.y + 1) / logf(3)) - 1;
     while(newLeaves.x < newLeaves.y && newLeaves.x < sizeOfSearchTree){
         cuMemsetD32(reinterpret_cast<CUdeviceptr>(duncoverededges),  0, size_t(1));
+        cudaDeviceSynchronize();
+
         EvaluateSingleLeafNode<<<blocksPerGrid, threadsPerBlock, 2*depthOfLeaf*sizeof(int)>>>(graph.nrEdges,
                                                                                             newLeaves.x,
                                                                                             dedges, 
@@ -338,6 +340,7 @@ void VCGPU::FindCover(int root,
     depthOfLeaf = ceil(logf(2*newLeaves.w + 1) / logf(3)) - 1;
     while(newLeaves.z < newLeaves.w && newLeaves.z < sizeOfSearchTree){
         cuMemsetD32(reinterpret_cast<CUdeviceptr>(duncoverededges),  0, size_t(1));
+        cudaDeviceSynchronize();
         EvaluateSingleLeafNode<<<blocksPerGrid, threadsPerBlock, 2*depthOfLeaf*sizeof(int)>>>(graph.nrEdges,
                                                                                             newLeaves.z,
                                                                                             dedges, 
@@ -581,11 +584,16 @@ __global__ void PopulateSearchTree(int nrVertices,
     //int internalLeafIndex = leavesToProcess - treeSizeNotIncludingThisLevel;
     int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
 
-    if (levelOffset + 0 >= sizeOfSearchTree){
-        //printf("child %d exceeded srch tree depth\n", levelOffset);
-        return;        
+    if (sizeOfSearchTree <= levelOffset ||
+        sizeOfSearchTree <= (levelOffset + 1) ||
+        sizeOfSearchTree <= (levelOffset +2)||
+        levelOffset< 0 ||
+        (levelOffset+1) < 0 ||
+        (levelOffset + 2)< 0){
+            dfullpathcount[0] = leavesToProcess;
+            printf("child %d exceeded srch tree depth\n", levelOffset);
+            return;
     }
-
     // Add to device pointer of level
     //atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf], 3); 
     // Test from root for now, this code can have an arbitrary root though
@@ -621,7 +629,12 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
             nodeEntry = dsearchtree[leafIndexSoln];
             soln[counter] = nodeEntry.x;
             soln[counter + 1] = nodeEntry.y;
-            leafIndexSoln = leafIndexSoln / 3;
+            if(leafIndexSoln % 3 == 0){
+                --leafIndexSoln;
+                leafIndexSoln = leafIndexSoln / 3;
+            } else {
+                leafIndexSoln = leafIndexSoln / 3;
+            }
             counter += 2;
         }
         /*
@@ -995,66 +1008,59 @@ __global__ void CalculateNumberOfLeaves(int *dfullpathcount){
 // binary, ternary, quaternary, ...
 int4 CalculateLeafOffsets(              int leafIndex,
                                         int fullpathcount){
-    int arbitraryParameter;
-    int leftMostLeafIndexOfFullLevel;
-    int leftMostLeafIndexOfIncompleteLevel;
-    int leavesToProcess = fullpathcount;
+
+    unsigned int leavesToProcess = fullpathcount;
+    unsigned int leavesFromIncompleteLvl = 1;
+    unsigned int leavesFromCompleteLvl = 1;
+
     if (leavesToProcess == 0)
         return make_int4( leafIndex,
                           leafIndex,
                           leafIndex,
                           leafIndex);
 
-        // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
-    // Solved for leavesToProcess < closed form
-    // start from level 1, hence add a level if LTP > 0, 1 complete level 
-    // Add 1 if LTP == 0 to prevent runtime error
-    // LTP = 2
-    // CL = 1
-    // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
-    int completeLevel = floor(logf(2*leavesToProcess + 1) / logf(3));
+    unsigned int n_com = floor(logf(2*leavesToProcess + 1) / logf(3));
+    unsigned int n_inc = ceil(logf(2*leavesToProcess + 1) / logf(3));
 
-    // At high powers, the error of transendental powf causes bugs.
-    //int leavesFromCompleteLvlTest = powf(3.0, completeLevel);
-    int leavesFromCompleteLvl = 1;
-    for (int i = 1; i <= completeLevel; ++i)
+    for (unsigned int i = 1; i <= n_inc; ++i)
+        leavesFromIncompleteLvl*=3;
+
+    for (unsigned int i = 1; i <= n_com; ++i)
         leavesFromCompleteLvl*=3;
-   // if (leavesFromCompleteLvlTest != leavesFromCompleteLvl)  
-    //    exit(1);
-
-    // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
-    // Solved for closed form < leavesToProcess
-    // Always add 2 to prevent run time error, also to start counting at level 1 not level 0
-    // IL = 1
-    int incompleteLevel = ceil(logf(2*leavesToProcess + 1) / logf(3));
-    // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
+    //float nf = logf(2*leavesToProcess + 1) / logf(3);
+    unsigned int arbitraryParameter = 3*((3*leafIndex)+1);
     // At high powers, the error of transendental powf causes bugs.
-    //int treeSizeCompleteTest = (1.0 - powf(3.0, completeLevel+1))/(1.0 - 3.0);
-    int treeSizeComplete = (1.0 - 3*leavesFromCompleteLvl)/(1.0 - 3.0);
-    //if (treeSizeCompleteTest != treeSizeComplete)  
-    //    exit(1);
-    // How many internal leaves to skip in complete level
-    // RFC = 1
-    int removeFromComplete = ((3*leavesToProcess - treeSizeComplete) + 3 - 1) / 3;
-    // Leaves that are used in next level
-    int leavesFromIncompleteLvl = 3*removeFromComplete;
-    
+    //unsigned int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, n-1) - 3)/6;
+
+    // Discrete calculation without trancendentals
+    unsigned int leftMostLeafIndexOfIncompleteLevel = (2*arbitraryParameter+3);
+    unsigned int multiplicandn_inc = 1;
+    for (unsigned int i = 1; i < n_inc; ++i)
+        multiplicandn_inc*=3;
+    leftMostLeafIndexOfIncompleteLevel*=multiplicandn_inc;
+    leftMostLeafIndexOfIncompleteLevel-=3;
+    leftMostLeafIndexOfIncompleteLevel/=6;
+
+    unsigned int leftMostLeafIndexOfCompleteLevel = (2*arbitraryParameter+3);
+    unsigned int multiplicandn_com = 1;
+    for (unsigned int i = 1; i < n_com; ++i)
+        multiplicandn_com*=3;
+    leftMostLeafIndexOfCompleteLevel*=multiplicandn_com;
+    leftMostLeafIndexOfCompleteLevel-=3;
+    leftMostLeafIndexOfCompleteLevel/=6;
+
+    unsigned int treeSizeNotIncludingThisLevel = (1.0 - multiplicandn_inc)/(1.0 - 3.0); 
+    // At high powers, the error of transendental powf causes bugs. 
+    //unsigned int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, ((n+1)-1)))/(1.0 - 3.0);  
     // Test from root for now, this code can have an arbitrary root though
-    arbitraryParameter = 3*((3*leafIndex)+1);
+    //leafIndex = global_active_leaves[globalIndex];
+//    leafIndex = 0;
     // Closed form solution of recurrence relation shown in comment above method
-    // Subtract 1 because reasons
-    int multiplicandIL = 1;
-    for (int i = 1; i < incompleteLevel; ++i)
-        multiplicandIL*=3;
+    // Subtract 1 because reasons???
+    unsigned int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
+    //unsigned int internalLeafIndex = leavesToProcess - treeSizeNotIncludingThisLevel;
+    unsigned int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
 
-    int multiplicandFL = 1;
-    for (int i = 1; i < completeLevel; ++i)
-        multiplicandFL*=3;        
-
-    leftMostLeafIndexOfFullLevel = ((2*arbitraryParameter+3)*multiplicandFL - 3)/6;
-    leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*multiplicandIL - 3)/6;
-
-    int totalNewActive = (leavesFromCompleteLvl - removeFromComplete) + leavesFromIncompleteLvl;
     #ifndef NDEBUG
     printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, completeLevel);
     printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, incompleteLevel);
@@ -1070,11 +1076,24 @@ int4 CalculateLeafOffsets(              int leafIndex,
     // Shape of leaves
     //CL    -     -    o o o 
     //IL  o o o o o o
-    return make_int4(leftMostLeafIndexOfIncompleteLevel,
-        leftMostLeafIndexOfIncompleteLevel + leavesFromIncompleteLvl,
-        leftMostLeafIndexOfFullLevel + removeFromComplete,
-        leftMostLeafIndexOfFullLevel + leavesFromCompleteLvl);
+    unsigned int clb;
+    unsigned int cub;
 
+    if (n_com == n_inc){
+        clb = levelOffset + 3;
+        cub = levelOffset + 3;
+    } else {
+        clb = (levelOffset + 2)/3;
+        cub = leftMostLeafIndexOfCompleteLevel + leavesFromCompleteLvl;
+    }
+    // Grow tree leftmost first, so put the incomplete level first.
+    // Shape of leaves
+    //CL    -     -    o o o 
+    //IL  o o o o o o
+    return make_int4(leftMostLeafIndexOfIncompleteLevel,
+                     levelOffset + 3,
+                     clb,
+                     cub);
 }
 
 void VCGPU::CopyMatchingBackToHost(std::vector<int> & match){
