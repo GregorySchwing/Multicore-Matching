@@ -209,6 +209,39 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
     return myActiveLeaves;
 }
 
+int4 VCGPU::numberCompletedPathsTest(int nrVertices, 
+                        int leafIndex,
+                        int *dbackwardlinkedlist, 
+                        int *dlength,
+                        int recursiveStackDepth){
+
+    fullpathcount = 1+rand()%20;
+
+    cudaMemcpy(&dfullpathcount[0], &fullpathcount, sizeof(int)*1, cudaMemcpyHostToDevice);
+
+	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
+    PopulateSearchTreeTest<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
+                                                            sizeOfSearchTree, 
+                                                            depthOfSearchTree,
+                                                            leafIndex,
+                                                            dfinishedLeavesPerLevel,
+                                                            dforwardlinkedlist,
+                                                            dbackwardlinkedlist, 
+                                                            dlength,
+                                                            dfullpathcount,
+                                                            dsearchtree);
+
+    cudaMemcpy(&fullpathcount, &dfullpathcount[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
+    //cudaMemcpy(&numberofdynamicallyaddedvertices, &dnumberofdynamicallyaddedvertices[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
+
+    int4 myActiveLeaves = CalculateLeafOffsets(leafIndex,
+                                                fullpathcount);
+
+
+    //printf("My active leaves %d %d %d %d\n", myActiveLeaves.x, myActiveLeaves.y, myActiveLeaves.z, myActiveLeaves.w);
+    return myActiveLeaves;
+}
+
 /*
 void VCGPU::eraseDynVertsOfRecursionLevel(int recursiveStackDepth){
 
@@ -285,28 +318,33 @@ void VCGPU::FindCover(int root,
     //matcher.copyMatchingBackToHost(match);
     // Need to pass device pointer to LOP
     int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
+    //int4 newLeaves = numberCompletedPathsTest(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
     
 	int blocksPerGrid = (graph.neighbours.size() + threadsPerBlock - 1)/threadsPerBlock;
     ReduceEdgeStatusArray<<<blocksPerGrid, threadsPerBlock, sizeof(int)*threadsPerBlock>>>(graph.neighbours.size(), dedgestatus, dremainingedges);
 
 
     #ifndef NDEBUG
-    cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
-    cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
-    cudaMemcpy(&searchtree[0], dsearchtree, sizeof(int2)*searchtree.size(), cudaMemcpyDeviceToHost);
-    
+    // Leaf nodes
+    //if (newLeaves.x == newLeaves.y == newLeaves.z == newLeaves.w){
+        cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
+        cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
+        cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
+        cudaMemcpy(&searchtree[0], dsearchtree, sizeof(int2)*searchtree.size(), cudaMemcpyDeviceToHost);
+        
 
-    PrintData (); 
-    Gviz.DrawInputGraphColored(graph, 
-							dmtch,
-							dfll,
-							dbll,
-							root);
-    Gviz.DrawSearchTree(sizeOfSearchTree,
-					&searchtree[0],
-					root);   
+        PrintData (); 
+        Gviz.DrawInputGraphColored(graph, 
+                                dmtch,
+                                dfll,
+                                dbll,
+                                root);
+        Gviz.DrawSearchTree(sizeOfSearchTree,
+                        &searchtree[0],
+                        root);   
+    //}
     #endif
+
 	blocksPerGrid = (graph.nrEdges + threadsPerBlock - 1)/threadsPerBlock;
     depthOfLeaf = ceil(logf(2*newLeaves.y + 1) / logf(3)) - 1;
     while(newLeaves.x < newLeaves.y && newLeaves.x < sizeOfSearchTree){
@@ -600,6 +638,81 @@ __global__ void PopulateSearchTree(int nrVertices,
     dsearchtree[levelOffset + 0] = make_int2(first, third);
     dsearchtree[levelOffset + 1] = make_int2(second, third);
     dsearchtree[levelOffset + 2] = make_int2(second, fourth);   
+}
+
+
+// Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
+__global__ void PopulateSearchTreeTest(int nrVertices, 
+                                    int sizeOfSearchTree,
+                                    int depthOfSearchTree,
+                                    int leafIndex,
+                                    float * dfinishedLeavesPerLevel,
+                                    int *dforwardlinkedlist, 
+                                    int *dbackwardlinkedlist, 
+                                    int *dlength, 
+                                    int *dfullpathcount,
+                                    int2* dsearchtree){
+	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+	// If not a head to a path of length 4, return (leaving the headindex == -1)
+    if (threadID >= dfullpathcount[0]) 
+            return;
+
+    int leavesToProcess = threadID + 1;
+    // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
+    // r = 3, a = 1, solve for n given s_n = leavesToProcess ∈ [1,m/4]
+    // where m = number of vertices.
+    // s_n = (1-r^(n+1))/(1-r)
+    // s_n * (1-3) = -2*s_n = (1-r^(n+1))
+    //     = -2*s_n - 1 = -3^(n+1)
+    //     = 2*s_n + 1  =  3^(n+1)
+    //     = log(2*s_n + 1) = n+1*log(3)
+    //     = log(2*s_n + 1)/log(3) = n + 1
+    //     = log(2*s_n + 1)/log(3) - 1 = n
+    // n is the number of terms in the closed form solution.
+    // Alternatively, n is the number of levels in the search tree.
+    int n = ceil(logf(2*leavesToProcess + 1) / logf(3));
+    //float nf = logf(2*leavesToProcess + 1) / logf(3);
+    int arbitraryParameter = 3*((3*leafIndex)+1);
+    // At high powers, the error of transendental powf causes bugs.
+    //int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, n-1) - 3)/6;
+
+    // Discrete calculation without trancendentals
+    int leftMostLeafIndexOfIncompleteLevel = (2*arbitraryParameter+3);
+    int multiplicand = 1;
+    for (int i = 1; i < n; ++i)
+        multiplicand*=3;
+    leftMostLeafIndexOfIncompleteLevel*=multiplicand;
+    leftMostLeafIndexOfIncompleteLevel-=3;
+    leftMostLeafIndexOfIncompleteLevel/=6;
+
+    int treeSizeNotIncludingThisLevel = (1.0 - multiplicand)/(1.0 - 3.0); 
+    // At high powers, the error of transendental powf causes bugs. 
+    //int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, ((n+1)-1)))/(1.0 - 3.0);  
+    // Test from root for now, this code can have an arbitrary root though
+    //leafIndex = global_active_leaves[globalIndex];
+//    leafIndex = 0;
+    // Closed form solution of recurrence relation shown in comment above method
+    // Subtract 1 because reasons???
+    int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
+    //int internalLeafIndex = leavesToProcess - treeSizeNotIncludingThisLevel;
+    int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
+
+    if (sizeOfSearchTree <= levelOffset ||
+        sizeOfSearchTree <= (levelOffset + 1) ||
+        sizeOfSearchTree <= (levelOffset +2)||
+        levelOffset< 0 ||
+        (levelOffset+1) < 0 ||
+        (levelOffset + 2)< 0){
+            dfullpathcount[0] = leavesToProcess;
+            printf("child %d exceeded srch tree depth\n", levelOffset);
+            return;
+    }
+    // Add to device pointer of level
+    //atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf], 3); 
+    // Test from root for now, this code can have an arbitrary root though
+    dsearchtree[levelOffset + 0] = make_int2(levelOffset, levelOffset);
+    dsearchtree[levelOffset + 1] = make_int2(levelOffset + 1, levelOffset + 1);
+    dsearchtree[levelOffset + 2] = make_int2(levelOffset + 2, levelOffset + 2);   
 }
 
 // Each thread will take an edge.  Each thread will loop through the answer

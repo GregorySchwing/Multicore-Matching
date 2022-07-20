@@ -63,6 +63,17 @@ __global__ void PopulateSearchTree(int nrVertices,
                                     int *dfullpathcount,
                                     int2* dsearchtree);
 
+__global__ void PopulateSearchTreeTest(int nrVertices, 
+                                    int sizeOfSearchTree,
+                                    int depthOfSearchTree,
+                                    int leafIndex,
+                                    float * dfinishedLeavesPerLevel,
+                                    int *dforwardlinkedlist, 
+                                    int *dbackwardlinkedlist, 
+                                    int *dlength, 
+                                    int *dfullpathcount,
+                                    int2* dsearchtree);
+
 __global__ void CalculateNumberOfLeafNodes(
                                         int * dfullpathcount,
                                         int * dnumleaves);
@@ -129,8 +140,14 @@ class VCGPU
                                 int leafIndex,
                                 int *dbackwardlinkedlist, 
                                 int *dlength,
-                                int recursiveStackDepth);		
-		                       
+                                int recursiveStackDepth);
+
+        int4 numberCompletedPathsTest(int nrVertices, 
+                                int leafIndex,
+                                int *dbackwardlinkedlist, 
+                                int *dlength,
+                                int recursiveStackDepth);
+
         void GetLengthStatistics(int nrVertices, 
                                 int threadsPerBlock, 
                                 int *dbackwardlinkedlist, 
