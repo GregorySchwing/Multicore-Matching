@@ -72,7 +72,8 @@ __global__ void PopulateSearchTreeTest(int nrVertices,
                                     int *dbackwardlinkedlist, 
                                     int *dlength, 
                                     int *dfullpathcount,
-                                    int2* dsearchtree);
+                                    int2* dsearchtree,
+                                    int fullpathcount);
 
 __global__ void CalculateNumberOfLeafNodes(
                                         int * dfullpathcount,
