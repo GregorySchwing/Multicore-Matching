@@ -69,6 +69,11 @@ class GraphViz {
 					thrust::host_vector<int> & fll,
 					thrust::host_vector<int> & bll);
 
+        void createColoredInputGraphViz(int * match, 
+                            const mtc::Graph & g,
+                            int * fll,
+                            int * bll);
+
        void createSearchTreeGraphViz(int sizeOfSearchTree,
 										int2 * searchTree);             
 };

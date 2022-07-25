@@ -23,6 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
+
+#include <sstream>
+#define SSTR( x ) static_cast< std::ostringstream & >( \
+        ( std::ostringstream() << std::dec << x ) ).str()
 //#include <device_functions.h>
 //CUDA 3.2 does not seem to make definitions for texture types.
 #ifndef cudaTextureType1D
@@ -255,7 +259,6 @@ __global__ void gSelect( int *match, int *sense, int * fll, int * bll, const int
 	//Based on the Wikipedia MD5 hashing pseudocode (http://en.wikipedia.org/wiki/MD5).
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
 	if (i >= nrVertices) return;
-
 
 	//printf("vert %d, made it past first ret\n", i);
 
@@ -770,6 +773,7 @@ __global__ void gLength(int *match, int *requests, int *fll, int *bll, int *leng
 			curr = next;
 			next = fll[curr];
 		}
+		length[curr] = pl;
 	}
 }
 
@@ -1304,9 +1308,9 @@ __global__ void grRequest( int *requests, const int *match, const int *sense, co
 
 			const int nm = match[ni];
 			//Do we have an unmatched neighbour?
-			// 0 : Blue; 1 : Red, 2 
+			// 0 : Blue; 1 : Red, 2 : unavailable
 			// Blue or Red
-			if (nm < 4 && ((length[ni]+length[i]) < 3))
+			if (nm < 2 && ((length[ni]+length[i]) <= 3))
 			{
 				// Negative sense 
 				if (sense[ni] == 1){
@@ -1636,6 +1640,9 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 
 #ifdef MATCH_INTERMEDIATE_COUNT
 	cout << "0\t0\t0" << endl;
+	int * tmpmatch = new int[graph.nrVertices];
+	int * tmpfll = new int[graph.nrVertices];
+	int * tmpbll  = new int[graph.nrVertices];
 #endif
 	int maxlength = 3;
 	for (int coarsenRounds = 0; coarsenRounds < maxlength; ++coarsenRounds){
@@ -1670,6 +1677,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 
 		for (int i = 0; i < NR_MATCH_ROUNDS; ++i)
 		{
+			//printf("matchRounds round %d\n", coarsenRounds);
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
 			gSelect<<<blocksPerGrid, threadsPerBlock>>>(match, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices, rand());
@@ -1699,14 +1707,15 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 			checkLastErrorCUDA(__FILE__, __LINE__);													
 
 	#ifdef MATCH_INTERMEDIATE_COUNT
-			cudaMemcpy(&match[0], match, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
-			cudaMemcpy(&fll[0], dforwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
-			cudaMemcpy(&bll[0], dbackwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
-			writeGraphVizIntermediate(match, 
+
+			cudaMemcpy(&tmpmatch[0], match, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
+			cudaMemcpy(&tmpfll[0], dforwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
+			cudaMemcpy(&tmpbll[0], dbackwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
+			g(tmpmatch, 
 							graph,
 							"iter_"+SSTR(coarsenRounds)+"_"+SSTR(i),  
-							fll,
-							bll);
+							tmpfll,
+							tmpbll);
 			double weight = 0;
 			long size = 0;
 
@@ -1738,13 +1747,19 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 													graph.nrVertices);
 	#endif
 
-	
+	// Does this break stuff?
 	gIndicatePendants<<<blocksPerGrid, threadsPerBlock>>>(match, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
 	
 
 	//Free memory.
 	cudaUnbindTexture(neighboursTexture);
 	cudaUnbindTexture(neighbourRangesTexture);
+
+	#ifdef MATCH_INTERMEDIATE_COUNT
+	delete[] tmpmatch;
+	delete[] tmpfll;
+	delete[] tmpbll;
+	#endif
 }
 
 void GraphMatchingGPURandomMaximal::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const

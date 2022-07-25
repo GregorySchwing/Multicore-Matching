@@ -315,19 +315,22 @@ void VCGPU::FindCover(int root,
     cudaDeviceSynchronize();
     // TODO - Need to set the pendant vertices also.
     SetEdgesOfLeaf(root);
-    //Match(root);
+
+    // Test algebra, comment Match(root)
+    Match(root);
     //matcher.copyMatchingBackToHost(match);
     // Need to pass device pointer to LOP
-    //int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
-    int4 newLeaves = numberCompletedPathsTest(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
+    // Test algebra, use Test
+    int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
+    //int4 newLeaves = numberCompletedPathsTest(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
     
 	int blocksPerGrid = (graph.neighbours.size() + threadsPerBlock - 1)/threadsPerBlock;
     ReduceEdgeStatusArray<<<blocksPerGrid, threadsPerBlock, sizeof(int)*threadsPerBlock>>>(graph.neighbours.size(), dedgestatus, dremainingedges);
 
 
-    #ifndef NDEBUG
+   #ifndef NDEBUG
     // Leaf nodes
-    //if (newLeaves.x == newLeaves.y == newLeaves.z == newLeaves.w){
+    if (newLeaves.x == newLeaves.y == newLeaves.z == newLeaves.w){
         cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
         cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
         cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
@@ -343,7 +346,8 @@ void VCGPU::FindCover(int root,
         Gviz.DrawSearchTree(sizeOfSearchTree,
                         &searchtree[0],
                         root);   
-    //}
+
+        }
     #endif
 
 	blocksPerGrid = (graph.nrEdges + threadsPerBlock - 1)/threadsPerBlock;
@@ -504,9 +508,13 @@ void VCGPU::ReinitializeArrays(){
     // and the remove tentative vertices to check a cover.
     cudaMemcpy(ddegrees, &graph.degrees[0], sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
 
+    dfll.clear();
+    dfll.resize(graph.nrVertices);
 	thrust::sequence(dfll.begin(),dfll.end(), 0, 1);
 	dforwardlinkedlist = thrust::raw_pointer_cast(&dfll[0]);
 	
+    dbll.clear();
+    dbll.resize(graph.nrVertices);
 	thrust::sequence(dbll.begin(),dbll.end(), 0, 1);
 	dbackwardlinkedlist = thrust::raw_pointer_cast(&dbll[0]);
 
