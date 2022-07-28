@@ -81,6 +81,7 @@ __global__ void CalculateNumberOfLeafNodes(
 
 __global__ void EvaluateSingleLeafNode(int nrEdges,
                                     int leafIndex,
+                                    int depthOfLeaf,
                                     mtc::Edge * dedges, 
                                     int2 * dsearchtree,
                                     int * dnumberofdynamicallyaddedvertices,
@@ -171,6 +172,8 @@ class VCGPU
         std::vector<int> newdegrees;
         std::vector<int2> searchtree;
         std::vector<int> solution;
+        std::vector<int> dynamcverts;
+        int numofdynamcverts;
         int uncoverededges;
         int * duncoverededges;
         // VC arrays

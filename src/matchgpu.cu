@@ -1310,7 +1310,8 @@ __global__ void grRequest( int *requests, const int *match, const int *sense, co
 			//Do we have an unmatched neighbour?
 			// 0 : Blue; 1 : Red, 2 : unavailable
 			// Blue or Red
-			if (nm < 2 && ((length[ni]+length[i]) <= 3))
+			// <= 2, since you also add a connecting edge
+			if (nm < 2 && ((length[ni]+length[i]) <= 2))
 			{
 				// Negative sense 
 				if (sense[ni] == 1){
@@ -1748,7 +1749,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 	#endif
 
 	// Does this break stuff?
-	gIndicatePendants<<<blocksPerGrid, threadsPerBlock>>>(match, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
+	//gIndicatePendants<<<blocksPerGrid, threadsPerBlock>>>(match, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
 	
 
 	//Free memory.
