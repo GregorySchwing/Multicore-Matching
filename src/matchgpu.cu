@@ -1126,13 +1126,13 @@ __global__ void gIndicatePendants(int *match, int *dlength, int *forwardlinkedli
 		const int ni = tex1Dfetch(neighboursTexture, j);
 		// Skip internal path verts
 		if (nf == ni || nb == ni) continue;
-		// match == 2 indicates a solution vertex
-		if (match[ni] != 2)
+		// match == 3 indicates a solution vertex
+		if (match[ni] != 3)
 			isPendant = false;
 	}
 	// This vertex has no neighbors which are unmatched.
 	if (isPendant)
-		match[i] = 2;
+		match[i] = 3;
 }
 
 __global__ void gSetSearchTreeVertices(int leafIndex, int *match, int2 *searchtree, const int depthOfLeaf)
@@ -1141,8 +1141,8 @@ __global__ void gSetSearchTreeVertices(int leafIndex, int *match, int2 *searchtr
 	//if (i >= depthOfLeaf) return;
 	while (leafIndex != 0){
 		int2 entry = searchtree[leafIndex];
-		match[entry.x] = 2;
-		match[entry.y] = 2;
+		match[entry.x] = 3;
+		match[entry.y] = 3;
 		//printf("LEAF %d %d %d\n", leafIndex, entry.x, entry.y);
 		if(leafIndex % 3 == 0){
 			--leafIndex;
@@ -1159,7 +1159,7 @@ __global__ void gSetDynamicVertices(int leafIndex, int *match, int *dynamicallyA
 
 	if (i >= nrDynamicallyAddedVertices) return;
 
-	match[dynamicallyAddedVertices[i]] = 2;
+	match[dynamicallyAddedVertices[i]] = 3;
 	//printf("leaf index setting pendant vert %d\n", dynamicallyAddedVertices[i]);
 }
  
@@ -1216,7 +1216,13 @@ __global__ void grRequest( int *requests, const int *match, const int *sense, co
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
 
 	if (i >= nrVertices) return;
-	
+
+	// Is this vertex a head or a tail? Else return
+	//bool isATail = forwardlinkedlist[i] == i;
+	//bool isAHead = backwardlinkedlist[i] == i;
+	//bool eligible = (isATail || isAHead);
+	//if (!eligible) return;
+
 	const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
 
 	//Look at all blue (+) vertices and let them make requests.
@@ -1241,9 +1247,9 @@ __global__ void grRequest( int *requests, const int *match, const int *sense, co
 			if (nf == ni || nb == ni) continue;
 			const int nm = match[ni];
 			//Do we have an unmatched neighbour?
-			// 0 : Blue; 1 : Red, 2 
+			// 0 : Blue; 1 : Red, 2 : Internal, 3 : dead
 			// Blue or Red
-			if (nm < 2)
+			if (nm < 3)
 			{
 				// Negative sense 
 				if (sense[ni] == 1){
@@ -1256,7 +1262,7 @@ __global__ void grRequest( int *requests, const int *match, const int *sense, co
 						return;
 					}
 				}
-				// Neighbor is : [red(+) or blue(-)]
+				// Neighbor is : [red(+) or blue(-) or internal]
 				noUnmatchedNeighborExists = 0;
 			}
 		}
@@ -1308,10 +1314,10 @@ __global__ void grRequest( int *requests, const int *match, const int *sense, co
 
 			const int nm = match[ni];
 			//Do we have an unmatched neighbour?
-			// 0 : Blue; 1 : Red, 2 : unavailable
+			// 0 : Blue; 1 : Red, 2 : Internal
 			// Blue or Red
 			// <= 2, since you also add a connecting edge
-			if (nm < 2 && ((length[ni]+length[i]) <= 2))
+			if (nm < 3 && ((length[ni]+length[i]) <= 2))
 			{
 				// Negative sense 
 				if (sense[ni] == 1){
@@ -1744,12 +1750,12 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 
 	// call uncoarsen for viz
 	#ifdef UNCOARSEN_GRAPH	
-	gUncoarsen<<<blocksPerGrid, threadsPerBlock>>>(match, dforwardlinkedlist, dbackwardlinkedlist, 
-													graph.nrVertices);
+	//gUncoarsen<<<blocksPerGrid, threadsPerBlock>>>(match, dforwardlinkedlist, dbackwardlinkedlist, 
+	//												graph.nrVertices);
 	#endif
 
 	// Does this break stuff?
-	//gIndicatePendants<<<blocksPerGrid, threadsPerBlock>>>(match, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
+	gIndicatePendants<<<blocksPerGrid, threadsPerBlock>>>(match, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
 	
 
 	//Free memory.

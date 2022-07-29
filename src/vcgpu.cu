@@ -328,7 +328,27 @@ void VCGPU::FindCover(int root,
 	int blocksPerGrid = (graph.neighbours.size() + threadsPerBlock - 1)/threadsPerBlock;
     ReduceEdgeStatusArray<<<blocksPerGrid, threadsPerBlock, sizeof(int)*threadsPerBlock>>>(graph.neighbours.size(), dedgestatus, dremainingedges);
 
+    if (root == 0){
+    cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
+    cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
+    cudaMemcpy(&searchtree[0], dsearchtree, sizeof(int2)*searchtree.size(), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&numofdynamcverts, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
+    cudaMemcpy(&dynamcverts[0], ddynamicallyaddedvertices, sizeof(int)*numofdynamcverts, cudaMemcpyDeviceToHost);
 
+
+    //PrintData (); 
+    Gviz.DrawInputGraphColored(graph,
+                            root,
+                            searchtree,
+                            dmtch,
+                            dfll,
+                            dbll,
+                            root);
+    Gviz.DrawSearchTree(sizeOfSearchTree,
+                    &searchtree[0],
+                    root);   
+    }
    #ifndef NDEBUG
     // Leaf nodes
     if (newLeaves.x == newLeaves.y == newLeaves.z == newLeaves.w){
@@ -340,7 +360,7 @@ void VCGPU::FindCover(int root,
         cudaMemcpy(&dynamcverts[0], ddynamicallyaddedvertices, sizeof(int)*numofdynamcverts, cudaMemcpyDeviceToHost);
 
 
-        PrintData (); 
+        //PrintData (); 
         Gviz.DrawInputGraphColored(graph, 
                                 dmtch,
                                 dfll,
@@ -421,7 +441,7 @@ void VCGPU::FindCover(int root,
     cudaMemcpy(&dynamcverts[0], ddynamicallyaddedvertices, sizeof(int)*numofdynamcverts, cudaMemcpyDeviceToHost);
 
 
-    PrintData (); 
+    //PrintData (); 
     Gviz.DrawInputGraphColored(graph,
                             root,
                             searchtree,
@@ -772,6 +792,7 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
     if (edgeID >= nrEdges)
         return;
     int UBDyn = dnumberofdynamicallyaddedvertices[0];
+    //printf("UBDyn %d\n", UBDyn);
     const int tid = threadIdx.x;
     int leafIndexSoln = leafIndex;
     int2 nodeEntry;
@@ -939,11 +960,11 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
     // Color == 2 if blue vertex has no unmatched neighbors
     // This avoids iterating over all degrees, but it is possible
     // to miss some vertices which could be pendant but are red not blue.
-    if (match[first] == 2){
+    if (match[first] == 3){
         dynamicIndex = atomicAdd(&dnumberofdynamicallyaddedvertices[0], 1); 
         ddynamicallyaddedvertices[dynamicIndex] = first;
         //SetEdges(first, dedgestatus);
-    } else if (match[second] == 2){
+    } else if (match[second] == 3){
         dynamicIndex = atomicAdd(&dnumberofdynamicallyaddedvertices[0], 1); 
         ddynamicallyaddedvertices[dynamicIndex] = second;
         //SetEdges(second, dedgestatus);
@@ -974,11 +995,11 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
     // Color == 2 if blue vertex has no unmatched neighbors
     // This avoids iterating over all degrees, but it is possible
     // to miss some vertices which could be pendant but are red not blue.
-    if (match[first] == 2){
+    if (match[first] == 3){
         dynamicIndex = atomicAdd(&dnumberofdynamicallyaddedvertices[0], 1); 
         ddynamicallyaddedvertices[dynamicIndex] = first;
         //SetEdges(first, dedgestatus);
-    } else if (match[third] == 2){
+    } else if (match[third] == 3){
         dynamicIndex = atomicAdd(&dnumberofdynamicallyaddedvertices[0], 1); 
         ddynamicallyaddedvertices[dynamicIndex] = first;
         //SetEdges(third, dedgestatus);
