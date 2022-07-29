@@ -134,11 +134,6 @@ void GraphViz::createColoredInputGraphViz(thrust::host_vector<int> & match,
 					thrust::host_vector<int> & fll,
 					thrust::host_vector<int> & bll)
 {
-	printf("Dyn soln\n");
-    for (int i = 0; i < UBDyn; ++i)
-        printf("%d ", dynamicallyaddedvertices[i]);
-     printf("\n");
-	
     for (int i = 0; i < g.nrVertices; ++i){
 		// skip singletons
 		if (fll[i] == i && bll[i] == i)
@@ -190,6 +185,14 @@ void GraphViz::createColoredInputGraphViz(thrust::host_vector<int> & match,
 			leafIndexSoln = leafIndexSoln / 3;
 		}
 	}
+	printf("Tree soln\n");
+    for (int i = 0; i < soln.size(); ++i)
+        printf("%d ", soln[i]);
+    printf("\n");
+	printf("Dyn soln\n");
+    for (int i = 0; i < UBDyn; ++i)
+        printf("%d ", dynamicallyaddedvertices[i]);
+    printf("\n");
 
     // Since the graph doesnt grow uniformly, it is too difficult to only copy the new parts..
     for (int i = 0; i < g.nrVertices; ++i){
