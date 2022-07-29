@@ -1243,7 +1243,7 @@ __global__ void grRequest( int *requests, const int *match, const int *sense, co
 			//Do we have an unmatched neighbour?
 			// 0 : Blue; 1 : Red, 2 
 			// Blue or Red
-			if (nm < 4)
+			if (nm < 2)
 			{
 				// Negative sense 
 				if (sense[ni] == 1){
