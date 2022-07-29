@@ -30,6 +30,8 @@ GraphViz::GraphViz(){
 }
 
 void GraphViz::DrawInputGraphColored(const mtc::Graph &_graph, 
+									int leafIndex,
+									std::vector<int2> & searchtree,
 									thrust::device_vector<int> & dmatch,
 									thrust::device_vector<int> & dfll,
 									thrust::device_vector<int> & dbll,
@@ -44,7 +46,7 @@ void GraphViz::DrawInputGraphColored(const mtc::Graph &_graph,
     	inputGraph->RemoveSubgraph(fullgraph);	
 		linearforestgraph = inputGraph->AddSubgraph(subgraph1);
     	fullgraph = inputGraph->AddSubgraph(subgraph2);				
-		createColoredInputGraphViz(match, _graph, fll, bll);
+		createColoredInputGraphViz(match, leafIndex, searchtree, _graph, fll, bll);
 		inputGraph->WriteToFile("inputGraph_iter_" + SSTR(iter));
 		std::cout << "Wrote graph viz " << "iter_" + SSTR(iter) << std::endl;
 }
@@ -122,6 +124,8 @@ void GraphViz::createSearchTreeGraphViz(int sizeOfSearchTree,
 }
 
 void GraphViz::createColoredInputGraphViz(thrust::host_vector<int> & match, 
+					int leafIndex,
+					std::vector<int2> & searchtree,
 					const mtc::Graph & g,
 					thrust::host_vector<int> & fll,
 					thrust::host_vector<int> & bll)
@@ -163,6 +167,21 @@ void GraphViz::createColoredInputGraphViz(thrust::host_vector<int> & match,
 		}
 	}
 
+	std::vector<int> soln;
+	int leafIndexSoln = leafIndex;
+	int2 nodeEntry;
+	while(leafIndexSoln != 0){
+		nodeEntry = searchtree[leafIndexSoln];
+		soln.push_back(nodeEntry.x);
+		soln.push_back(nodeEntry.y);
+		if(leafIndexSoln % 3 == 0){
+			--leafIndexSoln;
+			leafIndexSoln = leafIndexSoln / 3;
+		} else {
+			leafIndexSoln = leafIndexSoln / 3;
+		}
+	}
+
     // Since the graph doesnt grow uniformly, it is too difficult to only copy the new parts..
     for (int i = 0; i < g.nrVertices; ++i){
 		std::string node1Name = SSTR(i);
@@ -191,10 +210,17 @@ void GraphViz::createColoredInputGraphViz(thrust::host_vector<int> & match,
                 fullgraph->AddEdge(fullGraphNodeMap[node1Name], fullGraphNodeMap[node2Name]); 
             //}
         }
+		if ((std::find(soln.begin(), soln.end(), i)) != soln.end()){
+			fullGraphNodeMap[node1Name]->GetAttributes().SetColor(DotWriter::Color::e(23));
+			fullGraphNodeMap[node1Name]->GetAttributes().SetFillColor(DotWriter::Color::e(23));
+			fullGraphNodeMap[node1Name]->GetAttributes().SetStyle("filled");				
+		}
     }
 }
 
 void GraphViz::createColoredInputGraphViz(int * match, 
+					int leafIndex,
+					std::vector<int2> & searchtree,
 					const mtc::Graph & g,
 					int * fll,
 					int * bll)

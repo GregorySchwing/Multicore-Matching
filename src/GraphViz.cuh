@@ -29,6 +29,8 @@ class GraphViz {
     public:
         GraphViz();
         void DrawInputGraphColored(const mtc::Graph &_graph, 
+                                    int leafIndex,
+                                    std::vector<int2> & searchtree,
 									thrust::device_vector<int> & dmatch,
 									thrust::device_vector<int> & dfll,
 									thrust::device_vector<int> & dbll,
@@ -65,11 +67,15 @@ class GraphViz {
         std::map<std::string, DotWriter::Node *>::const_iterator nodeIt2;
 
         void createColoredInputGraphViz(thrust::host_vector<int> & match, 
+                    int leafIndex,
+                    std::vector<int2> & searchtree,
 					const mtc::Graph & g,
 					thrust::host_vector<int> & fll,
 					thrust::host_vector<int> & bll);
 
         void createColoredInputGraphViz(int * match, 
+                            int leafIndex,
+                            std::vector<int2> & searchtree,
                             const mtc::Graph & g,
                             int * fll,
                             int * bll);

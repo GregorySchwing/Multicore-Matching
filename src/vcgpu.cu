@@ -422,7 +422,9 @@ void VCGPU::FindCover(int root,
 
 
     PrintData (); 
-    Gviz.DrawInputGraphColored(graph, 
+    Gviz.DrawInputGraphColored(graph,
+                            root,
+                            searchtree,
                             dmtch,
                             dfll,
                             dbll,
@@ -801,6 +803,7 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
             printf("Tree soln\n");
         for (int i = 0; i < counter; ++i)
             printf("%d ", soln[i]);
+        printf("\n");
     }
     __syncthreads(); // put warp results in shared mem
     Edge & edge = dedges[edgeID];
