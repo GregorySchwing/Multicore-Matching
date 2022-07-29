@@ -50,7 +50,7 @@ void GraphViz::DrawInputGraphColored(const mtc::Graph &_graph,
     	fullgraph = inputGraph->AddSubgraph(subgraph2);				
 		createColoredInputGraphViz(match, leafIndex, searchtree, UBDyn, dynamicallyaddedvertices, _graph, fll, bll);
 		inputGraph->WriteToFile("inputGraph_iter_" + SSTR(iter));
-		std::cout << "Wrote graph viz " << "iter_" + SSTR(iter) << std::endl;
+		std::cout << "Wrote graph viz " << "inputGraph_iter_" + SSTR(iter) << std::endl;
 }
 
 void GraphViz::DrawSearchTree(int sizeOfSearchTree,
