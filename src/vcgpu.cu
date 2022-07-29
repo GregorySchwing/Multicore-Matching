@@ -296,10 +296,10 @@ void VCGPU::FindCover(int root,
     // and the device search tree.
     //std::vector<int> match;
     //matcher.initialMatching(match);
-    //printf("Called FindCover li %d rl %d \n", root, recursiveStackDepth);
+    printf("Called FindCover li %d rl %d \n", root, recursiveStackDepth);
     int depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - 1;
     if (depthOfLeaf > depthOfSearchTree){
-        //printf("depthOfLeaf %d depthOfSearchTree %d\n",  depthOfLeaf, depthOfSearchTree);
+        printf("depthOfLeaf %d depthOfSearchTree %d\n",  depthOfLeaf, depthOfSearchTree);
         return;
     }
 //    printf("\033[A\33[2K\rCalling Find Cover from %d, level depth of leaf %d\n", root, depthOfLeaf);
@@ -327,51 +327,7 @@ void VCGPU::FindCover(int root,
     
 	int blocksPerGrid = (graph.neighbours.size() + threadsPerBlock - 1)/threadsPerBlock;
     ReduceEdgeStatusArray<<<blocksPerGrid, threadsPerBlock, sizeof(int)*threadsPerBlock>>>(graph.neighbours.size(), dedgestatus, dremainingedges);
-
-    if (root == 0){
-    cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
-    cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
-    cudaMemcpy(&searchtree[0], dsearchtree, sizeof(int2)*searchtree.size(), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&numofdynamcverts, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
-    cudaMemcpy(&dynamcverts[0], ddynamicallyaddedvertices, sizeof(int)*numofdynamcverts, cudaMemcpyDeviceToHost);
-
-
-    //PrintData (); 
-    Gviz.DrawInputGraphColored(graph,
-                            root,
-                            searchtree,
-                            dmtch,
-                            dfll,
-                            dbll,
-                            root);
-    Gviz.DrawSearchTree(sizeOfSearchTree,
-                    &searchtree[0],
-                    root);   
-    }
-   #ifndef NDEBUG
-    // Leaf nodes
-    if (newLeaves.x == newLeaves.y == newLeaves.z == newLeaves.w){
-        cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
-        cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
-        cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
-        cudaMemcpy(&searchtree[0], dsearchtree, sizeof(int2)*searchtree.size(), cudaMemcpyDeviceToHost);
-        cudaMemcpy(&numofdynamcverts, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
-        cudaMemcpy(&dynamcverts[0], ddynamicallyaddedvertices, sizeof(int)*numofdynamcverts, cudaMemcpyDeviceToHost);
-
-
-        //PrintData (); 
-        Gviz.DrawInputGraphColored(graph, 
-                                dmtch,
-                                dfll,
-                                dbll,
-                                root);
-        Gviz.DrawSearchTree(sizeOfSearchTree,
-                        &searchtree[0],
-                        root);   
-
-        }
-    #endif
+    printf("leaf index %d LO %d %d LO %d %d\n", root, newLeaves.x, newLeaves.y, newLeaves.z, newLeaves.w);
 
 	blocksPerGrid = (graph.nrEdges + threadsPerBlock - 1)/threadsPerBlock;
     depthOfLeaf = ceil(logf(2*newLeaves.y + 1) / logf(3)) - 1;
@@ -404,7 +360,7 @@ void VCGPU::FindCover(int root,
         FindCover(newLeaves.x, recursiveStackDepth+1, foundSolution);
         ++newLeaves.x;
     }
-    depthOfLeaf = ceil(logf(2*newLeaves.w + 1) / logf(3)) - 1;
+    depthOfLeaf = ceil(logf(2*newLeaves.z + 1) / logf(3)) - 1;
     while(newLeaves.z < newLeaves.w && newLeaves.z < sizeOfSearchTree){
         cuMemsetD32(reinterpret_cast<CUdeviceptr>(duncoverededges),  0, size_t(1));
         cudaDeviceSynchronize();
@@ -433,6 +389,7 @@ void VCGPU::FindCover(int root,
         FindCover(newLeaves.z, recursiveStackDepth+1, foundSolution);
         ++newLeaves.z;
     }
+
     cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
     cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
     cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
@@ -445,6 +402,8 @@ void VCGPU::FindCover(int root,
     Gviz.DrawInputGraphColored(graph,
                             root,
                             searchtree,
+                            numofdynamcverts,
+                            dynamcverts,
                             dmtch,
                             dfll,
                             dbll,
@@ -452,6 +411,7 @@ void VCGPU::FindCover(int root,
     Gviz.DrawSearchTree(sizeOfSearchTree,
                     &searchtree[0],
                     root);   
+        
     exit(1);
     // Wipe away my pendant nodes from shared list
     eraseDynVertsOfRecursionLevel<<<1, threadsPerBlock>>>(recursiveStackDepth,
@@ -839,6 +799,14 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
         covered |= (edge.x == soln[solutionIndex] || edge.y == soln[solutionIndex]);
     }
     */
+    if (threadIdx.x == 0){
+        printf("Dyn soln\n");
+        for (int index = 0; index < UBDyn; ++index)
+            printf("%d ", ddynamicallyaddedvertices[index]);
+        printf("\n");
+    }
+    __syncthreads(); // put warp results in shared mem
+
     for (int index = 0; index < UBDyn; ++index){
         covered |= (edge.x == ddynamicallyaddedvertices[index]);
         covered |= (edge.y == ddynamicallyaddedvertices[index]);
@@ -867,9 +835,12 @@ __global__ void FillSolutionArray(int leafIndex,
             nodeEntry = dsearchtree[leafIndexSoln];
             dsolution[counter] = nodeEntry.x;
             dsolution[counter + 1] = nodeEntry.y;
-            printf("Search tree vertex %d\n", dsolution[counter]);
-            printf("Search tree vertex %d\n", dsolution[counter+1]);
-            leafIndexSoln = leafIndexSoln / 3;
+            if(leafIndexSoln % 3 == 0){
+                --leafIndexSoln;
+                leafIndexSoln = leafIndexSoln / 3;
+            } else {
+                leafIndexSoln = leafIndexSoln / 3;
+            }
             counter += 2;
         }
         for (int index = 0; index < UBDyn; ++index){

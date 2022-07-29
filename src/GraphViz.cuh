@@ -31,6 +31,8 @@ class GraphViz {
         void DrawInputGraphColored(const mtc::Graph &_graph, 
                                     int leafIndex,
                                     std::vector<int2> & searchtree,
+									int UBDyn,
+									std::vector<int> & dynamicallyaddedvertices,
 									thrust::device_vector<int> & dmatch,
 									thrust::device_vector<int> & dfll,
 									thrust::device_vector<int> & dbll,
@@ -69,6 +71,8 @@ class GraphViz {
         void createColoredInputGraphViz(thrust::host_vector<int> & match, 
                     int leafIndex,
                     std::vector<int2> & searchtree,
+					int UBDyn,
+					std::vector<int> & dynamicallyaddedvertices,
 					const mtc::Graph & g,
 					thrust::host_vector<int> & fll,
 					thrust::host_vector<int> & bll);
@@ -76,6 +80,8 @@ class GraphViz {
         void createColoredInputGraphViz(int * match, 
                             int leafIndex,
                             std::vector<int2> & searchtree,
+                            int UBDyn,
+                            std::vector<int> & dynamicallyaddedvertices,
                             const mtc::Graph & g,
                             int * fll,
                             int * bll);

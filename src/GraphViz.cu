@@ -32,6 +32,8 @@ GraphViz::GraphViz(){
 void GraphViz::DrawInputGraphColored(const mtc::Graph &_graph, 
 									int leafIndex,
 									std::vector<int2> & searchtree,
+									int UBDyn,
+									std::vector<int> & dynamicallyaddedvertices,
 									thrust::device_vector<int> & dmatch,
 									thrust::device_vector<int> & dfll,
 									thrust::device_vector<int> & dbll,
@@ -46,7 +48,7 @@ void GraphViz::DrawInputGraphColored(const mtc::Graph &_graph,
     	inputGraph->RemoveSubgraph(fullgraph);	
 		linearforestgraph = inputGraph->AddSubgraph(subgraph1);
     	fullgraph = inputGraph->AddSubgraph(subgraph2);				
-		createColoredInputGraphViz(match, leafIndex, searchtree, _graph, fll, bll);
+		createColoredInputGraphViz(match, leafIndex, searchtree, UBDyn, dynamicallyaddedvertices, _graph, fll, bll);
 		inputGraph->WriteToFile("inputGraph_iter_" + SSTR(iter));
 		std::cout << "Wrote graph viz " << "iter_" + SSTR(iter) << std::endl;
 }
@@ -126,10 +128,17 @@ void GraphViz::createSearchTreeGraphViz(int sizeOfSearchTree,
 void GraphViz::createColoredInputGraphViz(thrust::host_vector<int> & match, 
 					int leafIndex,
 					std::vector<int2> & searchtree,
+					int UBDyn,
+					std::vector<int> & dynamicallyaddedvertices,
 					const mtc::Graph & g,
 					thrust::host_vector<int> & fll,
 					thrust::host_vector<int> & bll)
 {
+	printf("Dyn soln\n");
+    for (int i = 0; i < UBDyn; ++i)
+        printf("%d ", dynamicallyaddedvertices[i]);
+     printf("\n");
+	
     for (int i = 0; i < g.nrVertices; ++i){
 		// skip singletons
 		if (fll[i] == i && bll[i] == i)
@@ -215,12 +224,19 @@ void GraphViz::createColoredInputGraphViz(thrust::host_vector<int> & match,
 			fullGraphNodeMap[node1Name]->GetAttributes().SetFillColor(DotWriter::Color::e(23));
 			fullGraphNodeMap[node1Name]->GetAttributes().SetStyle("filled");				
 		}
+		if ((std::find(dynamicallyaddedvertices.begin(), dynamicallyaddedvertices.begin() + UBDyn, i)) != dynamicallyaddedvertices.begin() + UBDyn){
+			fullGraphNodeMap[node1Name]->GetAttributes().SetColor(DotWriter::Color::e(23));
+			fullGraphNodeMap[node1Name]->GetAttributes().SetFillColor(DotWriter::Color::e(23));
+			fullGraphNodeMap[node1Name]->GetAttributes().SetStyle("filled");				
+		}
     }
 }
 
 void GraphViz::createColoredInputGraphViz(int * match, 
 					int leafIndex,
 					std::vector<int2> & searchtree,
+					int UBDyn,
+					std::vector<int> & dynamicallyaddedvertices,
 					const mtc::Graph & g,
 					int * fll,
 					int * bll)
