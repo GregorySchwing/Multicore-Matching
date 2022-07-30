@@ -291,17 +291,20 @@ void VCGPU::FindCover(int root,
     if (foundSolution)
         return;
 
+	int blocksPerGrid = (graph.nrEdges + threadsPerBlock - 1)/threadsPerBlock;
+    int depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - 1;
+    printf("Called FindCover li %d rl %d \n", root, recursiveStackDepth);
+    printf("depthOfLeaf %d depthOfSearchTree %d\n",  depthOfLeaf, depthOfSearchTree);
+    if (depthOfLeaf > depthOfSearchTree){
+        return;
+    }
+
     // If you want to check the quality of each match, uncomment
     // Else, the only noticable changes will be in the recursion stack 
     // and the device search tree.
     //std::vector<int> match;
     //matcher.initialMatching(match);
-    printf("Called FindCover li %d rl %d \n", root, recursiveStackDepth);
-    int depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - 1;
-    if (depthOfLeaf > depthOfSearchTree){
-        printf("depthOfLeaf %d depthOfSearchTree %d\n",  depthOfLeaf, depthOfSearchTree);
-        return;
-    }
+
 //    printf("\033[A\33[2K\rCalling Find Cover from %d, level depth of leaf %d\n", root, depthOfLeaf);
     cudaMemcpy(&finishedLeavesPerLevel[0], dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree, cudaMemcpyDeviceToHost);
 /*
@@ -318,25 +321,21 @@ void VCGPU::FindCover(int root,
 
     // Test algebra, comment Match(root)
     Match(root);
+    cudaDeviceSynchronize();
+
     //matcher.copyMatchingBackToHost(match);
     // Need to pass device pointer to LOP
     // Test algebra, use Test
     // Might have an error if 1 single path found.
     int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
     //int4 newLeaves = numberCompletedPathsTest(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
-    
-	int blocksPerGrid = (graph.neighbours.size() + threadsPerBlock - 1)/threadsPerBlock;
-    ReduceEdgeStatusArray<<<blocksPerGrid, threadsPerBlock, sizeof(int)*threadsPerBlock>>>(graph.neighbours.size(), dedgestatus, dremainingedges);
-    printf("leaf index %d LO %d %d LO %d %d\n", root, newLeaves.x, newLeaves.y, newLeaves.z, newLeaves.w);
+    cudaDeviceSynchronize();
 
-	blocksPerGrid = (graph.nrEdges + threadsPerBlock - 1)/threadsPerBlock;
-    depthOfLeaf = ceil(logf(2*newLeaves.y + 1) / logf(3)) - 1;
-    while(newLeaves.x < newLeaves.y && newLeaves.x < sizeOfSearchTree){
+    if (root != 0){
         cuMemsetD32(reinterpret_cast<CUdeviceptr>(duncoverededges),  0, size_t(1));
         cudaDeviceSynchronize();
-
         EvaluateSingleLeafNode<<<blocksPerGrid, threadsPerBlock, (2*depthOfLeaf+1)*sizeof(int)>>>(graph.nrEdges,
-                                                                                            newLeaves.x,
+                                                                                            root,
                                                                                             depthOfLeaf,
                                                                                             dedges, 
                                                                                             dsearchtree,
@@ -345,39 +344,10 @@ void VCGPU::FindCover(int root,
                                                                                             duncoverededges);
         cudaMemcpy(&uncoverededges, duncoverededges, sizeof(int)*1, cudaMemcpyDeviceToHost);
         if (uncoverededges){
-            printf("leaf index %d is not a solution :  %d edges are uncovered\n", newLeaves.x, uncoverededges);
+            printf("leaf index %d is not a solution :  %d edges are uncovered\n", root, uncoverededges);
         } else {
-            printf("leaf index in incomplete level %d is a solution :  %d edges are uncovered\n", newLeaves.x, uncoverededges);
-            FillSolutionArray<<<1,1>>>(newLeaves.z,
-                    dsolution,
-                    dsearchtree,
-                    dnumberofdynamicallyaddedvertices,
-                    ddynamicallyaddedvertices);
-            cudaMemcpy(&solution[0], dsolution, sizeof(int)*solution.size(), cudaMemcpyDeviceToHost);
-            foundSolution = true;
-            return;
-        }
-        FindCover(newLeaves.x, recursiveStackDepth+1, foundSolution);
-        ++newLeaves.x;
-    }
-    depthOfLeaf = ceil(logf(2*newLeaves.z + 1) / logf(3)) - 1;
-    while(newLeaves.z < newLeaves.w && newLeaves.z < sizeOfSearchTree){
-        cuMemsetD32(reinterpret_cast<CUdeviceptr>(duncoverededges),  0, size_t(1));
-        cudaDeviceSynchronize();
-        EvaluateSingleLeafNode<<<blocksPerGrid, threadsPerBlock, (2*depthOfLeaf+1)*sizeof(int)>>>(graph.nrEdges,
-                                                                                            newLeaves.z,
-                                                                                            depthOfLeaf,
-                                                                                            dedges, 
-                                                                                            dsearchtree,
-                                                                                            dnumberofdynamicallyaddedvertices,
-                                                                                            ddynamicallyaddedvertices,
-                                                                                            duncoverededges);
-        cudaMemcpy(&uncoverededges, duncoverededges, sizeof(int)*1, cudaMemcpyDeviceToHost);
-        if (uncoverededges){
-            printf("leaf index %d is not a solution :  %d edges are uncovered\n", newLeaves.z, uncoverededges);
-        }else {
-            printf("leaf index %d in complete level is a solution :  %d edges are uncovered\n", newLeaves.z, uncoverededges);
-            FillSolutionArray<<<1,1>>>(newLeaves.z,
+            printf("leaf index %d is a solution :  %d edges are uncovered\n", root, uncoverededges);
+            FillSolutionArray<<<1,1>>>(root,
                                 dsolution,
                                 dsearchtree,
                                 dnumberofdynamicallyaddedvertices,
@@ -386,8 +356,6 @@ void VCGPU::FindCover(int root,
             foundSolution = true;
             return;
         }
-        FindCover(newLeaves.z, recursiveStackDepth+1, foundSolution);
-        ++newLeaves.z;
     }
 
     cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
@@ -397,8 +365,6 @@ void VCGPU::FindCover(int root,
     cudaMemcpy(&numofdynamcverts, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
     cudaMemcpy(&dynamcverts[0], ddynamicallyaddedvertices, sizeof(int)*numofdynamcverts, cudaMemcpyDeviceToHost);
 
-
-    //PrintData (); 
     Gviz.DrawInputGraphColored(graph,
                             root,
                             searchtree,
@@ -412,6 +378,21 @@ void VCGPU::FindCover(int root,
                     &searchtree[0],
                     root);   
         
+	blocksPerGrid = (graph.neighbours.size() + threadsPerBlock - 1)/threadsPerBlock;
+    ReduceEdgeStatusArray<<<blocksPerGrid, threadsPerBlock, sizeof(int)*threadsPerBlock>>>(graph.neighbours.size(), dedgestatus, dremainingedges);
+    printf("leaf index %d LO %d %d LO %d %d\n", root, newLeaves.x, newLeaves.y, newLeaves.z, newLeaves.w);
+
+    while(newLeaves.x < newLeaves.y && newLeaves.x < sizeOfSearchTree){
+        FindCover(newLeaves.x, recursiveStackDepth+1, foundSolution);
+        ++newLeaves.x;
+    }
+    depthOfLeaf = ceil(logf(2*newLeaves.z + 1) / logf(3)) - 1;
+    while(newLeaves.z < newLeaves.w && newLeaves.z < sizeOfSearchTree){
+        FindCover(newLeaves.z, recursiveStackDepth+1, foundSolution);
+        ++newLeaves.z;
+    }
+
+    //PrintData (); 
     exit(1);
     // Wipe away my pendant nodes from shared list
     eraseDynVertsOfRecursionLevel<<<1, threadsPerBlock>>>(recursiveStackDepth,
@@ -752,25 +733,30 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
     if (edgeID >= nrEdges)
         return;
     int UBDyn = dnumberofdynamicallyaddedvertices[0];
-    //printf("UBDyn %d\n", UBDyn);
     const int tid = threadIdx.x;
+    if (tid == 0){
+        printf("depthOfLeaf %d\n", depthOfLeaf);
+        printf("UBDyn %d\n", UBDyn);
+    }
     int leafIndexSoln = leafIndex;
     int2 nodeEntry;
-    int & counter = soln[2*depthOfLeaf];
+    int counter = 0;
     // Load solution into shared memory
-    if (tid == 0){
-        while(leafIndexSoln != 0){
-            nodeEntry = dsearchtree[leafIndexSoln];
-            soln[counter] = nodeEntry.x;
-            soln[counter + 1] = nodeEntry.y;
+    if (tid <= depthOfLeaf){
+        for(int i = 0; i < tid; ++i){
             if(leafIndexSoln % 3 == 0){
                 --leafIndexSoln;
                 leafIndexSoln = leafIndexSoln / 3;
             } else {
                 leafIndexSoln = leafIndexSoln / 3;
             }
-            counter += 2;
         }
+        nodeEntry = dsearchtree[leafIndexSoln];
+        soln[2*tid] = nodeEntry.x;
+        soln[2*tid + 1] = nodeEntry.y;
+        printf("tid %d is adding %d %d to soln indices %d %d \n", tid, nodeEntry.x, nodeEntry.y, 2*tid, 2*tid + 1);
+        __threadfence();
+    }
         /*
         // If you decide to use sm for dynamic verts
         for (int index = 0; index < dnumberofdynamicallyaddedvertices[0]; ++index){
@@ -778,18 +764,18 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
             ++counter;
         }
         */
-    }    
+     
     __syncthreads(); // put warp results in shared mem
     if (threadIdx.x == 0){
-            printf("Tree soln\n");
-        for (int i = 0; i < counter; ++i)
+        printf("LI %d Tree soln\n", leafIndex);
+        for (int i = 0; i < (depthOfLeaf+1)*2; ++i)
             printf("%d ", soln[i]);
         printf("\n");
     }
     __syncthreads(); // put warp results in shared mem
     Edge & edge = dedges[edgeID];
     bool covered = false;
-    for (int solutionIndex = 0; solutionIndex < counter; ++solutionIndex){
+    for (int solutionIndex = 0; solutionIndex < (depthOfLeaf+1)*2; ++solutionIndex){
         covered |= (edge.x == soln[solutionIndex]);
         covered |= (edge.y == soln[solutionIndex]);
     }
@@ -800,7 +786,7 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
     }
     */
     if (threadIdx.x == 0){
-        printf("Dyn soln\n");
+        printf("LI %d Dyn soln\n", leafIndex);
         for (int index = 0; index < UBDyn; ++index)
             printf("%d ", ddynamicallyaddedvertices[index]);
         printf("\n");
