@@ -174,6 +174,7 @@ class VCGPU
         std::vector<int> solution;
         std::vector<int> dynamcverts;
         int numofdynamcverts;
+        int numoftreeverts;
         int uncoverededges;
         int * duncoverededges;
         // VC arrays
