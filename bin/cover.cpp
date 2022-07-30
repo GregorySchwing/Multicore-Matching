@@ -438,9 +438,8 @@ int main(int argc, char **argv)
 					vc.matcher.initialMatching(match);
 					//initscr ();
 					vc.FindCover(0, 0, foundSolution);
-					vc.CallDrawSearchTree(stn);
 					if (foundSolution){
-						for (int i = 0; i < vc.solution.size(); ++i)
+						for (int i = 0; i < vc.numoftreeverts+vc.numofdynamcverts; ++i)
 							printf("%d ",vc.solution[i]);
 					} else {
 						printf("No solution found.\n");
