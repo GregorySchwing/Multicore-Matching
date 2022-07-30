@@ -393,7 +393,6 @@ void VCGPU::FindCover(int root,
     }
 
     //PrintData (); 
-    exit(1);
     // Wipe away my pendant nodes from shared list
     eraseDynVertsOfRecursionLevel<<<1, threadsPerBlock>>>(recursiveStackDepth,
                                               dnumberofdynamicallyaddedvertices, 
