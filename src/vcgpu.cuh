@@ -99,6 +99,8 @@ __global__ void CalculateDegrees(
                         int * ddegrees);
 
 __global__ void DetectAndSetPendantPathsCase3(int nrVertices, 
+                                                int depthOfLeaf,
+                                                int k,
                                                 int *match, 
                                                 int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
@@ -108,6 +110,8 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
                                                 int *ddynamicallyaddedvertices);
 
 __global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
+                                                int depthOfLeaf,
+                                                int k,
                                                 int *match, 
                                                 int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
@@ -140,6 +144,7 @@ class VCGPU
 
         int4 numberCompletedPaths(int nrVertices, 
                                 int leafIndex,
+                                int depthOfLeaf,
                                 int *dbackwardlinkedlist, 
                                 int *dlength,
                                 int recursiveStackDepth);

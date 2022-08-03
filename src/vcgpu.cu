@@ -130,7 +130,7 @@ VCGPU::~VCGPU(){
     cudaFree(dfinishedLeavesPerLevel);
     cudaFree(dsolution);
     cudaFree(ddegrees);
-
+    printf("Finished deallocating memory\n");
 	cudaUnbindTexture(neighboursTexture);
 	cudaUnbindTexture(neighbourRangesTexture);
 }
@@ -165,6 +165,7 @@ void VCGPU::GetLengthStatistics(int nrVertices, int threadsPerBlock, int *dbackw
 
 int4 VCGPU::numberCompletedPaths(int nrVertices, 
                         int leafIndex,
+                        int depthOfLeaf,
                         int *dbackwardlinkedlist, 
                         int *dlength,
                         int recursiveStackDepth){
@@ -181,6 +182,8 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
                                                             dsearchtree);
 
     DetectAndSetPendantPathsCase3<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
+                                                        depthOfLeaf,
+                                                        k,
                                                         dmatch,
                                                         dforwardlinkedlist,
                                                         dbackwardlinkedlist,
@@ -189,6 +192,8 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
                                                         dnumberofdynamicallyaddedvertices,
                                                         ddynamicallyaddedvertices);
     DetectAndSetPendantPathsCase4<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
+                                                        depthOfLeaf,
+                                                        k,
                                                         dmatch,
                                                         dforwardlinkedlist,
                                                         dbackwardlinkedlist,
@@ -331,7 +336,7 @@ void VCGPU::FindCover(int root,
     // Need to pass device pointer to LOP
     // Test algebra, use Test
     // Might have an error if 1 single path found.
-    int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
+    int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, depthOfLeaf, dbackwardlinkedlist, dlength, recursiveStackDepth);
     //int4 newLeaves = numberCompletedPathsTest(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
     cudaDeviceSynchronize();
 
@@ -934,6 +939,8 @@ __global__ void EvaluateLeafNodesV2(int nrEdges,
 */
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
+                                                int depthOfLeaf,
+                                                int k,
                                                 int *match, 
                                                 int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
@@ -958,17 +965,31 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
     // to miss some vertices which could be pendant but are red not blue.
     if (match[first] == 3){
         dynamicIndex = atomicAdd(&dnumberofdynamicallyaddedvertices[0], 1); 
-        ddynamicallyaddedvertices[dynamicIndex] = first;
+        //ddynamicallyaddedvertices[dynamicIndex] = first;
         //SetEdges(first, dedgestatus);
     } else if (match[second] == 3){
         dynamicIndex = atomicAdd(&dnumberofdynamicallyaddedvertices[0], 1); 
-        ddynamicallyaddedvertices[dynamicIndex] = second;
+        //ddynamicallyaddedvertices[dynamicIndex] = second;
         //SetEdges(second, dedgestatus);
+    }
+
+    if (match[first] == 3 || match[second] == 3){
+        if (dynamicIndex < k){
+            if (match[first] == 3){
+                ddynamicallyaddedvertices[dynamicIndex] = first;
+            } else if (match[second] == 3){
+                ddynamicallyaddedvertices[dynamicIndex] = second;
+            }
+        } else {
+            atomicSub(&ddynamicallyaddedvertices[0], 1);
+        }
     }
 }
 
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void DetectAndSetPendantPathsCase3(int nrVertices, 
+                                              int depthOfLeaf,
+                                              int k,
                                                 int *match, 
                                                 int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
@@ -993,12 +1014,24 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
     // to miss some vertices which could be pendant but are red not blue.
     if (match[first] == 3){
         dynamicIndex = atomicAdd(&dnumberofdynamicallyaddedvertices[0], 1); 
-        ddynamicallyaddedvertices[dynamicIndex] = first;
+        //ddynamicallyaddedvertices[dynamicIndex] = first;
         //SetEdges(first, dedgestatus);
     } else if (match[third] == 3){
         dynamicIndex = atomicAdd(&dnumberofdynamicallyaddedvertices[0], 1); 
-        ddynamicallyaddedvertices[dynamicIndex] = first;
+        //ddynamicallyaddedvertices[dynamicIndex] = third;
         //SetEdges(third, dedgestatus);
+    }
+
+    if (match[first] == 3 || match[third] == 3){
+        if (dynamicIndex < k){
+            if (match[first] == 3){
+                ddynamicallyaddedvertices[dynamicIndex] = first;
+            } else if (match[third] == 3){
+                ddynamicallyaddedvertices[dynamicIndex] = third;
+            }
+        } else {
+            atomicSub(&ddynamicallyaddedvertices[0], 1);
+        }
     }
 }
 
