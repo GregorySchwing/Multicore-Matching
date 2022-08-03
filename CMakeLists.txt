@@ -34,3 +34,4 @@ add_subdirectory(${MATCH_SOURCE_DIR}/DotWriter/lib/)
 enable_testing()
 include(gtest/GoogleTest.cmake)
 add_subdirectory(gtest)
+

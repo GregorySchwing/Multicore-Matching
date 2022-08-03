@@ -434,7 +434,7 @@ int main(int argc, char **argv)
 				std::string stn = searchTreeName.str();
 				try
 				{
-					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 22);
+					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 10);
 					vc.matcher.initialMatching(match);
 					//initscr ();
 					vc.FindCover(0, 0, foundSolution);
@@ -443,6 +443,7 @@ int main(int argc, char **argv)
 							printf("%d ",vc.solution[i]);
 					} else {
 						printf("No solution found.\n");
+						vc.CallDrawSearchTree(stn);
 					}
 				    //endwin();
 					vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);
