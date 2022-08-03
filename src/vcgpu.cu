@@ -980,8 +980,9 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
             } else if (match[second] == 3){
                 ddynamicallyaddedvertices[dynamicIndex] = second;
             }
+            //printf("added pendant %d", dynamicIndex);
         } else {
-            atomicSub(&ddynamicallyaddedvertices[0], 1);
+            atomicSub(&dnumberofdynamicallyaddedvertices[0], 1);
         }
     }
 }
@@ -1029,8 +1030,9 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
             } else if (match[third] == 3){
                 ddynamicallyaddedvertices[dynamicIndex] = third;
             }
+            //printf("added pendant %d", dynamicIndex);
         } else {
-            atomicSub(&ddynamicallyaddedvertices[0], 1);
+            atomicSub(&dnumberofdynamicallyaddedvertices[0], 1);
         }
     }
 }
