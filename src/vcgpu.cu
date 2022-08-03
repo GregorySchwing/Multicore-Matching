@@ -116,19 +116,21 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 }
 
 VCGPU::~VCGPU(){
-    cudaFree(ddegrees);
-    cudaFree(dsolution);
-    cudaFree(duncoverededges);
-	cudaFree(dlength);
-    cudaFree(dsearchtree);
-    cudaFree(dedges);
     cudaFree(dedgestatus);
+    cudaFree(dedges);
+    cudaFree(dlength);
+    cudaFree(dsearchtree);
+    cudaFree(duncoverededges);
     cudaFree(dfullpathcount);
     cudaFree(dnumleaves);
+    cudaFree(dremainingedges);
     cudaFree(dnumberofdynamicallyaddedvertices);
     cudaFree(ddynamicallyaddedvertices_csr);
     cudaFree(ddynamicallyaddedvertices);
-    cudaFree(dremainingedges);
+    cudaFree(dfinishedLeavesPerLevel);
+    cudaFree(dsolution);
+    cudaFree(ddegrees);
+
 	cudaUnbindTexture(neighboursTexture);
 	cudaUnbindTexture(neighbourRangesTexture);
 }
