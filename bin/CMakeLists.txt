@@ -27,18 +27,18 @@ target_link_libraries(match ${CURSES_LIBRARIES})
 target_link_libraries(match ${TBB_IMPORTED_TARGETS})
 target_link_libraries(match matcher)
 
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -g -G --keep")
+#set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -g -G --keep")
 
 link_directories(${Boost_LIBRARY_DIRS})
 include_directories(${Boost_INCLUDE_DIRS} ${MATCH_SOURCE_DIR}/DotWriter/lib/ ${CURSES_INCLUDE_DIR})
 add_executable(cover cover.cpp ${DOT_LIBRARY_HEADERS} ${DOT_LIBRARY_SOURCES})
 set_target_properties(cover PROPERTIES
 CUDA_ARCHITECTURES "35;37;60;70;80"
-CUDA_RESOLVE_DEVICE_SYMBOLS ON
+#CUDA_RESOLVE_DEVICE_SYMBOLS ON
 )
 set_target_properties(matcher PROPERTIES
 CUDA_ARCHITECTURES "35;37;60;70;80"
-CUDA_RESOLVE_DEVICE_SYMBOLS ON
+#CUDA_RESOLVE_DEVICE_SYMBOLS ON
 )
 target_compile_options(cover PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
                        --generate-line-info

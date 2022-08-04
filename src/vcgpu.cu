@@ -180,27 +180,29 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
                                                             dlength,
                                                             dfullpathcount,
                                                             dsearchtree);
-
-    DetectAndSetPendantPathsCase3<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
-                                                        depthOfLeaf,
-                                                        k,
-                                                        dmatch,
-                                                        dforwardlinkedlist,
-                                                        dbackwardlinkedlist,
-                                                        dedgestatus, 
-                                                        dlength,
-                                                        dnumberofdynamicallyaddedvertices,
-                                                        ddynamicallyaddedvertices);
-    DetectAndSetPendantPathsCase4<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
-                                                        depthOfLeaf,
-                                                        k,
-                                                        dmatch,
-                                                        dforwardlinkedlist,
-                                                        dbackwardlinkedlist,
-                                                        dedgestatus, 
-                                                        dlength,
-                                                        dnumberofdynamicallyaddedvertices,
-                                                        ddynamicallyaddedvertices);
+    // Dont bother with looking for pendants if I'm out of space.
+    if (numberofdynamicallyaddedvertices<k){
+        DetectAndSetPendantPathsCase3<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
+                                                            depthOfLeaf,
+                                                            k,
+                                                            dmatch,
+                                                            dforwardlinkedlist,
+                                                            dbackwardlinkedlist,
+                                                            dedgestatus, 
+                                                            dlength,
+                                                            dnumberofdynamicallyaddedvertices,
+                                                            ddynamicallyaddedvertices);
+        DetectAndSetPendantPathsCase4<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
+                                                            depthOfLeaf,
+                                                            k,
+                                                            dmatch,
+                                                            dforwardlinkedlist,
+                                                            dbackwardlinkedlist,
+                                                            dedgestatus, 
+                                                            dlength,
+                                                            dnumberofdynamicallyaddedvertices,
+                                                            ddynamicallyaddedvertices);
+    }
     // Create CSR entry for dynamically added verts
     cudaMemcpy(&ddynamicallyaddedvertices_csr[recursiveStackDepth], dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToDevice);
 
@@ -336,6 +338,7 @@ void VCGPU::FindCover(int root,
     // Need to pass device pointer to LOP
     // Test algebra, use Test
     // Might have an error if 1 single path found.
+    cudaMemcpy(&numberofdynamicallyaddedvertices, &dnumberofdynamicallyaddedvertices[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
     int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, depthOfLeaf, dbackwardlinkedlist, dlength, recursiveStackDepth);
     //int4 newLeaves = numberCompletedPathsTest(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
     cudaDeviceSynchronize();
