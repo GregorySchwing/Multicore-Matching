@@ -19,7 +19,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${MATCH_SOURCE_DIR})
 
 find_package(CUDA REQUIRED)
 find_package(TBB REQUIRED)
-find_package(Curses REQUIRED)
+#find_package(Curses REQUIRED)
 
 include_directories(${CURSES_INCLUDE_DIR})
 
