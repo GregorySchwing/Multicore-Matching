@@ -495,15 +495,15 @@ GraphMatchingTBBRandom::~GraphMatchingTBBRandom()
 	
 }
 
-void GraphMatchingTBBRandom::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
+void GraphMatchingTBBRandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//This is a random greedy matching algorithm using Intel's Threading Building Blocks library.
 	//Assumes that the order of the vertices has already been randomized.
 	
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Clear matching.
-	match.assign(graph.nrVertices, 0);
+	std::fill_n(match, graph.nrVertices, 0);
 	
 	//Create requests array.
 	vector<int> requests(graph.nrVertices, 0);
@@ -564,15 +564,15 @@ GraphMatchingTBBWeighted::~GraphMatchingTBBWeighted()
 	
 }
 
-void GraphMatchingTBBWeighted::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
+void GraphMatchingTBBWeighted::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//This is a weighted greedy matching algorithm using Intel's Threading Building Blocks library.
 	//Assumes that the order of the vertices has already been randomized.
 	
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Clear matching.
-	match.assign(graph.nrVertices, 0);
+	std::fill_n(match, graph.nrVertices, 0);
 	
 	//Create requests array.
 	vector<int> requests(graph.nrVertices, 0);

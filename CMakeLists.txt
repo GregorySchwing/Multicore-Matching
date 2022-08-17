@@ -19,6 +19,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${MATCH_SOURCE_DIR})
 
 find_package(CUDA REQUIRED)
 find_package(TBB REQUIRED)
+find_package(Curses REQUIRED)
+
+include_directories(${CURSES_INCLUDE_DIR})
+
 #set(CMAKE_CXX_FLAGS "-O2 -g -Wall -Wextra -Wshadow -Werror -ansi")
 set(CMAKE_CXX_FLAGS "-O3 -Wall -ffast-math -DNDEBUG")
 #set(CUDA_NVCC_FLAGS -g -G)
@@ -27,3 +31,7 @@ set(CUDA_NVCC_FLAGS -Xptxas -dlcm=cg)
 add_subdirectory(${MATCH_SOURCE_DIR}/src/)
 add_subdirectory(${MATCH_SOURCE_DIR}/bin/)
 add_subdirectory(${MATCH_SOURCE_DIR}/DotWriter/lib/)
+enable_testing()
+include(gtest/GoogleTest.cmake)
+add_subdirectory(gtest)
+

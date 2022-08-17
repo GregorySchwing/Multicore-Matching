@@ -46,7 +46,7 @@ GraphMatching::~GraphMatching()
 	
 }
 
-vector<int> GraphMatching::initialMatching() const
+void GraphMatching::initialMatching(std::vector<int> & match)
 {
 	/*
 	if (graph.empty())
@@ -55,15 +55,13 @@ vector<int> GraphMatching::initialMatching() const
 		throw exception();
 	}
 	*/
-
-	vector<int> match(graph.nrVertices, 0);
-
-	return match;
+	match.clear();
+	match.resize(graph.nrVertices);
 }
 
 void GraphMatching::getWeight(double &_weight, long &_size, const vector<int> &match, const Graph &graph)
 {
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 
 	double weight = 0.0;
 	long size = 0;
@@ -95,6 +93,29 @@ void GraphMatching::getWeight(double &_weight, long &_size, const vector<int> &m
 	_weight = weight/2.0;
 	_size = size;
 }
+
+
+void GraphMatching::getWeightGeneral(double &_weight, vector<long> &_size, const vector<int> &degrees, const vector<int> &bll, const vector<int> &lengthOfPath, const Graph &graph)
+{
+	assert((int)bll.size() == graph.nrVertices);
+	assert((int)lengthOfPath.size() == graph.nrVertices);
+
+	double weight = 0.0;
+	int length = 0;
+
+	for (int i = 0; i < graph.nrVertices; ++i)
+	{
+		if(degrees[i]==0)
+			continue;
+		//std::cout << i << " " << bll[i] << isHead(i, bll) << " " << lengthOfPath[i] << " " << std::endl;
+		if (isHead(i, bll))
+		{
+			length = lengthOfPath[i];
+			_size[length] += 1;
+		}
+	}
+}
+
 
 class SortVerticesMatch
 {
@@ -256,12 +277,12 @@ GraphMatchingCPURandom::~GraphMatchingCPURandom()
 	
 }
 
-void GraphMatchingCPURandom::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
+void GraphMatchingCPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//This is a random greedy matching algorithm.
 	//Assumes that the order of the vertices has already been randomized.
 	
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	cudaEventRecord(t1, 0);
 	cudaEventSynchronize(t1);
@@ -313,12 +334,12 @@ GraphMatchingCPUMinDeg::~GraphMatchingCPUMinDeg()
 	
 }
 
-void GraphMatchingCPUMinDeg::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
+void GraphMatchingCPUMinDeg::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//This is a two-sided dynamic minimum degree greedy matching algorithm.
 	//Assumes that no vertices have been matched yet.
 	
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Allocate memory.
 	vector<multimap<int, int>::iterator> mapPtrs(graph.nrVertices);
@@ -459,11 +480,11 @@ class SortByDegree
 		const Graph &g;
 };
 
-void GraphMatchingCPUStatMinDeg::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
+void GraphMatchingCPUStatMinDeg::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//This is a one-sided static minimum degree greedy matching algorithm.
 	
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Create array for all vertex degrees.
 	vector<int> order(graph.nrVertices);
@@ -526,12 +547,12 @@ GraphMatchingCPUKarpSipser::~GraphMatchingCPUKarpSipser()
 	
 }
 
-void GraphMatchingCPUKarpSipser::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
+void GraphMatchingCPUKarpSipser::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//This is the one-sided Karp-Sipser greedy matching algorithm.
 	//Assumes that the order of the vertices has already been randomized and that the given matching is empty.
 	
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Allocate memory.
 	vector<list<int>::iterator> listPtrs(graph.nrVertices);
@@ -692,12 +713,12 @@ GraphMatchingCPUWeighted::~GraphMatchingCPUWeighted()
 	
 }
 
-void GraphMatchingCPUWeighted::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
+void GraphMatchingCPUWeighted::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//This is a greedy weighted matching algorithm.
 	//Assumes that the order of the vertices has already been randomized.
 	
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	cudaEventRecord(t1, 0);
 	cudaEventSynchronize(t1);
@@ -774,7 +795,7 @@ GraphMatchingCPUWeightedEdge::~GraphMatchingCPUWeightedEdge()
 	
 }
 
-void GraphMatchingCPUWeightedEdge::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
+void GraphMatchingCPUWeightedEdge::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//This is a greedy weighted matching algorithm.
 	//Instead of being vertex oriented, this is an edge oriented algorithm.

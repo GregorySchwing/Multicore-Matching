@@ -36,13 +36,16 @@ class GraphMatching
 		virtual ~GraphMatching();
 
 		static void getWeight(double &, long &, const std::vector<int> &, const Graph &);
+		static void getWeightGeneral(double &, std::vector<long> &, const std::vector<int> &, const std::vector<int> &, const std::vector<int> &, const Graph &);
 		static bool testMatching(const std::vector<int> &, const Graph &);
 		
 		static inline int matchVal(const int &i, const int &j) {return 4 + (i < j ? i : j);};
 		static inline bool isMatched(const int &m) {return m >= 4;};
-	
-		std::vector<int> initialMatching() const;
-		virtual void performMatching(std::vector<int> &, cudaEvent_t &, cudaEvent_t &, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & lengthOfPath,std::vector<int> & heads, std::vector<int> & tails) const = 0;
+		static inline bool isHead(const int &m, const std::vector<int> & bll) {return bll[m] == m;};
+
+		void initialMatching(std::vector<int> & match);
+		virtual void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const = 0;
+		std::vector<int> match;
 
 	protected:
 		const Graph &graph;
@@ -54,7 +57,7 @@ class GraphMatchingCPURandom : public GraphMatching
 		GraphMatchingCPURandom(const Graph &);
 		~GraphMatchingCPURandom();
 		
-		void performMatching(std::vector<int> &, cudaEvent_t &, cudaEvent_t &, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & lengthOfPath, std::vector<int> & heads, std::vector<int> & tails) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const;
 };
 
 class GraphMatchingCPUMinDeg : public GraphMatching
@@ -63,7 +66,7 @@ class GraphMatchingCPUMinDeg : public GraphMatching
 		GraphMatchingCPUMinDeg(const Graph &);
 		~GraphMatchingCPUMinDeg();
 		
-		void performMatching(std::vector<int> &, cudaEvent_t &, cudaEvent_t &, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & lengthOfPath, std::vector<int> & heads, std::vector<int> & tails) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const;
 };
 
 class GraphMatchingCPUStatMinDeg : public GraphMatching
@@ -72,7 +75,7 @@ class GraphMatchingCPUStatMinDeg : public GraphMatching
 		GraphMatchingCPUStatMinDeg(const Graph &);
 		~GraphMatchingCPUStatMinDeg();
 		
-		void performMatching(std::vector<int> &, cudaEvent_t &, cudaEvent_t &, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & lengthOfPath, std::vector<int> & heads, std::vector<int> & tails) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const;
 };
 
 class GraphMatchingCPUKarpSipser : public GraphMatching
@@ -81,7 +84,7 @@ class GraphMatchingCPUKarpSipser : public GraphMatching
 		GraphMatchingCPUKarpSipser(const Graph &);
 		~GraphMatchingCPUKarpSipser();
 		
-		void performMatching(std::vector<int> &, cudaEvent_t &, cudaEvent_t &, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & lengthOfPath, std::vector<int> & heads, std::vector<int> & tails) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const;
 };
 
 class GraphMatchingCPUWeighted : public GraphMatching
@@ -90,7 +93,7 @@ class GraphMatchingCPUWeighted : public GraphMatching
 		GraphMatchingCPUWeighted(const Graph &);
 		~GraphMatchingCPUWeighted();
 		
-		void performMatching(std::vector<int> &, cudaEvent_t &, cudaEvent_t &, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & lengthOfPath, std::vector<int> & heads, std::vector<int> & tails) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const;
 };
 
 class GraphMatchingCPUWeightedEdge : public GraphMatching
@@ -99,7 +102,7 @@ class GraphMatchingCPUWeightedEdge : public GraphMatching
 		GraphMatchingCPUWeightedEdge(const Graph &);
 		~GraphMatchingCPUWeightedEdge();
 		
-		void performMatching(std::vector<int> &, cudaEvent_t &, cudaEvent_t &, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & lengthOfPath, std::vector<int> & heads, std::vector<int> & tails) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const;
 };
 
 };

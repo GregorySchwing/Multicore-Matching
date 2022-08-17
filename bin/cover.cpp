@@ -9,7 +9,7 @@ the Free Software Foundation, either version 3 of the License, or
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+GNU General Public License for more deedgestatus.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
@@ -36,113 +36,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 
-//#include "../DotWriter/lib/DotWriter.h"
-//#include "../DotWriter/lib/Enums.h"
 #include <sstream>
 #include "vcgpu.cuh"
-
-
-
-#define SSTR( x ) static_cast< std::ostringstream & >( \
-        ( std::ostringstream() << std::dec << x ) ).str()
 
 using namespace std;
 using namespace tbb;
 using namespace mtc;
 
-/*
-void writeGraphViz(std::vector<int> & match, 
-					const Graph & g,
-					const string &fileName_arg,  
-					std::vector<int> & fll,
-					std::vector<int> & bll)
-{
-	DotWriter::RootGraph gVizWriter(false, "graph");
-    std::string subgraph1 = "linearforest";
-	std::string subgraph2 = "fullgraph";
-    DotWriter::Subgraph * linearforestgraph = gVizWriter.AddSubgraph(subgraph1);
-    DotWriter::Subgraph * fullgraph = gVizWriter.AddSubgraph(subgraph2);
+#define SSTR( x ) static_cast< std::ostringstream & >( \
+        ( std::ostringstream() << std::dec << x ) ).str()
+#include <sstream>
+#include <string>
 
-    std::map<std::string, DotWriter::Node *> linearForestNodeMap;    
-	std::map<std::string, DotWriter::Node *> fullGraphNodeMap;    
-
-	int curr, next;
-	std::map<std::string, DotWriter::Node *>::const_iterator nodeIt1;
-	std::map<std::string, DotWriter::Node *>::const_iterator nodeIt2;
-
-    for (int i = 0; i < g.nrVertices; ++i){
-		// skip singletons
-		if (fll[i] == i && bll[i] == i)
-			continue;
-		// Start from heads only
-		if (bll[i] == i){
-			curr = i;
-			next = fll[curr];
-			while(curr != next){
-				std::string node1Name = SSTR(curr);
-				nodeIt1 = linearForestNodeMap.find(node1Name);
-				if(nodeIt1 == linearForestNodeMap.end()){
-					linearForestNodeMap[node1Name] = linearforestgraph->AddNode(node1Name);
-					linearForestNodeMap[node1Name]->GetAttributes().SetColor(DotWriter::Color::e(match[curr]));
-					linearForestNodeMap[node1Name]->GetAttributes().SetFillColor(DotWriter::Color::e(match[curr]));
-					linearForestNodeMap[node1Name]->GetAttributes().SetStyle("filled");
-				}
-				std::string node2Name = SSTR(next);
-				nodeIt2 = linearForestNodeMap.find(node2Name);
-				if(nodeIt2 == linearForestNodeMap.end()){
-					linearForestNodeMap[node2Name] = linearforestgraph->AddNode(node2Name);
-					linearForestNodeMap[node2Name]->GetAttributes().SetColor(DotWriter::Color::e(match[next]));
-					linearForestNodeMap[node2Name]->GetAttributes().SetFillColor(DotWriter::Color::e(match[next]));
-					linearForestNodeMap[node2Name]->GetAttributes().SetStyle("filled");
-				}
-				nodeIt1 = linearForestNodeMap.find(node1Name);
-				nodeIt2 = linearForestNodeMap.find(node2Name);
-
-				if(nodeIt1 != linearForestNodeMap.end() && nodeIt2 != linearForestNodeMap.end()) 
-					linearforestgraph->AddEdge(linearForestNodeMap[node1Name], linearForestNodeMap[node2Name]); 
-
-				curr = next; 
-				next = fll[curr];
-			}
-		}
-	}
-
-    // Since the graph doesnt grow uniformly, it is too difficult to only copy the new parts..
-    for (int i = 0; i < g.nrVertices; ++i){
-		std::string node1Name = SSTR(i);
-        std::map<std::string, DotWriter::Node *>::const_iterator nodeIt1 = fullGraphNodeMap.find(node1Name);
-        if(nodeIt1 == fullGraphNodeMap.end()) {
-            fullGraphNodeMap[node1Name] = fullgraph->AddNode(node1Name);
-			// Only color the linear forest vertices
-            if(linearForestNodeMap.find(node1Name) != linearForestNodeMap.end()){
-                fullGraphNodeMap[node1Name]->GetAttributes().SetColor(DotWriter::Color::e(match[i]));
-                fullGraphNodeMap[node1Name]->GetAttributes().SetFillColor(DotWriter::Color::e(match[i]));
-                fullGraphNodeMap[node1Name]->GetAttributes().SetStyle("filled");
-            }
-        }
-        for (int j = g.neighbourRanges[i].x; j < g.neighbourRanges[i].y; ++j){
-            //if (i < g.neighbours[j]){
-                std::string node2Name = SSTR(g.neighbours[j]);
-                std::map<std::string, DotWriter::Node *>::const_iterator nodeIt2 = fullGraphNodeMap.find(node2Name);
-                if(nodeIt2 == fullGraphNodeMap.end()) {
-                    fullGraphNodeMap[node2Name] = fullgraph->AddNode(node2Name);
-                    if(linearForestNodeMap.find(node2Name) != linearForestNodeMap.end()){
-                        fullGraphNodeMap[node2Name]->GetAttributes().SetColor(DotWriter::Color::e(match[g.neighbours[j]]));
-                        fullGraphNodeMap[node2Name]->GetAttributes().SetFillColor(DotWriter::Color::e(match[g.neighbours[j]]));
-                        fullGraphNodeMap[node2Name]->GetAttributes().SetStyle("filled");
-                    }
-                }  
-                fullgraph->AddEdge(fullGraphNodeMap[node1Name], fullGraphNodeMap[node2Name]); 
-            //}
-        }
-    }
-
-    gVizWriter.WriteToFile(fileName_arg);
-
-	std::cout << "Wrote graph viz " << fileName_arg << std::endl;
-
-}
-*/
 void initCUDA(CUdevice &device, int &nrThreads, const int &deviceIndex, const int &nrVertices)
 {
 	//Initialise CUDA.
@@ -469,7 +374,7 @@ int main(int argc, char **argv)
 	std::vector<int> lengthOfPath(graph.nrVertices);
 	std::vector<int> degrees(graph.nrVertices);
 	std::vector<int> edgestatus(graph.nrEdges);
-	std::vector<int2> searchtree(graph.nrEdges);
+	bool foundSolution = false;
 	//Perform all desired greedy matchings.
 	for (set<int>::const_iterator i = matchTypes.begin(); i != matchTypes.end(); ++i)
 	{
@@ -521,19 +426,28 @@ int main(int argc, char **argv)
 				cudaEventRecord(t0, 0);
 				cudaEventSynchronize(t0);
 
-				//Generate matching of the desired type.
-				vector<int> match;
-
+				std::vector<int> match;
+				std::stringstream searchTreeName;
+				searchTreeName.str(std::string());
+				searchTreeName.clear();
+				searchTreeName << k << "_final_";
+				std::string stn = searchTreeName.str();
 				try
 				{
-					GraphMatching *matcher = getMatcher(graph2, *i, GPUNrThreadsPerBlock, barrier);
-					
-					 matcher->initialMatching(match);
-					//broken for gpu, need to create device mem
-					matcher->performMatching(&match[0], t1, t2, &fll[0], &bll[0], &lengthOfPath[0],
-											 &searchtree[0], &lengthOfPath[0], 0, 0);
-
-					delete matcher;
+					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 30);
+					vc.matcher.initialMatching(match);
+					//initscr ();
+					vc.FindCover(0, 0, foundSolution);
+					if (foundSolution){
+						for (int i = 0; i < vc.numoftreeverts+vc.numofdynamcverts; ++i)
+							printf("%d ",vc.solution[i]);
+					} else {
+						printf("No solution found.\n");
+						vc.CallDrawSearchTree(stn);
+					}
+				    //endwin();
+					vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);
+					vc.CopyMatchingBackToHost(match);
 				}
 				catch (exception &e)
 				{
@@ -587,9 +501,7 @@ int main(int argc, char **argv)
 					matchingSizesGeneral[i][k] = matchingSizeGeneral[i];
 				matchingWeights[k] = matchingWeight;
 				totalTimes[k] = time0;
-				matchTimes[k] = time1;
-
-				//writeGraphViz(match, graph2, "iter_" + SSTR(k), fll, bll);
+				matchTimes[k] = time1;		
 			}
 
 			

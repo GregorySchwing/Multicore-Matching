@@ -23,6 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
+
+#include <sstream>
+#define SSTR( x ) static_cast< std::ostringstream & >( \
+        ( std::ostringstream() << std::dec << x ) ).str()
 //#include <device_functions.h>
 //CUDA 3.2 does not seem to make definitions for texture types.
 #ifndef cudaTextureType1D
@@ -43,70 +47,7 @@ inline void checkLastErrorCUDA(const char *file, int line)
   }
 }
 
-#include "../DotWriter/lib/DotWriter.h"
-#include "../DotWriter/lib/Enums.h"
-#include <sstream>
 
-#define SSTR( x ) static_cast< std::ostringstream & >( \
-	( std::ostringstream() << std::dec << x ) ).str()
-
-void writeGraphVizIntermediate(std::vector<int> & match, 
-					const Graph & g,
-					const string &fileName_arg,  
-					std::vector<int> & fll,
-					std::vector<int> & bll)
-{
-	DotWriter::RootGraph gVizWriter(false, "graph");
-    std::string subgraph1 = "graph";
-    DotWriter::Subgraph * graph = gVizWriter.AddSubgraph(subgraph1);
-
-    std::map<std::string, DotWriter::Node *> nodeMap;    
-	int curr, next;
-	std::map<std::string, DotWriter::Node *>::const_iterator nodeIt1;
-	std::map<std::string, DotWriter::Node *>::const_iterator nodeIt2;
-
-    for (int i = 0; i < g.nrVertices; ++i){
-		// skip singletons
-		if (fll[i] == i && bll[i] == i)
-			continue;
-		// Start from heads only
-		if (bll[i] == i){
-			curr = i;
-			next = fll[curr];
-			while(curr != next){
-				std::string node1Name = SSTR(curr);
-				nodeIt1 = nodeMap.find(node1Name);
-				if(nodeIt1 == nodeMap.end()){
-					nodeMap[node1Name] = graph->AddNode(node1Name);
-					nodeMap[node1Name]->GetAttributes().SetColor(DotWriter::Color::e(match[curr]));
-					nodeMap[node1Name]->GetAttributes().SetFillColor(DotWriter::Color::e(match[curr]));
-					nodeMap[node1Name]->GetAttributes().SetStyle("filled");
-				}
-				std::string node2Name = SSTR(next);
-				nodeIt2 = nodeMap.find(node2Name);
-				if(nodeIt2 == nodeMap.end()){
-					nodeMap[node2Name] = graph->AddNode(node2Name);
-					nodeMap[node2Name]->GetAttributes().SetColor(DotWriter::Color::e(match[next]));
-					nodeMap[node2Name]->GetAttributes().SetFillColor(DotWriter::Color::e(match[next]));
-					nodeMap[node2Name]->GetAttributes().SetStyle("filled");
-				}
-				//graph->AddEdge(nodeMap[node1Name], nodeMap[node2Name], SSTR(host_levels[i]));
-				nodeIt1 = nodeMap.find(node1Name);
-				nodeIt2 = nodeMap.find(node2Name);
-
-				if(nodeIt1 != nodeMap.end() && nodeIt2 != nodeMap.end()) 
-					graph->AddEdge(nodeMap[node1Name], nodeMap[node2Name]); 
-
-				curr = next; 
-				next = fll[curr];
-			}
-		}
-	}
-    gVizWriter.WriteToFile(fileName_arg);
-
-	std::cout << "Wrote graph viz " << fileName_arg << std::endl;
-
-}
 
 __constant__ uint dSelectBarrier = 0x8000000;
 
@@ -226,12 +167,18 @@ GraphMatchingGPUWeightedMaximal::~GraphMatchingGPUWeightedMaximal()
 GraphMatchingGeneralGPURandom::GraphMatchingGeneralGPURandom(const Graph &_graph, const int &_nrThreads, const unsigned int &_selectBarrier) :
 		GraphMatchingGPU(_graph, _nrThreads, _selectBarrier)
 {
-
+	if (cudaMalloc(&drequests, sizeof(int)*graph.nrVertices) != cudaSuccess ||  
+		cudaMalloc(&dsense, sizeof(int)*graph.nrVertices) != cudaSuccess)
+	{
+		cerr << "Not enough memory on device!" << endl;
+		throw exception();
+	}
 }
 
 GraphMatchingGeneralGPURandom::~GraphMatchingGeneralGPURandom()
 {
-
+	cudaFree(drequests);
+	cudaFree(dsense);
 }
 
 //==== Kernel variables ====
@@ -306,13 +253,12 @@ __global__ void gSelect(int *match, const int nrVertices, const uint random)
 }
 
 // Finds head/tail by iterating through the list
-__global__ void gSelect(int *match, int *sense, int * fll, int * bll, const int nrVertices, const uint random)
+__global__ void gSelect( int *match, int *sense, int * fll, int * bll, const int nrVertices, const uint random)
 {
 	//Determine blue and red groups using MD5 hashing.
 	//Based on the Wikipedia MD5 hashing pseudocode (http://en.wikipedia.org/wiki/MD5).
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
 	if (i >= nrVertices) return;
-
 
 	//printf("vert %d, made it past first ret\n", i);
 
@@ -323,12 +269,14 @@ __global__ void gSelect(int *match, int *sense, int * fll, int * bll, const int 
 	bool singleton = (isATail && isAHead);
 
 	//printf("vert %d, entered gSel\n", i);
+
+	/*
 	if (!singleton)
 	if (isAHead)
 	printf("%d (%s head)\n", i, match[i] ? "Red" : "Blue");
 	else
 	printf("%d (%s tail)\n", i, match[i] ? "Red" : "Blue");
-	
+	*/
 
 
 	// Dont color internal vertices
@@ -347,7 +295,7 @@ __global__ void gSelect(int *match, int *sense, int * fll, int * bll, const int 
 		g = i;
 	} else {
 		if (isAHead){
-			printf("vert %d, isAHead\n", i);
+			//printf("vert %d, isAHead\n", i);
 
 			int curr = i;
 			int next = fll[curr];
@@ -358,12 +306,12 @@ __global__ void gSelect(int *match, int *sense, int * fll, int * bll, const int 
 			while(next != curr) {
 				curr = next;
 				next = fll[curr];
-				printf("curr %d, next %d, vert %d, looping head 2 tail\n", curr, next, i);
+				//printf("curr %d, next %d, vert %d, looping head 2 tail\n", curr, next, i);
 			}
 			head = i;
 			tail = curr;
 		} else if (isATail){
-			printf("vert %d, isATail\n", i);
+			//printf("vert %d, isATail\n", i);
 			int curr = i;
 			int prev = bll[curr];
 			// Find the end in the forward dir
@@ -373,7 +321,7 @@ __global__ void gSelect(int *match, int *sense, int * fll, int * bll, const int 
 			while(prev != curr) {
 				curr = prev;
 				prev = bll[curr];
-				printf("curr %d, prev %d, vert %d, looping tail 2 head\n", curr, prev, i);
+				//printf("curr %d, prev %d, vert %d, looping tail 2 head\n", curr, prev, i);
 			}
 			head = curr;
 			tail = i;
@@ -478,12 +426,13 @@ __global__ void gSelect(int *match, int *sense, int * heads, int * tails, int * 
 	bool singleton = (isATail && isAHead);
 
 	//printf("vert %d, entered gSel\n", i);
+	/*
 	if (!singleton)
 		if (isAHead)
 			printf("%d (%s head)\n", i, match[i] ? "Red" : "Blue");
 		else
 			printf("%d (%s tail)\n", i, match[i] ? "Red" : "Blue");
-
+	*/
 	// Dont color internal vertices
 	if ( !isATail && !isAHead ) match[i] = 2;
 
@@ -500,11 +449,11 @@ __global__ void gSelect(int *match, int *sense, int * heads, int * tails, int * 
 		g = i;
 	} else {
 		if (isAHead){
-			printf("vert %d, isAHead\n", i);
+			//printf("vert %d, isAHead\n", i);
 			head = i;
 			tail = tails[i];
 		} else if (isATail){
-			printf("vert %d, isATail\n", i);
+			//printf("vert %d, isATail\n", i);
 			head = heads[i];
 			tail = i;
 		} else {
@@ -657,7 +606,7 @@ __global__ void gMatch(int *match, const int *requests, const int nrVertices)
 	}
 }
 
-__global__ void gMatch(int *match, int *fll, int *bll, const int *requests, const int nrVertices){
+__global__ void gMatch( int *match, int *fll, int *bll, const int *requests, const int nrVertices){
 
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -687,12 +636,14 @@ __global__ void gMatch(int *match, int *fll, int *bll, const int *requests, cons
 			bool isATail = fll[i] == i;
 			bool isAHead = bll[i] == i;
 			bool isAsingleton = (isATail && isAHead);
+			/*
 			if (isAsingleton)
 			printf("SUCCESS MATCHING %d (%s singleton %s) w %d\n", i, match[i] ? "Red" : "Blue", isAsingleton ? "True" : "False", r);
 			else if (isAHead)
 			printf("SUCCESS MATCHING %d (%s head %s) w %d\n", i, match[i] ? "Red" : "Blue", isAHead ? "True" : "False", r);
 			else
 			printf("SUCCESS MATCHING %d (%s tail %s) w %d\n", i, match[i] ? "Red" : "Blue", isATail ? "True" : "False", r);
+			*/
 			uint head;
 			uint tail; 
 			if(isAsingleton){
@@ -718,7 +669,7 @@ __global__ void gMatch(int *match, int *fll, int *bll, const int *requests, cons
 			// Reverse the red LL to obtain : BH-BT<->RH-RT
 				printf("%d is a red tail, reverse ll shouldve already happened!!!\n", i);
 			} else if (isAHead && !isATail){
-				printf("vert %d, isAHead\n", i);
+				//printf("vert %d, isAHead\n", i);
 	
 				int curr = i;
 				int next = fll[curr];
@@ -729,12 +680,12 @@ __global__ void gMatch(int *match, int *fll, int *bll, const int *requests, cons
 				while(next != curr) {
 					curr = next;
 					next = fll[curr];
-					printf("curr %d, next %d, vert %d, looping head 2 tail\n", curr, next, i);
+					//printf("curr %d, next %d, vert %d, looping head 2 tail\n", curr, next, i);
 				}
 				head = i;
 				tail = curr;
 			} else if (!isAHead && isATail){
-				printf("vert %d, isATail\n", i);
+				//printf("vert %d, isATail\n", i);
 				int curr = i;
 				int prev = bll[curr];
 				// Find the end in the forward dir
@@ -744,7 +695,7 @@ __global__ void gMatch(int *match, int *fll, int *bll, const int *requests, cons
 				while(prev != curr) {
 					curr = prev;
 					prev = bll[curr];
-					printf("curr %d, prev %d, vert %d, looping tail 2 head\n", curr, prev, i);
+					//printf("curr %d, prev %d, vert %d, looping tail 2 head\n", curr, prev, i);
 				}
 				head = curr;
 				tail = i;
@@ -758,10 +709,10 @@ __global__ void gMatch(int *match, int *fll, int *bll, const int *requests, cons
 				bool amIStillAHead = bll[i] == i;
 				bool amINowATail = fll[i] == i;
 				bool isMyTailStillATail = fll[tail] == tail;
-				printf("%d (%s head %s) after matching\n", i, match[i] ? "Red" : "Blue", amIStillAHead ? "True" : "False");
-				printf("%d (%s tail %s) after matching\n", i, match[i] ? "Red" : "Blue", amINowATail ? "True" : "False");
+				//printf("%d (%s head %s) after matching\n", i, match[i] ? "Red" : "Blue", amIStillAHead ? "True" : "False");
+				//printf("%d (%s tail %s) after matching\n", i, match[i] ? "Red" : "Blue", amINowATail ? "True" : "False");
 
-				printf("%d's (%s tail %d) is still a tail(%s) w %d\n", i, match[i] ? "Red" : "Blue", tail, isMyTailStillATail ? "True" : "False");
+				//printf("%d's (%s tail %d) is still a tail(%s) w %d\n", i, match[i] ? "Red" : "Blue", tail, isMyTailStillATail ? "True" : "False");
 			// With these assumptions, red matched vertices can always set
 			// prev to matched partner
 			} if(i == tail){
@@ -770,10 +721,10 @@ __global__ void gMatch(int *match, int *fll, int *bll, const int *requests, cons
 				bool amINowAHead = fll[i] == i;
 
 				bool isMyHeadStillAHead = bll[head] == head;
-				printf("%d (%s head %s) after matching\n", i, match[i] ? "Red" : "Blue", amINowAHead ? "True" : "False");
+				//printf("%d (%s head %s) after matching\n", i, match[i] ? "Red" : "Blue", amINowAHead ? "True" : "False");
 
-				printf("%d (%s tail %s) after matching\n", i, match[i] ? "Red" : "Blue", amIStillATail ? "True" : "False");
-				printf("%d's (%s head %d) is still a head(%s) w %d\n", i, match[i] ? "Red" : "Blue", head, isMyHeadStillAHead ? "True" : "False");
+				//printf("%d (%s tail %s) after matching\n", i, match[i] ? "Red" : "Blue", amIStillATail ? "True" : "False");
+				//printf("%d's (%s head %d) is still a head(%s) w %d\n", i, match[i] ? "Red" : "Blue", head, isMyHeadStillAHead ? "True" : "False");
 
 
 			}
@@ -794,7 +745,7 @@ __global__ void gLength(int *match, int *requests, int *fll, int *bll, int *leng
 	// I'm a recently matched head, so I'll update length variable in head and tail
 	//if (r < nrVertices && 4 <= match[i] && bll[i] == i){
 	if (bll[i] == i){
-		printf("vert %d, isAHead\n", i);
+		//printf("vert %d, isAHead\n", i);
 		int head, tail, pl;
 		int curr = i;
 		int next = fll[curr];
@@ -808,14 +759,25 @@ __global__ void gLength(int *match, int *requests, int *fll, int *bll, int *leng
 			curr = next;
 			next = fll[curr];
 		}
-		head = i;
-		tail = curr;
-		length[head] = pl;
-		length[tail] = pl;
+		// Used to only set the head and tail lengths
+		//head = i;
+		//tail = curr;
+		//length[head] = pl;
+		//length[tail] = pl;
+
+		// Set length for all verts in a path
+		curr = i;
+		next = fll[curr];
+		while(next != curr) {
+			length[curr] = pl;
+			curr = next;
+			next = fll[curr];
+		}
+		length[curr] = pl;
 	}
 }
 
-__global__ void gReverseLL(int *match, int *heads, int *tails, int *fll, int *bll, const int *requests, const int nrVertices){
+__global__ void gReverseLL( int *match, int *heads, int *tails, int *fll, int *bll, const int *requests, const int nrVertices){
 
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -845,7 +807,7 @@ __global__ void gReverseLL(int *match, int *heads, int *tails, int *fll, int *bl
 			// The blue end always remains the head of the path, therefore:
 			// If a blue head matches, BT-BH<->R(H/T)-R(H/T)
 			// Reverse the blue LL to obtain : BH-BT<->R(H/T)-R(H/T)
-				printf("%d is a blue head, reverse ll\n", i);
+				//printf("%d is a blue head, reverse ll\n", i);
 				int curr = i;
 				int next;
 				int prev;
@@ -856,7 +818,7 @@ __global__ void gReverseLL(int *match, int *heads, int *tails, int *fll, int *bl
 				do {
 					prev = bll[curr];
 					next = fll[curr];
-					printf("old next %d prev %d, vertex %d\n", next, prev, i);
+					//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 					bll[curr] = next;
 					fll[curr] = prev; 
 					curr = next;
@@ -864,7 +826,7 @@ __global__ void gReverseLL(int *match, int *heads, int *tails, int *fll, int *bl
 				// Reverse old tail to make it a head
 				prev = bll[curr];
 				next = fll[curr];
-				printf("old next %d prev %d, vertex %d\n", next, prev, i);
+				//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 				bll[curr] = next;
 				fll[curr] = prev; 
 				curr = next;
@@ -882,7 +844,7 @@ __global__ void gReverseLL(int *match, int *heads, int *tails, int *fll, int *bl
 			// The red end always remains the tail of the path, therefore:
 			// If a red tail matches, B(H/T)-B(H/T)<->RT-RH
 			// Reverse the red LL to obtain : BH-BT<->RH-RT
-				printf("%d is a red tail, reverse ll\n", i);
+				//printf("%d is a red tail, reverse ll\n", i);
 				int curr = i;
 				int next;
 				int prev;
@@ -894,7 +856,7 @@ __global__ void gReverseLL(int *match, int *heads, int *tails, int *fll, int *bl
 				do {
 					prev = bll[curr];
 					next = fll[curr];
-					printf("old next %d prev %d, vertex %d\n", next, prev, i);
+					//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 					bll[curr] = next;
 					fll[curr] = prev; 
 					curr = prev;
@@ -902,7 +864,7 @@ __global__ void gReverseLL(int *match, int *heads, int *tails, int *fll, int *bl
 				// Reverse old head
 				prev = bll[curr];
 				next = fll[curr];
-				printf("old next %d prev %d, vertex %d\n", next, prev, i);
+				//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 				bll[curr] = next;
 				fll[curr] = prev; 
 				// Set myself to head and curr to tail
@@ -921,7 +883,7 @@ __global__ void gReverseLL(int *match, int *heads, int *tails, int *fll, int *bl
 }
 
 // Only reverse without worrying about recording heads/tails
-__global__ void gReverseLL(int *match, int *fll, int *bll, const int *requests, const int nrVertices){
+__global__ void gReverseLL( int *match, int *fll, int *bll, const int *requests, const int nrVertices){
 
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -951,7 +913,7 @@ __global__ void gReverseLL(int *match, int *fll, int *bll, const int *requests, 
 			// The blue end always remains the head of the path, therefore:
 			// If a blue head matches, BT-BH<->R(H/T)-R(H/T)
 			// Reverse the blue LL to obtain : BH-BT<->R(H/T)-R(H/T)
-				printf("%d is a blue head, reverse ll\n", i);
+				//printf("%d is a blue head, reverse ll\n", i);
 				int curr = i;
 				int next;
 				int prev;
@@ -962,7 +924,7 @@ __global__ void gReverseLL(int *match, int *fll, int *bll, const int *requests, 
 				do {
 					prev = bll[curr];
 					next = fll[curr];
-					printf("old next %d prev %d, vertex %d\n", next, prev, i);
+					//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 					bll[curr] = next;
 					fll[curr] = prev; 
 					curr = next;
@@ -970,7 +932,7 @@ __global__ void gReverseLL(int *match, int *fll, int *bll, const int *requests, 
 				// Reverse old tail to make it a head
 				prev = bll[curr];
 				next = fll[curr];
-				printf("old next %d prev %d, vertex %d\n", next, prev, i);
+				//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 				bll[curr] = next;
 				fll[curr] = prev; 
 				curr = next;
@@ -988,7 +950,7 @@ __global__ void gReverseLL(int *match, int *fll, int *bll, const int *requests, 
 			// The red end always remains the tail of the path, therefore:
 			// If a red tail matches, B(H/T)-B(H/T)<->RT-RH
 			// Reverse the red LL to obtain : BH-BT<->RH-RT
-				printf("%d is a red tail, reverse ll\n", i);
+				//printf("%d is a red tail, reverse ll\n", i);
 				int curr = i;
 				int next;
 				int prev;
@@ -1000,7 +962,7 @@ __global__ void gReverseLL(int *match, int *fll, int *bll, const int *requests, 
 				do {
 					prev = bll[curr];
 					next = fll[curr];
-					printf("old next %d prev %d, vertex %d\n", next, prev, i);
+					//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 					bll[curr] = next;
 					fll[curr] = prev; 
 					curr = prev;
@@ -1008,7 +970,7 @@ __global__ void gReverseLL(int *match, int *fll, int *bll, const int *requests, 
 				// Reverse old head
 				prev = bll[curr];
 				next = fll[curr];
-				printf("old next %d prev %d, vertex %d\n", next, prev, i);
+				//printf("old next %d prev %d, vertex %d\n", next, prev, i);
 				bll[curr] = next;
 				fll[curr] = prev; 
 				// Set myself to head and curr to tail
@@ -1146,6 +1108,62 @@ __global__ void gUncoarsen(int *match, int *fll, int *bll, const int nrVertices)
 	}
 }
 
+// sets neccessarily pendant vertices
+__global__ void gIndicatePendants(int *match, int *dlength, int *forwardlinkedlist, int *backwardlinkedlist,  const int nrVertices)
+{
+	int i = blockIdx.x*blockDim.x + threadIdx.x;
+
+	if (i >= nrVertices) return;
+
+	if (3 == dlength[i]) return;
+
+	const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
+	bool isPendant = true;
+	const int nf = forwardlinkedlist[i];
+	const int nb = backwardlinkedlist[i];
+	for (int j = indices.x; j < indices.y; ++j)
+	{
+		const int ni = tex1Dfetch(neighboursTexture, j);
+		// Skip internal path verts
+		if (nf == ni || nb == ni) continue;
+		// match == 3 indicates a solution vertex
+		if (match[ni] != 3)
+			isPendant = false;
+	}
+	// This vertex has no neighbors which are unmatched.
+	if (isPendant)
+		match[i] = 3;
+}
+
+__global__ void gSetSearchTreeVertices(int leafIndex, int *match, int2 *searchtree, const int depthOfLeaf)
+{
+	//int i = blockIdx.x*blockDim.x + threadIdx.x;
+	//if (i >= depthOfLeaf) return;
+	while (leafIndex != 0){
+		int2 entry = searchtree[leafIndex];
+		match[entry.x] = 3;
+		match[entry.y] = 3;
+		//printf("LEAF %d %d %d\n", leafIndex, entry.x, entry.y);
+		if(leafIndex % 3 == 0){
+			--leafIndex;
+			leafIndex /= 3;
+		} else {
+			leafIndex /= 3;
+		}
+	}
+}
+
+__global__ void gSetDynamicVertices(int leafIndex, int *match, int *dynamicallyAddedVertices, const int nrDynamicallyAddedVertices)
+{
+	int i = blockIdx.x*blockDim.x + threadIdx.x;
+
+	if (i >= nrDynamicallyAddedVertices) return;
+
+	match[dynamicallyAddedVertices[i]] = 3;
+	//printf("leaf index setting pendant vert %d\n", dynamicallyAddedVertices[i]);
+}
+ 
+
 //==== Random greedy matching kernels ====
 __global__ void grRequest(int *requests, const int *match, const int nrVertices)
 {
@@ -1192,13 +1210,19 @@ __global__ void grRequest(int *requests, const int *match, const int nrVertices)
 
 
 //==== Random greedy matching kernels ====
-__global__ void grRequest(int *requests, const int *match, const int *sense, const int *forwardlinkedlist, const int *backwardlinkedlist, const int nrVertices)
+__global__ void grRequest( int *requests, const int *match, const int *sense, const int *forwardlinkedlist, const int *backwardlinkedlist, const int nrVertices)
 {
 	//Let all blue (+) vertices make requests.
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
 
 	if (i >= nrVertices) return;
-	
+
+	// Is this vertex a head or a tail? Else return
+	//bool isATail = forwardlinkedlist[i] == i;
+	//bool isAHead = backwardlinkedlist[i] == i;
+	//bool eligible = (isATail || isAHead);
+	//if (!eligible) return;
+
 	const int2 indices = tex1Dfetch(neighbourRangesTexture, i);
 
 	//Look at all blue (+) vertices and let them make requests.
@@ -1223,9 +1247,9 @@ __global__ void grRequest(int *requests, const int *match, const int *sense, con
 			if (nf == ni || nb == ni) continue;
 			const int nm = match[ni];
 			//Do we have an unmatched neighbour?
-			// 0 : Blue; 1 : Red, 2 
+			// 0 : Blue; 1 : Red, 2 : Internal, 3 : dead
 			// Blue or Red
-			if (nm < 4)
+			if (nm < 3)
 			{
 				// Negative sense 
 				if (sense[ni] == 1){
@@ -1238,7 +1262,7 @@ __global__ void grRequest(int *requests, const int *match, const int *sense, con
 						return;
 					}
 				}
-				// Neighbor is : [red(+) or blue(-)]
+				// Neighbor is : [red(+) or blue(-) or internal]
 				noUnmatchedNeighborExists = 0;
 			}
 		}
@@ -1256,7 +1280,7 @@ __global__ void grRequest(int *requests, const int *match, const int *sense, con
 
 
 //==== Random greedy matching kernels ====
-__global__ void grRequest(int *requests, const int *match, const int *sense, const int *length, const int *forwardlinkedlist, const int *backwardlinkedlist, const int nrVertices)
+__global__ void grRequest( int *requests, const int *match, const int *sense, const int *length, const int *forwardlinkedlist, const int *backwardlinkedlist, const int nrVertices)
 {
 	//Let all blue (+) vertices make requests.
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
@@ -1284,12 +1308,16 @@ __global__ void grRequest(int *requests, const int *match, const int *sense, con
 			// flag will never be set for pairs
 			// without this continue statement.
 			// r+.-r-, b+.b-; there is a colored neighbor.
+			// Also, skip edges which have been deactivated.
 			if (nf == ni || nb == ni) continue;
+			//if (nf == ni || nb == ni ) continue;
+
 			const int nm = match[ni];
 			//Do we have an unmatched neighbour?
-			// 0 : Blue; 1 : Red, 2 
+			// 0 : Blue; 1 : Red, 2 : Internal
 			// Blue or Red
-			if (nm < 4 && ((length[ni]+length[i]) < 3))
+			// <= 2, since you also add a connecting edge
+			if (nm < 3 && ((length[ni]+length[i]) <= 2))
 			{
 				// Negative sense 
 				if (sense[ni] == 1){
@@ -1350,7 +1378,7 @@ __global__ void grRespond(int *requests, const int *match, const int nrVertices)
 }
 
 
-__global__ void grRespond(int *requests, const int *match, const int *sense, const int nrVertices)
+__global__ void grRespond( int *requests, const int *match, const int *sense, const int nrVertices)
 {
 	const int i = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -1476,12 +1504,12 @@ __global__ void gwRespond(int *requests, const int *match, const int nrVertices)
 	}
 }
 
-void GraphMatchingGPURandom::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
+void GraphMatchingGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//Creates a greedy random matching on the GPU.
 	//Assumes the current matching is empty.
 
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Setup textures.
 	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
@@ -1575,13 +1603,13 @@ void GraphMatchingGPURandom::performMatching(vector<int> &match, cudaEvent_t &t1
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
+void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//Creates a greedy random matching on the GPU.
 	//Assumes the current matching is empty.
-	std::cout << "GraphMatchingGeneralGPURandom" << std::endl;
+	//std::cout << "GraphMatchingGeneralGPURandom" << std::endl;
 
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Setup textures.
 	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
@@ -1603,44 +1631,9 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 	// dtails - to quickly flip sense of strand
 	// dmatch - same as singleton implementation
 	// dsense - indicates directionality of strand
-	int *dforwardlinkedlist, *dbackwardlinkedlist, *dmatch, *drequests, *dsense, *dlength, *dh, *dt;
-
-	if (cudaMalloc(&drequests, sizeof(int)*graph.nrVertices) != cudaSuccess ||  
-		cudaMalloc(&dmatch, sizeof(int)*graph.nrVertices) != cudaSuccess || 
-		cudaMalloc(&dsense, sizeof(int)*graph.nrVertices) != cudaSuccess)
-	{
-		cerr << "Not enough memory on device!" << endl;
-		throw exception();
-	}
-
-	thrust::device_vector<int>dfll(graph.nrVertices);
-	thrust::sequence(dfll.begin(),dfll.end());
-	dforwardlinkedlist = thrust::raw_pointer_cast(&dfll[0]);
-	
-	thrust::device_vector<int>dbll(graph.nrVertices);
-	thrust::sequence(dbll.begin(),dbll.end());
-	dbackwardlinkedlist = thrust::raw_pointer_cast(&dbll[0]);
-
-	thrust::device_vector<int>dlengthOfPath(graph.nrVertices);
-	thrust::fill(dlengthOfPath.begin(),dlengthOfPath.end(), 0);
-	dlength = thrust::raw_pointer_cast(&dlengthOfPath[0]);
+	srand(12345);
 
 	bool useMaxLength = true;
-	/*
-	bool useMoreMemory = true;
-
-	if (useMoreMemory){
-
-
-		thrust::device_vector<int>dheads(graph.nrVertices);
-		thrust::sequence(dheads.begin(),dheads.end());
-		dh = thrust::raw_pointer_cast(&dheads[0]);
-
-		thrust::device_vector<int>dtails(graph.nrVertices);
-		thrust::sequence(dtails.begin(),dtails.end());
-		dt = thrust::raw_pointer_cast(&dtails[0]);
-	}
-	*/
 	//Perform matching.
 	int blocksPerGrid = (graph.nrVertices + threadsPerBlock - 1)/threadsPerBlock;
 	
@@ -1654,6 +1647,9 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 
 #ifdef MATCH_INTERMEDIATE_COUNT
 	cout << "0\t0\t0" << endl;
+	int * tmpmatch = new int[graph.nrVertices];
+	int * tmpfll = new int[graph.nrVertices];
+	int * tmpbll  = new int[graph.nrVertices];
 #endif
 	int maxlength = 3;
 	for (int coarsenRounds = 0; coarsenRounds < maxlength; ++coarsenRounds){
@@ -1662,71 +1658,72 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 		// Each inner loop call adds at most one edge to a path.
 		// However, after the first inner loop call, which is guarunteed
 		// to match at least half the graph, success is random.
-		if (cudaMemset(dmatch, 0, sizeof(int)*graph.nrVertices) != cudaSuccess)
+		if (cudaMemset(match, 0, sizeof(int)*graph.nrVertices) != cudaSuccess)
 		{
 			cerr << "Unable to clear matching on device!" << endl;
 			throw exception();
 		}
-		printf("coarsenRounds round %d\n", coarsenRounds);
+		//Indicate the solution by setting to match == 2 for all vertices in curr soln
+		int depthOfLeaf = ceil(logf(2*leafIndex + 1) / logf(3)) - 1;
+		if (depthOfLeaf > 0){
+			int blocksPerGridST = (depthOfLeaf + threadsPerBlock - 1)/threadsPerBlock;
+			gSetSearchTreeVertices<<<1, 1>>>(leafIndex, match, dsearchtree, depthOfLeaf);
+		}
+
+		cudaDeviceSynchronize();
+		checkLastErrorCUDA(__FILE__, __LINE__);
+		int numberOfDynamicallyAddedVertices_host;
+		cudaMemcpy(&numberOfDynamicallyAddedVertices_host, numberOfDynamicallyAddedVertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
+		if (numberOfDynamicallyAddedVertices_host > 0){
+			//printf("numberOfDynamicallyAddedVertices_host : %d\n", numberOfDynamicallyAddedVertices_host);
+			int blocksPerGridDy = (numberOfDynamicallyAddedVertices_host + threadsPerBlock - 1)/threadsPerBlock;
+			gSetDynamicVertices<<<blocksPerGridDy, threadsPerBlock>>>(leafIndex, match, dynamicallyAddedVertices, numberOfDynamicallyAddedVertices_host);
+		}
+		//printf("coarsenRounds round %d\n", coarsenRounds);
+		cudaDeviceSynchronize();
+		checkLastErrorCUDA(__FILE__, __LINE__);
 
 		for (int i = 0; i < NR_MATCH_ROUNDS; ++i)
 		{
+			//printf("matchRounds round %d\n", coarsenRounds);
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
-			printf("Match round %d\n", i);
-			//if (useMoreMemory){
-			//	gSelect<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dsense, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices, rand());
-			//}else{
-			gSelect<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices, rand());
-			//}
+			gSelect<<<blocksPerGrid, threadsPerBlock>>>(match, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices, rand());
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
-			printf("gSelect done\n");
 			if (useMaxLength)
-				grRequest<<<blocksPerGrid, threadsPerBlock>>>(drequests, dmatch, dsense, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
+				grRequest<<<blocksPerGrid, threadsPerBlock>>>(drequests, match, dsense, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
 			else 
-				grRequest<<<blocksPerGrid, threadsPerBlock>>>(drequests, dmatch, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
+				grRequest<<<blocksPerGrid, threadsPerBlock>>>(drequests, match, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
+			cudaDeviceSynchronize();
+			checkLastErrorCUDA(__FILE__, __LINE__);			
+			grRespond<<<blocksPerGrid, threadsPerBlock>>>(drequests, match, dsense, graph.nrVertices);
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
-			printf("grRequest done\n");
-			
-			grRespond<<<blocksPerGrid, threadsPerBlock>>>(drequests, dmatch, dsense, graph.nrVertices);
-			cudaDeviceSynchronize();
-			checkLastErrorCUDA(__FILE__, __LINE__);
-			printf("grRespond done\n");
-			/*
-			if (useMoreMemory){
-				gReverseLL<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, 
-					drequests, graph.nrVertices);
-				gMatch<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dh, dt, dforwardlinkedlist, dbackwardlinkedlist, 
-					drequests, graph.nrVertices);
-			}else{
-			*/
-			gReverseLL<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dforwardlinkedlist, dbackwardlinkedlist, 
+			gReverseLL<<<blocksPerGrid, threadsPerBlock>>>(match, dforwardlinkedlist, dbackwardlinkedlist, 
 														drequests, graph.nrVertices);
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
-			gMatch<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dforwardlinkedlist, dbackwardlinkedlist, 
+			gMatch<<<blocksPerGrid, threadsPerBlock>>>(match, dforwardlinkedlist, dbackwardlinkedlist, 
 														drequests, graph.nrVertices);
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
 			if (useMaxLength)
-				gLength<<<blocksPerGrid, threadsPerBlock>>>(dmatch, drequests, dforwardlinkedlist, dbackwardlinkedlist, 
+				gLength<<<blocksPerGrid, threadsPerBlock>>>(match, drequests, dforwardlinkedlist, dbackwardlinkedlist, 
 															dlength, graph.nrVertices);
-			//}
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);													
-			printf("gMatch done\n");
 
 	#ifdef MATCH_INTERMEDIATE_COUNT
-			cudaMemcpy(&match[0], dmatch, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
-			cudaMemcpy(&fll[0], dforwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
-			cudaMemcpy(&bll[0], dbackwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
-			writeGraphVizIntermediate(match, 
+
+			cudaMemcpy(&tmpmatch[0], match, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
+			cudaMemcpy(&tmpfll[0], dforwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
+			cudaMemcpy(&tmpbll[0], dbackwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
+			g(tmpmatch, 
 							graph,
 							"iter_"+SSTR(coarsenRounds)+"_"+SSTR(i),  
-							fll,
-							bll);
+							tmpfll,
+							tmpbll);
 			double weight = 0;
 			long size = 0;
 
@@ -1739,6 +1736,7 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 
 	cudaEventRecord(t2, 0);
 	cudaEventSynchronize(t2);
+
 
 #ifndef NDEBUG
 	cudaError_t error;
@@ -1753,39 +1751,31 @@ void GraphMatchingGeneralGPURandom::performMatching(vector<int> &match, cudaEven
 
 	// call uncoarsen for viz
 	#ifdef UNCOARSEN_GRAPH	
-	gUncoarsen<<<blocksPerGrid, threadsPerBlock>>>(dmatch, dforwardlinkedlist, dbackwardlinkedlist, 
-													graph.nrVertices);
+	//gUncoarsen<<<blocksPerGrid, threadsPerBlock>>>(match, dforwardlinkedlist, dbackwardlinkedlist, 
+	//												graph.nrVertices);
 	#endif
 
-	//Copy obtained matching on the device back to the host.
-	if (cudaMemcpy(&match[0], dmatch, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost) != cudaSuccess)
-	{
-		cerr << "Unable to retrieve data!" << endl;
-		throw exception();
-	}
-
-	//Copy obtained matching on the device back to the host.
-	if (cudaMemcpy(&fll[0], dforwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost) != cudaSuccess ||
-		cudaMemcpy(&bll[0], dbackwardlinkedlist, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost) != cudaSuccess)
-	{
-		cerr << "Unable to retrieve data!" << endl;
-		throw exception();
-	}
+	// Does this break stuff?
+	gIndicatePendants<<<blocksPerGrid, threadsPerBlock>>>(match, dlength, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices);
+	
 
 	//Free memory.
-	cudaFree(drequests);
-	cudaFree(dmatch);
-	cudaFree(dsense);
 	cudaUnbindTexture(neighboursTexture);
 	cudaUnbindTexture(neighbourRangesTexture);
+
+	#ifdef MATCH_INTERMEDIATE_COUNT
+	delete[] tmpmatch;
+	delete[] tmpfll;
+	delete[] tmpbll;
+	#endif
 }
 
-void GraphMatchingGPURandomMaximal::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
+void GraphMatchingGPURandomMaximal::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//Creates a greedy random maximal matching on the GPU using atomic operations.
 	//Assumes the current matching is empty.
 
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Setup textures.
 	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
@@ -1871,12 +1861,12 @@ void GraphMatchingGPURandomMaximal::performMatching(vector<int> &match, cudaEven
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGPUWeighted::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
+void GraphMatchingGPUWeighted::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//Creates a greedy weighted matching on the GPU.
 	//Assumes the current matching is empty.
 
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Setup textures.
 	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
@@ -1980,12 +1970,12 @@ void GraphMatchingGPUWeighted::performMatching(vector<int> &match, cudaEvent_t &
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
-void GraphMatchingGPUWeightedMaximal::performMatching(vector<int> &match, cudaEvent_t &t1, cudaEvent_t &t2, vector<int> & fll, vector<int> & bll, vector<int> & lengthOfPath, vector<int> & heads, vector<int> & tails) const
+void GraphMatchingGPUWeightedMaximal::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int leafIndex) const
 {
 	//Creates a greedy weighted matching on the GPU.
 	//Assumes the current matching is empty.
 
-	assert((int)match.size() == graph.nrVertices);
+	//assert((int)match.size() == graph.nrVertices);
 	
 	//Setup textures.
 	cudaChannelFormatDesc neighbourRangesTextureDesc = cudaCreateChannelDesc<int2>();
