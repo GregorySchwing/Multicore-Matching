@@ -1685,7 +1685,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 
 		for (int i = 0; i < NR_MATCH_ROUNDS; ++i)
 		{
-			//printf("matchRounds round %d\n", coarsenRounds);
+			//printf("matchRounds round %d\n", i);
 			cudaDeviceSynchronize();
 			checkLastErrorCUDA(__FILE__, __LINE__);
 			gSelect<<<blocksPerGrid, threadsPerBlock>>>(match, dsense, dforwardlinkedlist, dbackwardlinkedlist, graph.nrVertices, rand());

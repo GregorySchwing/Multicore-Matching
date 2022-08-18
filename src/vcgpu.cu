@@ -23,8 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 using namespace mtc;
 
-
-
 #include <iostream>
 
 
@@ -172,6 +170,7 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     PopulateSearchTree<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
                                                             sizeOfSearchTree, 
+                                                            depthOfLeaf,
                                                             depthOfSearchTree,
                                                             leafIndex,
                                                             dfinishedLeavesPerLevel,
@@ -301,7 +300,12 @@ void VCGPU::FindCover(int root,
         return;
 
 	int blocksPerGrid = (graph.nrEdges + threadsPerBlock - 1)/threadsPerBlock;
-    int depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - 1;
+    int depthOfLeaf;
+    if (root)
+        depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - 1;
+    else
+        depthOfLeaf = 0;
+
     #ifndef NDEBUG
     printf("Called FindCover li %d rl %d \n", root, recursiveStackDepth);
     printf("depthOfLeaf %d depthOfSearchTree %d\n",  depthOfLeaf, depthOfSearchTree);
@@ -318,13 +322,13 @@ void VCGPU::FindCover(int root,
 
 //    printf("\033[A\33[2K\rCalling Find Cover from %d, level depth of leaf %d\n", root, depthOfLeaf);
     cudaMemcpy(&finishedLeavesPerLevel[0], dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree, cudaMemcpyDeviceToHost);
-/*
+///*
     curs_set (0);
     for(int i = 0; i < depthOfSearchTree; ++i){
-        mvprintw (i, 4, "Depth %d %f Complete\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i]);
+        mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
     }
     refresh ();
-*/
+//*/
     ReinitializeArrays();
     cudaDeviceSynchronize();
     // TODO - Need to set the pendant vertices also.
@@ -596,6 +600,7 @@ __global__ void eraseDynVertsOfRecursionLevel(int recursiveStackDepth,
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void PopulateSearchTree(int nrVertices, 
                                     int sizeOfSearchTree,
+                                    int depthOfLeaf,
                                     int depthOfSearchTree,
                                     int leafIndex,
                                     float * dfinishedLeavesPerLevel,
@@ -623,10 +628,10 @@ __global__ void PopulateSearchTree(int nrVertices,
     // s_n = (1-r^(n+1))/(1-r)
     // s_n * (1-3) = -2*s_n = (1-r^(n+1))
     //     = -2*s_n - 1 = -3^(n+1)
-    //     = 2*s_n + 1  =  3^(n+1)
-    //     = log(2*s_n + 1) = n+1*log(3)
-    //     = log(2*s_n + 1)/log(3) = n + 1
-    //     = log(2*s_n + 1)/log(3) - 1 = n
+    //     =  2*s_n + 1  =  3^(n+1)
+    //     =  log(2*s_n + 1) = n+1*log(3)
+    //     =  log(2*s_n + 1)/log(3) = n + 1
+    //     =  log(2*s_n + 1)/log(3) - 1 = n
     // n is the number of terms in the closed form solution.
     // Alternatively, n is the number of levels in the search tree.
     int n = ceil(logf(2*leavesToProcess + 1) / logf(3));
@@ -663,11 +668,12 @@ __global__ void PopulateSearchTree(int nrVertices,
         (levelOffset+1) < 0 ||
         (levelOffset + 2)< 0){
             atomicSub(&dfullpathcount[0], 1);
-            //printf("child %d exceeded srch tree depth\n", levelOffset);
+            printf("child %d exceeded srch tree depth\n", levelOffset);
             return;
     }
     // Add to device pointer of level
-    //atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf], 3); 
+    printf("leafIndex %d atomicAdd(&dfinishedLeavesPerLevel[%d + %d], 3) newleaves %d - %d\n", leafIndex, depthOfLeaf,n, levelOffset, levelOffset + 2); 
+    atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf + n], 3); 
     // Test from root for now, this code can have an arbitrary root though
     dsearchtree[levelOffset + 0] = make_int2(first, third);
     dsearchtree[levelOffset + 1] = make_int2(second, third);
@@ -1283,14 +1289,10 @@ int4 CalculateLeafOffsets(              int leafIndex,
     unsigned int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
 
     #ifndef NDEBUG
-    printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, completeLevel);
-    printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, incompleteLevel);
-    printf("Leaves %d, treeSizeComplete %d\n",leavesToProcess, treeSizeComplete);
-    printf("Leaves %d, removeFromComplete %d\n",leavesToProcess, removeFromComplete);
-    printf("Leaves %d, totalNewActive %d\n",leavesToProcess, totalNewActive);
+    printf("Leaves %d, completeLevel Level Depth %d\n",leavesToProcess, n_com);
+    printf("Leaves %d, incompleteLevel Level Depth %d\n",leavesToProcess, n_inc);
     printf("Leaves %d, leavesFromCompleteLvl %d\n",leavesToProcess, leavesFromCompleteLvl);
     printf("Leaves %d, leavesFromIncompleteLvl %d\n",leavesToProcess, leavesFromIncompleteLvl);
-    printf("Leaves %d, leftMostLeafIndexOfFullLevel %d\n",leavesToProcess, leftMostLeafIndexOfFullLevel);
     printf("Leaves %d, leftMostLeafIndexOfIncompleteLevel %d\n",leavesToProcess, leftMostLeafIndexOfIncompleteLevel);
     #endif
     // Grow tree leftmost first, so put the incomplete level first.
