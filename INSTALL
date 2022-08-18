@@ -54,4 +54,4 @@ Install in the new dir
 Boost 1.80:
 Extract
 bootstrap. 
-./b2 --build-dir=build\x64 address-model=64 threading=multi --stagedir=.\bin\x64 --toolset=msvc -j 8 link=static,shared runtime-link=static,shared --variant=debug,release -sBZIP2_SOURCE=C:\Sys\GnuWin32\src\bzip2\1.0.5\bzip2-1.0.5 
+./b2 --build-dir=build\x64 address-model=64 threading=multi --stagedir=.\bin\x64 --toolset=msvc -j 8 link=static runtime-link=static --variant=debug,release --with-program_options --with-iostreams -sBZIP2_SOURCE=C:\Sys\GnuWin32\src\bzip2\1.0.5\bzip2-1.0.5 -sBZIP2_INCLUDE=C:\Sys\GnuWin32 -sBZIP2_LIBPATH=C:\Sys\GnuWin32
