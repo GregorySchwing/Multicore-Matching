@@ -13,14 +13,25 @@
 #You should have received a copy of the GNU General Public License
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 cmake_minimum_required(VERSION 2.6)
-project(MATCH)
+project(MATCH LANGUAGES CUDA CXX)
+
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${MATCH_SOURCE_DIR})
 
 find_package(CUDA REQUIRED)
-find_package(TBB REQUIRED)
-#find_package(Curses REQUIRED)
+message(STATUS "CUDA_INCLUDE_DIR: ${CUDA_INCLUDE_DIR}")
+message(STATUS "CUDA_INCLUDE_DIRS	: ${CUDA_INCLUDE_DIRS}")
+message(STATUS "CUDA_TOOLKIT_ROOT_DIR: ${CUDA_TOOLKIT_ROOT_DIR}")
+message(STATUS "CUDA_LIBRARY: ${CUDA_LIBRARY}")
+message(STATUS "CUDA_LIBRARY: ${CUDA_LIBRARIES}")
 
+find_package(TBB REQUIRED)
+message(STATUS "TBB_INCLUDE_DIR: ${TBB_INCLUDE_DIR}")
+message(STATUS "TBB_INCLUDE_DIRS: ${TBB_INCLUDE_DIRS}")
+message(STATUS "TBB_ROOT_DIR: ${TBB_ROOT_DIR}")
+
+#find_package(Curses REQUIRED)
+add_definitions(-w)
 include_directories(${CURSES_INCLUDE_DIR})
 
 #set(CMAKE_CXX_FLAGS "-O2 -g -Wall -Wextra -Wshadow -Werror -ansi")
@@ -31,7 +42,7 @@ set(CUDA_NVCC_FLAGS -Xptxas -dlcm=cg)
 add_subdirectory(${MATCH_SOURCE_DIR}/src/)
 add_subdirectory(${MATCH_SOURCE_DIR}/bin/)
 add_subdirectory(${MATCH_SOURCE_DIR}/DotWriter/lib/)
-enable_testing()
-include(gtest/GoogleTest.cmake)
-add_subdirectory(gtest)
+#enable_testing()
+#include(gtest/GoogleTest.cmake)
+#add_subdirectory(gtest)
 

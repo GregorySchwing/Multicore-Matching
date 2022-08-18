@@ -54,4 +54,10 @@ Install in the new dir
 Boost 1.80:
 Extract
 bootstrap. 
-./b2 --build-dir=build\x64 address-model=64 threading=multi --stagedir=.\bin\x64 --toolset=msvc -j 8 link=static runtime-link=static --variant=debug,release --with-program_options --with-iostreams -sBZIP2_SOURCE=C:\Sys\GnuWin32\src\bzip2\1.0.5\bzip2-1.0.5 -sBZIP2_INCLUDE=C:\Sys\GnuWin32 -sBZIP2_LIBPATH=C:\Sys\GnuWin32
+
+# For now reading compressed graphs with boost on windows isn't supported since I can get the bzip2 library to compile
+#Generates BZIP# might just remove bzip2 support..
+#./b2 --build-dir=build\x64 address-model=64 threading=multi --stagedir=.\bin\x64 --toolset=msvc -j8 --build-type=complete link=static,shared runtime-link=static,shared --allow-shared-static --variant=debug,release --with-iostreams -sBZIP2_SOURCE=C:\Sys\GnuWin32\src\bzip2\1.0.5\bzip2-1.0.5 -sBZIP2_INCLUDE=C:\Sys\GnuWin32 -sBZIP2_LIBPATH=C:\Sys\GnuWin32
+
+Passes CMAKE
+./b2 --build-dir=build\x64 address-model=64 threading=multi --stagedir=.\bin\x64 --toolset=msvc -j 8 link=static,shared runtime-link=static,shared --allow-shared-static --variant=debug,release --with-iostreams --with-program_options
