@@ -54,6 +54,7 @@ __global__ void SetEdges(const int nrVertices,
 
 __global__ void PopulateSearchTree(int nrVertices, 
                                     int sizeOfSearchTree,
+                                    int depthOfLeaf,
                                     int depthOfSearchTree,
                                     int leafIndex,
                                     float * dfinishedLeavesPerLevel,
