@@ -436,8 +436,9 @@ int main(int argc, char **argv)
 				{
 					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 30);
 					vc.matcher.initialMatching(match);
-					//initscr ();
+					initscr ();
 					vc.FindCover(0, 0, foundSolution);
+					endwin();
 					if (foundSolution){
 						for (int i = 0; i < vc.numoftreeverts+vc.numofdynamcverts; ++i)
 							printf("%d ",vc.solution[i]);
@@ -445,7 +446,6 @@ int main(int argc, char **argv)
 						printf("No solution found.\n");
 						vc.CallDrawSearchTree(stn);
 					}
-				    //endwin();
 					vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);
 					vc.CopyMatchingBackToHost(match);
 				}
