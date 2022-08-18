@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 
 #include <cuda.h>
-#include <tbb/task_scheduler_init.h>
+//#include <tbb/task_scheduler_init.h>
 
 #include <graph.h>
 #include <matchcpu.h>
@@ -40,7 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "vcgpu.cuh"
 
 using namespace std;
-using namespace tbb;
+//using namespace tbb;
 using namespace mtc;
 
 #define SSTR( x ) static_cast< std::ostringstream & >( \
@@ -155,8 +155,8 @@ GraphMatching *getMatcher(const Graph &graph, const int &type, const int &nrThre
 	else if (type ==  8) return new GraphMatchingGPUWeighted(graph, nrThreads, barrier);
 	else if (type ==  9) return new GraphMatchingGPUWeightedMaximal(graph, nrThreads, barrier);
 	else if (type == 10) return new GraphMatchingGeneralGPURandom(graph, nrThreads, barrier);
-	else if (type == 11) return new GraphMatchingTBBRandom(graph, barrier);
-	else if (type == 12) return new GraphMatchingTBBWeighted(graph, barrier);
+	//else if (type == 11) return new GraphMatchingTBBRandom(graph, barrier);
+	//else if (type == 12) return new GraphMatchingTBBWeighted(graph, barrier);
 	else
 	{
 		cerr << "Unknown matching type!" << endl;
@@ -200,7 +200,7 @@ int main(int argc, char **argv)
 	bool randomiseVertices = false;
 	
 	matchTypes.insert(0);
-	CPUNrThreads.insert(task_scheduler_init::default_num_threads());
+	CPUNrThreads.insert(8);
 
 	//Parse command line options.
 	try
@@ -326,7 +326,7 @@ int main(int argc, char **argv)
 	}
 	
 	//Initialise TBB.
-	cerr << "Using TBB with up to " << task_scheduler_init::default_num_threads() << " CPU threads." << endl;
+	//cerr << "Using TBB with up to " << task_scheduler_init::default_num_threads() << " CPU threads." << endl;
 	
 	//Open GNUplot file.
 	ofstream gnuplotFile;
@@ -384,7 +384,7 @@ int main(int argc, char **argv)
 			const bool usingTBB = (*i >= 11);
 			
 			//Setup task scheduler.
-			task_scheduler_init tbbScheduler(*j);
+			//task_scheduler_init tbbScheduler(*j);
 			
 			//Store data for all iterations.
 			vector<double> matchingSizes(nrTimeAvg, 0);
