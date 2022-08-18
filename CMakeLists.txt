@@ -29,8 +29,15 @@ find_package(TBB REQUIRED)
 message(STATUS "TBB_INCLUDE_DIR: ${TBB_INCLUDE_DIR}")
 message(STATUS "TBB_INCLUDE_DIRS: ${TBB_INCLUDE_DIRS}")
 message(STATUS "TBB_ROOT_DIR: ${TBB_ROOT_DIR}")
+message(STATUS "TBB::tbb: ${TBB::tbb}")
+message(STATUS "TBB_LIBRARIES: ${TBB_LIBRARIES}")
 
-#find_package(Curses REQUIRED)
+message(STATUS "TBB_LIBRARY: ${TBB_LIBRARY}")
+
+find_package(Curses REQUIRED)
+message(STATUS "CURSES_INCLUDE_DIR: ${CURSES_INCLUDE_DIR}")
+message(STATUS "CURSES_LIBRARIES: ${CURSES_LIBRARIES}")
+message(STATUS "CURSES_LIBRARY: ${CURSES_LIBRARY}")
 add_definitions(-w)
 include_directories(${CURSES_INCLUDE_DIR})
 

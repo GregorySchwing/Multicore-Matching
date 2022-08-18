@@ -434,11 +434,11 @@ int main(int argc, char **argv)
 				std::string stn = searchTreeName.str();
 				try
 				{
-					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 30);
+					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 20);
 					vc.matcher.initialMatching(match);
-					initscr ();
+					//initscr ();
 					vc.FindCover(0, 0, foundSolution);
-					endwin();
+					//endwin();
 					if (foundSolution){
 						for (int i = 0; i < vc.numoftreeverts+vc.numofdynamcverts; ++i)
 							printf("%d ",vc.solution[i]);
