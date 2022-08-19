@@ -600,7 +600,7 @@ void VCGPU::Match(int leafIndex){
     cudaEventRecord(t0, 0);
     cudaEventSynchronize(t0);
 
-    matcher.performMatching(dmatch, t1, t2, dforwardlinkedlist, dbackwardlinkedlist, dlength, dsearchtree, ddynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, leafIndex);
+    matcher.performMatching(dmatch, t1, t2, dforwardlinkedlist, dbackwardlinkedlist, dlength, dsearchtree, ddynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeOfKernelSolution, leafIndex);
     
     cudaEventElapsedTime(&time1, t1, t2);
     cudaEventRecord(t3, 0);

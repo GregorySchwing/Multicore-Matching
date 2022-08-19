@@ -531,7 +531,7 @@ int main(int argc, char **argv)
 					 matcher->initialMatching(match);
 					//broken for gpu, need to create device mem
 					matcher->performMatching(&match[0], t1, t2, &fll[0], &bll[0], &lengthOfPath[0],
-											 &searchtree[0], &lengthOfPath[0], 0, 0);
+											 &searchtree[0], &lengthOfPath[0], 0, 0, 0);
 
 					delete matcher;
 				}
