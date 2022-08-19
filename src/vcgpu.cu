@@ -459,11 +459,16 @@ void VCGPU::FindCover(int root,
                                 dsearchtree,
                                 dnumberofdynamicallyaddedvertices,
                                 ddynamicallyaddedvertices);
+    
             cudaMemcpy(&numofdynamcverts, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
             numoftreeverts = 2*(depthOfLeaf+1);
-            cudaMemcpy(&solution[0], dsolution, sizeof(int)*(sizeOfKernelSolution+numoftreeverts+numofdynamcverts), cudaMemcpyDeviceToHost);
+            solutionSize = sizeOfKernelSolution+numoftreeverts+numofdynamcverts;
+            cudaMemcpy(solution.data(), dsolution, sizeof(int)*solutionSize, cudaMemcpyDeviceToHost);
+            PrintSolutionArray<<<1,1>>>(solutionSize,
+                    dsolution);
             foundSolution = true;
-
+            cudaDeviceSynchronize();
+            checkLastErrorCUDA(__FILE__, __LINE__);    
             cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
             cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
             cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
@@ -957,6 +962,13 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
     #endif
 }
 
+__global__ void PrintSolutionArray(int solutionSize,
+                                int * dsolution){
+    for (int i = 0; i < solutionSize; ++i){
+        printf("%d ", dsolution[i]);
+    }
+}
+
 // Single threaded; could accelerate eventually.
 __global__ void FillSolutionArray(int leafIndex,
                                 int * dsolution,
@@ -974,6 +986,7 @@ __global__ void FillSolutionArray(int leafIndex,
             nodeEntry = dsearchtree[leafIndexSoln];
             dsolution[sizeOfKernelSolution + counter] = nodeEntry.x;
             dsolution[sizeOfKernelSolution + counter + 1] = nodeEntry.y;
+            //printf("Tree verts %d %d\n", nodeEntry.x, nodeEntry.y);
             if(leafIndexSoln % 3 == 0){
                 --leafIndexSoln;
                 leafIndexSoln = leafIndexSoln / 3;

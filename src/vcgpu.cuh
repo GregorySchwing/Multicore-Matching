@@ -138,6 +138,9 @@ __global__ void FillSolutionArray(int leafIndex,
                                 int * dnumberofdynamicallyaddedvertices,
                                 int * ddynamicallyaddedvertices);
 
+__global__ void PrintSolutionArray(int solutionSize,
+                                int * dsolution);
+
 __device__ void SetEdges(   int vertexToInclude,
                             int * dedgestatus);
 
@@ -198,6 +201,7 @@ class VCGPU
         std::vector<int> newdegrees;
         std::vector<int2> searchtree;
         std::vector<int> solution;
+        int solutionSize;
         std::vector<int> dynamcverts;
         int sizeOfKernelSolution;
         int numofdynamcverts;
