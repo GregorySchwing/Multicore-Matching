@@ -438,8 +438,6 @@ int main(int argc, char **argv)
 					vc.matcher.initialMatching(match);
 					initscr ();
 					vc.FindCover(0, 0, foundSolution);
-					cout << '\n' << "Press a key to continue...\n";
-					cin.get();
 					if (foundSolution){
 						for (int i = 0; i < vc.numoftreeverts+vc.numofdynamcverts; ++i)
 							printf("%d ",vc.solution[i]);
@@ -450,6 +448,8 @@ int main(int argc, char **argv)
 						printf("edges to excede k before reaching the leaf nodes.\n");
 						vc.CallDrawSearchTree(stn);
 					}
+					cout << '\n' << "Press a key to continue...\n";
+					cin.get();
 					endwin();
 					vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);
 					vc.CopyMatchingBackToHost(match);
