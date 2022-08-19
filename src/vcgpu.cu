@@ -300,16 +300,20 @@ void VCGPU::FindCover(int root,
         return;
 
 	int blocksPerGrid = (graph.nrEdges + threadsPerBlock - 1)/threadsPerBlock;
-    int depthOfLeaf;
-    if (root)
-        depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - 1;
-    else
-        depthOfLeaf = 0;
+    int depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - 1;
+
 
     #ifndef NDEBUG
     printf("Called FindCover li %d rl %d \n", root, recursiveStackDepth);
     printf("depthOfLeaf %d depthOfSearchTree %d\n",  depthOfLeaf, depthOfSearchTree);
     #endif
+    cudaMemcpy(&finishedLeavesPerLevel[0], dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree, cudaMemcpyDeviceToHost);
+
+    curs_set (0);
+    for(int i = 0; i <= depthOfSearchTree; ++i){
+        mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
+    }
+    refresh ();
     if (depthOfLeaf > depthOfSearchTree){
         return;
     }
@@ -321,14 +325,8 @@ void VCGPU::FindCover(int root,
     //matcher.initialMatching(match);
 
 //    printf("\033[A\33[2K\rCalling Find Cover from %d, level depth of leaf %d\n", root, depthOfLeaf);
-    cudaMemcpy(&finishedLeavesPerLevel[0], dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree, cudaMemcpyDeviceToHost);
-///*
-    curs_set (0);
-    for(int i = 0; i < depthOfSearchTree; ++i){
-        mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
-    }
-    refresh ();
-//*/
+
+
     ReinitializeArrays();
     cudaDeviceSynchronize();
     // TODO - Need to set the pendant vertices also.
@@ -668,12 +666,12 @@ __global__ void PopulateSearchTree(int nrVertices,
         (levelOffset+1) < 0 ||
         (levelOffset + 2)< 0){
             atomicSub(&dfullpathcount[0], 1);
-            printf("child %d exceeded srch tree depth\n", levelOffset);
+            //printf("child %d exceeded srch tree depth\n", levelOffset);
             return;
     }
     // Add to device pointer of level
-    printf("leafIndex %d atomicAdd(&dfinishedLeavesPerLevel[%d + %d], 3) newleaves %d - %d\n", leafIndex, depthOfLeaf,n, levelOffset, levelOffset + 2); 
-    atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf + n], 3); 
+    //printf("leafIndex %d atomicAdd(&dfinishedLeavesPerLevel[1+%d + %d], 3) newleaves %d - %d\n", leafIndex, depthOfLeaf,n, levelOffset, levelOffset + 2); 
+    atomicAdd(&dfinishedLeavesPerLevel[1 + depthOfLeaf + n], 3); 
     // Test from root for now, this code can have an arbitrary root though
     dsearchtree[levelOffset + 0] = make_int2(first, third);
     dsearchtree[levelOffset + 1] = make_int2(second, third);
