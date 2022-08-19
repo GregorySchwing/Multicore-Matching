@@ -435,9 +435,12 @@ void VCGPU::FindCover(int root,
     if (root != 0){
         cuMemsetD32(reinterpret_cast<CUdeviceptr>(duncoverededges),  0, size_t(1));
         cudaDeviceSynchronize();
-        EvaluateSingleLeafNode<<<blocksPerGrid, threadsPerBlock, 2*(depthOfLeaf+1)*sizeof(int)>>>(graph.nrEdges,
+        EvaluateSingleLeafNode<<<blocksPerGrid, threadsPerBlock, (sizeOfKernelSolution + 2*(depthOfLeaf+1))*sizeof(int)>>>(
+                                                                                            graph.nrEdges,
                                                                                             root,
                                                                                             depthOfLeaf,
+                                                                                            sizeOfKernelSolution,
+                                                                                            dsolution,
                                                                                             dedges, 
                                                                                             dsearchtree,
                                                                                             dnumberofdynamicallyaddedvertices,
@@ -849,6 +852,8 @@ __global__ void PopulateSearchTreeTest(int nrVertices,
 __global__ void EvaluateSingleLeafNode(int nrEdges,
                                     int leafIndex,
                                     int depthOfLeaf,
+                                    int sizeOfKernelSolution,
+                                    int * dsolution,
                                     mtc::Edge * dedges, 
                                     int2 * dsearchtree,
                                     int * dnumberofdynamicallyaddedvertices,
@@ -869,7 +874,15 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
     int leafIndexSoln = leafIndex;
     int2 nodeEntry;
     int counter = 0;
+    int i;
     // Load solution into shared memory
+    for(i = threadIdx.x; i < sizeOfKernelSolution; i+=blockDim.x){
+        soln[i] = dsolution[i];
+    }
+    // Currently the same first sizeOfKernelSolution threads
+    // have to first copy the kernel solution
+    // then copy the tree solution.
+    // This can occur in parallel with fancy for loop indexing.
     if (tid <= depthOfLeaf){
         for(int i = 0; i < tid; ++i){
             if(leafIndexSoln % 3 == 0){
@@ -880,8 +893,8 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
             }
         }
         nodeEntry = dsearchtree[leafIndexSoln];
-        soln[2*tid] = nodeEntry.x;
-        soln[2*tid + 1] = nodeEntry.y;
+        soln[sizeOfKernelSolution + 2*tid] = nodeEntry.x;
+        soln[sizeOfKernelSolution + 2*tid + 1] = nodeEntry.y;
         #ifndef NDEBUG
         printf("tid %d is adding %d %d to soln indices %d %d \n", tid, nodeEntry.x, nodeEntry.y, 2*tid, 2*tid + 1);
         #endif
@@ -906,7 +919,7 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
     #endif
     Edge & edge = dedges[edgeID];
     bool covered = false;
-    for (int solutionIndex = 0; solutionIndex < (depthOfLeaf+1)*2; ++solutionIndex){
+    for (int solutionIndex = 0; solutionIndex < sizeOfKernelSolution + (depthOfLeaf+1)*2; ++solutionIndex){
         covered |= (edge.x == soln[solutionIndex]);
         covered |= (edge.y == soln[solutionIndex]);
     }

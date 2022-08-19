@@ -93,6 +93,8 @@ __global__ void CalculateNumberOfLeafNodes(
 __global__ void EvaluateSingleLeafNode(int nrEdges,
                                     int leafIndex,
                                     int depthOfLeaf,
+                                    int sizeOfKernelSolution,
+                                    int * dsolution,
                                     mtc::Edge * dedges, 
                                     int2 * dsearchtree,
                                     int * dnumberofdynamicallyaddedvertices,
