@@ -199,6 +199,8 @@ int main(int argc, char **argv)
 	bool performTest = false;
 	bool randomiseVertices = false;
 	
+	int kArg = 1;
+
 	matchTypes.insert(0);
 	CPUNrThreads.insert(8);
 
@@ -218,6 +220,7 @@ int main(int argc, char **argv)
 		("gnuplot", boost::program_options::value<string>(), "output gnuplot data to file")
 		("scaledata", "output thread scaling data")
 		("threads", boost::program_options::value<string>(), "number of TBB threads")
+		("k,k", boost::program_options::value<int>(), "parameterization variable")
 		("match,m", boost::program_options::value<string>(), 
 		 "desired matching types:\n"
 		 "0  = CPU random,\n"
@@ -273,6 +276,8 @@ int main(int argc, char **argv)
 
 			while (stypes >> t) CPUNrThreads.insert(t);
 		}
+
+		if (varMap.count("k")) kArg = varMap["k"].as<int>();
 
 		if (varMap.count("match"))
 		{
@@ -432,31 +437,36 @@ int main(int argc, char **argv)
 				searchTreeName.clear();
 				searchTreeName << k << "_final_";
 				std::string stn = searchTreeName.str();
+				bool solutionCantExist = false;
 				try
 				{
-					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 34);
-					vc.matcher.initialMatching(match);
-					initscr ();
-					vc.FindCover(0, 0, foundSolution);
-					if (foundSolution){
-						printf("Found a solution.\n");
-					} else {
-						printf("No solution found.\n");
+					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
+					if (!solutionCantExist){
+						vc.matcher.initialMatching(match);
+						initscr ();
+						vc.FindCover(0, 0, foundSolution);
+						if (foundSolution){
+							printf("Found a solution.\n");
+						} else {
+							printf("No solution found.\n");
+						}
+						cout << '\n' << "Press a key to continue...\n";
+						cin.get();
+						endwin();
+						
+						if (foundSolution){
+							for (int i = 0; i < vc.numoftreeverts+vc.numofdynamcverts; ++i)
+								printf("%d ",vc.solution[i]);					
+						} else {
+							vc.CallDrawSearchTree(stn);
+						}
+						
+						printf("If the tree isn't completely generated,\n"); 
+						printf("it is due to dynamically added pendant excede k before\n"); 
+						printf("reaching the leaf nodes.\n");
+						vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);
+						vc.CopyMatchingBackToHost(match);
 					}
-					cout << '\n' << "Press a key to continue...\n";
-					cin.get();
-					endwin();
-					if (foundSolution){
-						for (int i = 0; i < vc.numoftreeverts+vc.numofdynamcverts; ++i)
-							printf("%d ",vc.solution[i]);					
-					} else {
-						vc.CallDrawSearchTree(stn);
-					}
-					printf("If the tree isn't completely generated,\n"); 
-					printf("it is due to dynamically added pendant excede k before\n"); 
-					printf("reaching the leaf nodes.\n");
-					vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);
-					vc.CopyMatchingBackToHost(match);
 				}
 				catch (exception &e)
 				{
@@ -493,24 +503,25 @@ int main(int argc, char **argv)
 						return -1;
 					}
 				}
-				
-				//Determine matching weight and size.
-				double matchingWeight = 0.0;
-				long matchingSize = 0;
-				std::vector<long> matchingSizeGeneral(maxLength+1);
-				GraphMatching::getWeight(matchingWeight, matchingSize, match, graph2);
-				GraphMatching::getWeightGeneral(matchingWeight, matchingSizeGeneral, graph.degrees, bll, lengthOfPath, graph2);
-				//Store benchmark data.
-				// currently wrong for general
-				// Currently matchingSizes is an array of size 1
-				// Since for max length 1, a vertex is either matched or not
-				// I need to generalize the length of this to max length "n".
-				matchingSizes[k] = matchingSize;
-				for (uint i = 0; i < matchingSizesGeneral.size(); ++i)
-					matchingSizesGeneral[i][k] = matchingSizeGeneral[i];
-				matchingWeights[k] = matchingWeight;
-				totalTimes[k] = time0;
-				matchTimes[k] = time1;		
+				if (!solutionCantExist){
+					//Determine matching weight and size.
+					double matchingWeight = 0.0;
+					long matchingSize = 0;
+					std::vector<long> matchingSizeGeneral(maxLength+1);
+					GraphMatching::getWeight(matchingWeight, matchingSize, match, graph2);
+					GraphMatching::getWeightGeneral(matchingWeight, matchingSizeGeneral, graph.degrees, bll, lengthOfPath, graph2);
+					//Store benchmark data.
+					// currently wrong for general
+					// Currently matchingSizes is an array of size 1
+					// Since for max length 1, a vertex is either matched or not
+					// I need to generalize the length of this to max length "n".
+					matchingSizes[k] = matchingSize;
+					for (uint i = 0; i < matchingSizesGeneral.size(); ++i)
+						matchingSizesGeneral[i][k] = matchingSizeGeneral[i];
+					matchingWeights[k] = matchingWeight;
+					totalTimes[k] = time0;
+					matchTimes[k] = time1;		
+				}
 			}
 
 			

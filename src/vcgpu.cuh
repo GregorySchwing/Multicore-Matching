@@ -145,7 +145,11 @@ class VCGPU
 {
 
 	public:
-		VCGPU(const mtc::Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier, const unsigned int &_k);
+		VCGPU(const mtc::Graph &_graph, 
+              const int &_threadsPerBlock, 
+              const unsigned int &_barrier, 
+              const unsigned int &_k,
+              bool &solutionCantExist);
 		~VCGPU();
         void CallDrawSearchTree(std::string prefix);
 
@@ -180,6 +184,7 @@ class VCGPU
         void PrintData ();
         void CopyMatchingBackToHost(std::vector<int> & match);
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
+        bool & solutionCantExist;
         long long sizeOfSearchTree;
         int k;
         int kPrime;

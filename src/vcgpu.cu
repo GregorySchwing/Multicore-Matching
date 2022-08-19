@@ -46,7 +46,11 @@ texture<int2, cudaTextureType1D, cudaReadModeElementType> neighbourRangesTexture
 texture<int, cudaTextureType1D, cudaReadModeElementType> neighboursTexture;
 texture<float, cudaTextureType1D, cudaReadModeElementType> weightsTexture;
 
-VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned int &_barrier, const unsigned int &_k) :
+VCGPU::VCGPU(const Graph &_graph, 
+             const int &_threadsPerBlock, 
+             const unsigned int &_barrier, 
+             const unsigned int &_k,
+             bool & _solutionCantExist) :
 		graph(_graph),
         threadsPerBlock(_threadsPerBlock),
         barrier(_barrier),
@@ -54,9 +58,9 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         dfll(_graph.nrVertices),
         dbll(_graph.nrVertices),
         k(_k),
-        depthOfSearchTree(_k/2)
+        solutionCantExist(_solutionCantExist)
 {
-    solution.resize(2*k);
+    solution.resize(k);
     if (cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess || 
         cudaMalloc(&dsolution, sizeof(int)*k) != cudaSuccess || 
         cudaMalloc(&dremainingedges, sizeof(int)*1) != cudaSuccess || 
@@ -71,15 +75,22 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
     } else {
         printf("|S| = b (%d) <= k (%d), a solution may exist\n", sizeOfKernelSolution, k);
     }
+    solutionCantExist = sizeOfKernelSolution > k;
     kPrime = k - sizeOfKernelSolution;
-    printf("Setting k' = k %d - b %d = %d\n", k, sizeOfKernelSolution, kPrime);
-    bussKernelizationP2();
-    if(remainingedges > k*kPrime){
-        printf("|G'(E)| (%d) > k (%d) * k' (%d) = %d, no solution exists\n",remainingedges, k, kPrime, k*kPrime);
-    } else {
-        printf("|G'(E)| (%d) <= k (%d) * k' (%d) = %d, a solution may exist\n",remainingedges, k, kPrime, k*kPrime);
+    if(!solutionCantExist){
+        printf("Setting k' = k %d - b %d = %d\n", k, sizeOfKernelSolution, kPrime);
+        bussKernelizationP2();
+        solutionCantExist = remainingedges > k*kPrime;
+        if(remainingedges > k*kPrime){
+            printf("|G'(E)| (%d) > k (%d) * k' (%d) = %d, no solution exists\n",remainingedges, k, kPrime, k*kPrime);
+        } else {
+            printf("|G'(E)| (%d) <= k (%d) * k' (%d) = %d, a solution may exist\n",remainingedges, k, kPrime, k*kPrime);
+        }
     }
-    exit(0);
+    depthOfSearchTree = kPrime/2;
+    if (solutionCantExist){
+        return;
+    }
     finishedLeavesPerLevel.resize(depthOfSearchTree+1);
     totalLeavesPerLevel.resize(depthOfSearchTree+1);
     sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(depthOfSearchTree);
@@ -98,7 +109,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         cudaMalloc(&dremainingedges, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumberofdynamicallyaddedvertices, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&ddynamicallyaddedvertices_csr, sizeof(int)*(depthOfSearchTree+1)) != cudaSuccess || 
-        cudaMalloc(&ddynamicallyaddedvertices, sizeof(int)*(k)) != cudaSuccess ||        
+        cudaMalloc(&ddynamicallyaddedvertices, sizeof(int)*(kPrime)) != cudaSuccess ||        
         cudaMalloc(&dfinishedLeavesPerLevel, sizeof(float)*(depthOfSearchTree+1)) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
@@ -135,23 +146,30 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
 }
 
 VCGPU::~VCGPU(){
-    cudaFree(dedgestatus);
-    cudaFree(dedges);
-    cudaFree(dlength);
-    cudaFree(dsearchtree);
-    cudaFree(duncoverededges);
-    cudaFree(dfullpathcount);
-    cudaFree(dnumleaves);
-    cudaFree(dremainingedges);
-    cudaFree(dnumberofdynamicallyaddedvertices);
-    cudaFree(ddynamicallyaddedvertices_csr);
-    cudaFree(ddynamicallyaddedvertices);
-    cudaFree(dfinishedLeavesPerLevel);
-    cudaFree(dsolution);
-    cudaFree(ddegrees);
-    printf("Finished deallocating memory\n");
-	cudaUnbindTexture(neighboursTexture);
-	cudaUnbindTexture(neighbourRangesTexture);
+    if(solutionCantExist){
+        cudaFree(ddegrees);
+        cudaFree(dsolution);
+        cudaFree(dremainingedges);
+        cudaFree(dsizeofkernelsolution);
+    } else {
+        cudaFree(dedgestatus);
+        cudaFree(dedges);
+        cudaFree(dlength);
+        cudaFree(dsearchtree);
+        cudaFree(duncoverededges);
+        cudaFree(dfullpathcount);
+        cudaFree(dnumleaves);
+        cudaFree(dremainingedges);
+        cudaFree(dnumberofdynamicallyaddedvertices);
+        cudaFree(ddynamicallyaddedvertices_csr);
+        cudaFree(ddynamicallyaddedvertices);
+        cudaFree(dfinishedLeavesPerLevel);
+        cudaFree(dsolution);
+        cudaFree(ddegrees);
+        printf("Finished deallocating memory\n");
+        cudaUnbindTexture(neighboursTexture);
+        cudaUnbindTexture(neighbourRangesTexture);
+    }
 }
 
 long long VCGPU::CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels){
@@ -200,9 +218,9 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
                                                             dfullpathcount,
                                                             dsearchtree);
     // Dont bother with looking for pendants if I'm out of space.
-    if (numberofdynamicallyaddedvertices<k){
+    if (numberofdynamicallyaddedvertices<kPrime){
         DetectAndSetPendantPathsCase3<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
-                                                            k,
+                                                            kPrime,
                                                             dmatch,
                                                             dforwardlinkedlist,
                                                             dbackwardlinkedlist,
@@ -211,7 +229,7 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
                                                             dnumberofdynamicallyaddedvertices,
                                                             ddynamicallyaddedvertices);
         DetectAndSetPendantPathsCase4<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
-                                                            k,
+                                                            kPrime,
                                                             dmatch,
                                                             dforwardlinkedlist,
                                                             dbackwardlinkedlist,
@@ -957,7 +975,7 @@ __global__ void FillSolutionArray(int leafIndex,
 }
 // Each block is a leaf node
 // First it loads it's solution into shared memory.
-// ADVANCED - If k*sizeof(int) > shared memory limit, check in portions
+// ADVANCED - If kPrime*sizeof(int) > shared memory limit, check in portions
 // Each thread takes an edge, iterate over all edges,
 // check of vertex a and vertex b is missing from soln
 // if so, indicate in final position of shared memory.
@@ -1015,7 +1033,7 @@ __global__ void EvaluateLeafNodesV2(int nrEdges,
 */
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
-                                                int k,
+                                                int kPrime,
                                                 int *match, 
                                                 int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
@@ -1049,7 +1067,7 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
     }
 
     if (match[first] == 3 || match[second] == 3){
-        if (dynamicIndex < k){
+        if (dynamicIndex < kPrime){
             if (match[first] == 3){
                 ddynamicallyaddedvertices[dynamicIndex] = first;
             } else if (match[second] == 3){
@@ -1064,7 +1082,7 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
 
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void DetectAndSetPendantPathsCase3(int nrVertices, 
-                                              int k,
+                                              int kPrime,
                                                 int *match, 
                                                 int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
@@ -1098,7 +1116,7 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
     }
 
     if (match[first] == 3 || match[third] == 3){
-        if (dynamicIndex < k){
+        if (dynamicIndex < kPrime){
             if (match[first] == 3){
                 ddynamicallyaddedvertices[dynamicIndex] = first;
             } else if (match[third] == 3){
