@@ -138,7 +138,7 @@ long long VCGPU::CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels){
     // ceiling(vertexCount/2) loops
     for (int i = 0; i <= NumberOfLevels; ++i){
         summand += pow (3.0, i);
-        finishedLeavesPerLevel[i] = 0;
+        finishedLeavesPerLevel[i] = i ? 0 : 1;
         totalLeavesPerLevel[i] = pow (3.0, i);
     }
     return summand;
@@ -170,7 +170,6 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     PopulateSearchTree<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
                                                             sizeOfSearchTree, 
-                                                            depthOfLeaf,
                                                             depthOfSearchTree,
                                                             leafIndex,
                                                             dfinishedLeavesPerLevel,
@@ -312,7 +311,7 @@ void VCGPU::FindCover(int root,
     printf("Called FindCover li %d rl %d \n", root, recursiveStackDepth);
     printf("depthOfLeaf %d depthOfSearchTree %d\n",  depthOfLeaf, depthOfSearchTree);
     #endif    
-    cudaMemcpy(&finishedLeavesPerLevel[0], dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree+1, cudaMemcpyDeviceToHost);
+    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*depthOfSearchTree, cudaMemcpyDeviceToHost);
 
     curs_set (0);
     for(int i = 0; i <= depthOfSearchTree; ++i){
@@ -349,7 +348,7 @@ void VCGPU::FindCover(int root,
     int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, depthOfLeaf, dbackwardlinkedlist, dlength, recursiveStackDepth);
     //int4 newLeaves = numberCompletedPathsTest(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
     cudaDeviceSynchronize();
-    cudaMemcpy(&finishedLeavesPerLevel[0], dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree+1, cudaMemcpyDeviceToHost);
+    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*(depthOfSearchTree), cudaMemcpyDeviceToHost);
 
     curs_set (0);
     for(int i = 0; i <= depthOfSearchTree; ++i){
@@ -609,7 +608,6 @@ __global__ void eraseDynVertsOfRecursionLevel(int recursiveStackDepth,
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void PopulateSearchTree(int nrVertices, 
                                     int sizeOfSearchTree,
-                                    int depthOfLeaf,
                                     int depthOfSearchTree,
                                     int leafIndex,
                                     float * dfinishedLeavesPerLevel,
@@ -681,8 +679,9 @@ __global__ void PopulateSearchTree(int nrVertices,
             return;
     }
     // Add to device pointer of level
-    printf("leafIndex %d atomicAdd(&dfinishedLeavesPerLevel[%d + %d], 3) newleaves %d - %d\n", leafIndex, depthOfLeaf,n, levelOffset, levelOffset + 2); 
-    atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf + n], 3); 
+    int depthOfLeaf = floor(logf(2*levelOffset + 1) / logf(3));
+    //printf("leafIndex %d atomicAdd(&dfinishedLeavesPerLevel[%d], 3) newleaves %d - %d\n", leafIndex, depthOfLeaf,levelOffset, levelOffset + 2); 
+    atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf], 3.0); 
     // Test from root for now, this code can have an arbitrary root though
     dsearchtree[levelOffset + 0] = make_int2(first, third);
     dsearchtree[levelOffset + 1] = make_int2(second, third);

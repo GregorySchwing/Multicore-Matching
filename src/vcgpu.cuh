@@ -54,7 +54,6 @@ __global__ void SetEdges(const int nrVertices,
 
 __global__ void PopulateSearchTree(int nrVertices, 
                                     int sizeOfSearchTree,
-                                    int depthOfLeaf,
                                     int depthOfSearchTree,
                                     int leafIndex,
                                     float * dfinishedLeavesPerLevel,
@@ -100,7 +99,6 @@ __global__ void CalculateDegrees(
                         int * ddegrees);
 
 __global__ void DetectAndSetPendantPathsCase3(int nrVertices, 
-                                                int depthOfLeaf,
                                                 int k,
                                                 int *match, 
                                                 int *dforwardlinkedlist, 
@@ -111,7 +109,6 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
                                                 int *ddynamicallyaddedvertices);
 
 __global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
-                                                int depthOfLeaf,
                                                 int k,
                                                 int *match, 
                                                 int *dforwardlinkedlist, 
