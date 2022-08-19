@@ -133,6 +133,7 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
 
 __global__ void FillSolutionArray(int leafIndex,
                                 int * dsolution,
+                                int sizeOfKernelSolution,
                                 int2 * dsearchtree,
                                 int * dnumberofdynamicallyaddedvertices,
                                 int * ddynamicallyaddedvertices);

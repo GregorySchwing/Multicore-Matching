@@ -455,7 +455,7 @@ int main(int argc, char **argv)
 						endwin();
 						
 						if (foundSolution){
-							for (int i = 0; i < vc.numoftreeverts+vc.numofdynamcverts; ++i)
+							for (int i = 0; i < vc.sizeOfKernelSolution+vc.numoftreeverts+vc.numofdynamcverts; ++i)
 								printf("%d ",vc.solution[i]);					
 						} else {
 							vc.CallDrawSearchTree(stn);

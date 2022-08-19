@@ -455,12 +455,13 @@ void VCGPU::FindCover(int root,
             printf("leaf index %d is a solution :  %d edges are uncovered\n", root, uncoverededges);
             FillSolutionArray<<<1,1>>>(root,
                                 dsolution,
+                                sizeOfKernelSolution,
                                 dsearchtree,
                                 dnumberofdynamicallyaddedvertices,
                                 ddynamicallyaddedvertices);
             cudaMemcpy(&numofdynamcverts, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
             numoftreeverts = 2*(depthOfLeaf+1);
-            cudaMemcpy(&solution[0], dsolution, sizeof(int)*(numoftreeverts+numofdynamcverts), cudaMemcpyDeviceToHost);
+            cudaMemcpy(&solution[0], dsolution, sizeof(int)*(sizeOfKernelSolution+numoftreeverts+numofdynamcverts), cudaMemcpyDeviceToHost);
             foundSolution = true;
 
             cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
@@ -959,6 +960,7 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
 // Single threaded; could accelerate eventually.
 __global__ void FillSolutionArray(int leafIndex,
                                 int * dsolution,
+                                int sizeOfKernelSolution,
                                 int2 * dsearchtree,
                                 int * dnumberofdynamicallyaddedvertices,
                                 int * ddynamicallyaddedvertices){
@@ -970,8 +972,8 @@ __global__ void FillSolutionArray(int leafIndex,
     if (threadID == 0){
         while(leafIndexSoln != 0){
             nodeEntry = dsearchtree[leafIndexSoln];
-            dsolution[counter] = nodeEntry.x;
-            dsolution[counter + 1] = nodeEntry.y;
+            dsolution[sizeOfKernelSolution + counter] = nodeEntry.x;
+            dsolution[sizeOfKernelSolution + counter + 1] = nodeEntry.y;
             if(leafIndexSoln % 3 == 0){
                 --leafIndexSoln;
                 leafIndexSoln = leafIndexSoln / 3;
@@ -981,7 +983,7 @@ __global__ void FillSolutionArray(int leafIndex,
             counter += 2;
         }
         for (int index = 0; index < UBDyn; ++index){
-            dsolution[counter + index] = ddynamicallyaddedvertices[index];
+            dsolution[sizeOfKernelSolution + counter + index] = ddynamicallyaddedvertices[index];
             //printf("Dynamic vertex %d\n", dsolution[counter+index]);
         }
     }
