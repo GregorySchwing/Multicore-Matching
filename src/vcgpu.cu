@@ -76,7 +76,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         cudaMalloc(&dnumberofdynamicallyaddedvertices, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&ddynamicallyaddedvertices_csr, sizeof(int)*(depthOfSearchTree+1)) != cudaSuccess || 
         cudaMalloc(&ddynamicallyaddedvertices, sizeof(int)*(k)) != cudaSuccess ||        
-        cudaMalloc(&dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree+1) != cudaSuccess || 
+        cudaMalloc(&dfinishedLeavesPerLevel, sizeof(float)*(depthOfSearchTree+1)) != cudaSuccess || 
         cudaMalloc(&dsolution, sizeof(int)*2*k) != cudaSuccess || 
         cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
@@ -182,7 +182,6 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
     // Dont bother with looking for pendants if I'm out of space.
     if (numberofdynamicallyaddedvertices<k){
         DetectAndSetPendantPathsCase3<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
-                                                            depthOfLeaf,
                                                             k,
                                                             dmatch,
                                                             dforwardlinkedlist,
@@ -192,7 +191,6 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
                                                             dnumberofdynamicallyaddedvertices,
                                                             ddynamicallyaddedvertices);
         DetectAndSetPendantPathsCase4<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
-                                                            depthOfLeaf,
                                                             k,
                                                             dmatch,
                                                             dforwardlinkedlist,
@@ -302,12 +300,19 @@ void VCGPU::FindCover(int root,
 	int blocksPerGrid = (graph.nrEdges + threadsPerBlock - 1)/threadsPerBlock;
     int depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - 1;
 
+    /*
+    int depthOfLeaf;
+    if (root)
+        depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - 1;
+    else
+        depthOfLeaf = root;
+    */
 
     #ifndef NDEBUG
     printf("Called FindCover li %d rl %d \n", root, recursiveStackDepth);
     printf("depthOfLeaf %d depthOfSearchTree %d\n",  depthOfLeaf, depthOfSearchTree);
-    #endif
-    cudaMemcpy(&finishedLeavesPerLevel[0], dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree, cudaMemcpyDeviceToHost);
+    #endif    
+    cudaMemcpy(&finishedLeavesPerLevel[0], dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree+1, cudaMemcpyDeviceToHost);
 
     curs_set (0);
     for(int i = 0; i <= depthOfSearchTree; ++i){
@@ -344,7 +349,13 @@ void VCGPU::FindCover(int root,
     int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, depthOfLeaf, dbackwardlinkedlist, dlength, recursiveStackDepth);
     //int4 newLeaves = numberCompletedPathsTest(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
     cudaDeviceSynchronize();
+    cudaMemcpy(&finishedLeavesPerLevel[0], dfinishedLeavesPerLevel, sizeof(float)*depthOfSearchTree+1, cudaMemcpyDeviceToHost);
 
+    curs_set (0);
+    for(int i = 0; i <= depthOfSearchTree; ++i){
+        mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
+    }
+    refresh ();
     if (root != 0){
         cuMemsetD32(reinterpret_cast<CUdeviceptr>(duncoverededges),  0, size_t(1));
         cudaDeviceSynchronize();
@@ -670,8 +681,8 @@ __global__ void PopulateSearchTree(int nrVertices,
             return;
     }
     // Add to device pointer of level
-    //printf("leafIndex %d atomicAdd(&dfinishedLeavesPerLevel[1+%d + %d], 3) newleaves %d - %d\n", leafIndex, depthOfLeaf,n, levelOffset, levelOffset + 2); 
-    atomicAdd(&dfinishedLeavesPerLevel[1 + depthOfLeaf + n], 3); 
+    printf("leafIndex %d atomicAdd(&dfinishedLeavesPerLevel[%d + %d], 3) newleaves %d - %d\n", leafIndex, depthOfLeaf,n, levelOffset, levelOffset + 2); 
+    atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf + n], 3); 
     // Test from root for now, this code can have an arbitrary root though
     dsearchtree[levelOffset + 0] = make_int2(first, third);
     dsearchtree[levelOffset + 1] = make_int2(second, third);
@@ -946,7 +957,6 @@ __global__ void EvaluateLeafNodesV2(int nrEdges,
 */
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
-                                                int depthOfLeaf,
                                                 int k,
                                                 int *match, 
                                                 int *dforwardlinkedlist, 
@@ -996,7 +1006,6 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
 
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void DetectAndSetPendantPathsCase3(int nrVertices, 
-                                              int depthOfLeaf,
                                               int k,
                                                 int *match, 
                                                 int *dforwardlinkedlist, 
