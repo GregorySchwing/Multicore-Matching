@@ -434,13 +434,12 @@ int main(int argc, char **argv)
 				std::string stn = searchTreeName.str();
 				try
 				{
-					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 10);
+					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, 20);
 					vc.matcher.initialMatching(match);
 					initscr ();
 					vc.FindCover(0, 0, foundSolution);
 					cout << '\n' << "Press a key to continue...\n";
 					cin.get();
-					endwin();
 					if (foundSolution){
 						for (int i = 0; i < vc.numoftreeverts+vc.numofdynamcverts; ++i)
 							printf("%d ",vc.solution[i]);
@@ -448,6 +447,7 @@ int main(int argc, char **argv)
 						printf("No solution found.\n");
 						vc.CallDrawSearchTree(stn);
 					}
+					endwin();
 					vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);
 					vc.CopyMatchingBackToHost(match);
 				}
