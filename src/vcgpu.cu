@@ -451,7 +451,7 @@ void VCGPU::FindCover(int root,
             #ifndef NDEBUG
             printf("leaf index %d is not a solution :  %d edges are uncovered\n", root, uncoverededges);
             #endif
-        } else {
+        } else {   
             printf("leaf index %d is a solution :  %d edges are uncovered\n", root, uncoverededges);
             FillSolutionArray<<<1,1>>>(root,
                                 dsolution,
@@ -464,8 +464,6 @@ void VCGPU::FindCover(int root,
             numoftreeverts = 2*(depthOfLeaf+1);
             solutionSize = sizeOfKernelSolution+numoftreeverts+numofdynamcverts;
             cudaMemcpy(solution.data(), dsolution, sizeof(int)*solutionSize, cudaMemcpyDeviceToHost);
-            PrintSolutionArray<<<1,1>>>(solutionSize,
-                    dsolution);
             foundSolution = true;
             cudaDeviceSynchronize();
             checkLastErrorCUDA(__FILE__, __LINE__);    
