@@ -445,6 +445,7 @@ int main(int argc, char **argv)
 							printf("%d ",vc.solution[i]);
 					} else {
 						printf("No solution found.\n");
+						printf("If the tree isn't completely generated, it is due to dynamically added pendant edges.\n");
 						vc.CallDrawSearchTree(stn);
 					}
 					endwin();
