@@ -56,9 +56,32 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         k(_k),
         depthOfSearchTree(_k/2)
 {
+    solution.resize(2*k);
+    if (cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess || 
+        cudaMalloc(&dsolution, sizeof(int)*k) != cudaSuccess || 
+        cudaMalloc(&dremainingedges, sizeof(int)*1) != cudaSuccess || 
+        cudaMalloc(&dsizeofkernelsolution, sizeof(int)*1))	
+    {
+		cerr << "Not enough memory on device!" << endl;
+		throw exception();
+	}
+    bussKernelizationP1();
+    if (sizeOfKernelSolution > k){
+        printf("|S| = b (%d) > k (%d), no solution exists\n", sizeOfKernelSolution, k);
+    } else {
+        printf("|S| = b (%d) <= k (%d), a solution may exist\n", sizeOfKernelSolution, k);
+    }
+    kPrime = k - sizeOfKernelSolution;
+    printf("Setting k' = k %d - b %d = %d\n", k, sizeOfKernelSolution, kPrime);
+    bussKernelizationP2();
+    if(remainingedges > k*kPrime){
+        printf("|G'(E)| (%d) > k (%d) * k' (%d) = %d, no solution exists\n",remainingedges, k, kPrime, k*kPrime);
+    } else {
+        printf("|G'(E)| (%d) <= k (%d) * k' (%d) = %d, a solution may exist\n",remainingedges, k, kPrime, k*kPrime);
+    }
+    exit(0);
     finishedLeavesPerLevel.resize(depthOfSearchTree+1);
     totalLeavesPerLevel.resize(depthOfSearchTree+1);
-    solution.resize(2*k);
     sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(depthOfSearchTree);
     printf("SIZE OF SEARCH TREE %lld\n", sizeOfSearchTree);
     searchtree.resize(sizeOfSearchTree);
@@ -76,9 +99,7 @@ VCGPU::VCGPU(const Graph &_graph, const int &_threadsPerBlock, const unsigned in
         cudaMalloc(&dnumberofdynamicallyaddedvertices, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&ddynamicallyaddedvertices_csr, sizeof(int)*(depthOfSearchTree+1)) != cudaSuccess || 
         cudaMalloc(&ddynamicallyaddedvertices, sizeof(int)*(k)) != cudaSuccess ||        
-        cudaMalloc(&dfinishedLeavesPerLevel, sizeof(float)*(depthOfSearchTree+1)) != cudaSuccess || 
-        cudaMalloc(&dsolution, sizeof(int)*2*k) != cudaSuccess || 
-        cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
+        cudaMalloc(&dfinishedLeavesPerLevel, sizeof(float)*(depthOfSearchTree+1)) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
 		throw exception();
@@ -247,6 +268,44 @@ int4 VCGPU::numberCompletedPathsTest(int nrVertices,
     //printf("My active leaves %d %d %d %d\n", myActiveLeaves.x, myActiveLeaves.y, myActiveLeaves.z, myActiveLeaves.w);
     return myActiveLeaves;
 }
+
+// Initial kernelization before search tree is built
+void VCGPU::bussKernelizationP1(){
+    cudaMemcpy(ddegrees, graph.degrees.data(), sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
+    int blocksPerGrid = (graph.nrVertices + threadsPerBlock - 1)/threadsPerBlock;
+    BussKernelizationP1Kernel<<<blocksPerGrid, threadsPerBlock>>>(graph.nrVertices, 
+                                                                k, 
+                                                                ddegrees,
+                                                                dsolution,
+                                                                dsizeofkernelsolution);
+    cudaMemcpy(&sizeOfKernelSolution, dsizeofkernelsolution, sizeof(int)*1, cudaMemcpyDeviceToHost);
+    cudaMemcpy(solution.data(), dsolution, sizeof(int)*sizeOfKernelSolution, cudaMemcpyDeviceToHost);
+}
+
+// Initial kernelization before search tree is built
+void VCGPU::bussKernelizationP2(){
+    printf("Remaining edges before Kernel %d\n", graph.nrEdges);
+    // Using the indices to calculate degrees requires doubling and then halving
+    // Since each edge is counted twice, once in each connecting vertex's indices.x to indices.y
+    remainingedges = 2*graph.nrEdges;
+    cudaMemcpy(dremainingedges, &remainingedges, sizeof(int)*1, cudaMemcpyHostToDevice);
+    int blocksPerGrid = (sizeOfKernelSolution + threadsPerBlock - 1)/threadsPerBlock;
+    //printf("Launching %d blocks for a solution of size %d\n", blocksPerGrid, sizeOfKernelSolution);
+    BussKernelizationP2Kernel<<<blocksPerGrid, threadsPerBlock>>>(sizeOfKernelSolution,
+                                                                ddegrees,
+                                                                dremainingedges,
+                                                                dsolution);
+    cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
+    // Using the indices to calculate degrees requires doubling and then halving
+    // Since each edge is counted twice, once in each connecting vertex's indices.x to indices.y
+    remainingedges/=2;
+    printf("Remaining edges after Kernel %d\n", remainingedges);
+}
+
+void VCGPU::bussKernelizationP1(int root, int recursiveStackDepth, bool & foundSolution){
+
+}
+
 
 /*
 void VCGPU::eraseDynVertsOfRecursionLevel(int recursiveStackDepth){
@@ -1139,6 +1198,38 @@ __global__ void SetEdges(const int leafIndex,
     } 
 }
 
+
+// Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
+__global__ void BussKernelizationP1Kernel(int nrVertices, 
+                                        int k, 
+                                        int *ddegrees,
+                                        int *dsolution,
+                                        int *dsizeofkernelsolution){
+	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+    if (threadID >= nrVertices) return;
+    int degree = ddegrees[threadID];
+    if (degree <= k) return;
+    int solutionIndex = atomicAdd(&dsizeofkernelsolution[0], 1);
+    // dsolution = new int[k];
+    // Prevent oob
+    if (solutionIndex >= k){
+        return;
+    }
+    dsolution[solutionIndex] = threadID;
+}
+
+__global__ void BussKernelizationP2Kernel(int sizeOfKernelSolution,
+                                        int *ddegrees,
+                                        int *dremainingedges,
+                                        int *dsolution){
+	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+    if (threadID >= sizeOfKernelSolution) return;
+    int solnVertex = dsolution[threadID];
+    int degree = ddegrees[solnVertex];
+    int remainingedges = atomicSub(&dremainingedges[0], degree);
+    //printf("Removed %d's %d edges : edges remaining %d\n", solnVertex, degree/2, remainingedges/2);
+}
+
 __device__ void SetEdges(   int vertexToInclude,
                             int * dedgestatus){
 
@@ -1200,7 +1291,6 @@ __global__ void CalculateDegrees(
                         int * ddegrees){
 
 	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
-	// If not a head to a path of length 4, return (leaving the headindex == -1)
     if (threadID >= nrVertices ) return;
     int sum = 0;
     int2 indices = tex1Dfetch(neighbourRangesTexture, threadID);

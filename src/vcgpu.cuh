@@ -38,6 +38,17 @@ __global__ void InitDegrees(const int nrVertices,
                             int * ddegrees);
 
 
+__global__ void BussKernelizationP1Kernel(int nrVertices, 
+                                        int k, 
+                                        int *ddegrees,
+                                        int *dsolution,
+                                        int *dsizeofkernelsolution);
+
+__global__ void BussKernelizationP2Kernel(int sizeOfKernelSolution,
+                                        int *ddegrees,
+                                        int *dremainingedges,
+                                        int *dsolution);
+
 __global__ void ReducePathLengths(int nrVertices,
 							int *dbackwardlinkedlist,
                             int* dlength,
@@ -161,6 +172,9 @@ class VCGPU
         
         void SetEdgesOfLeaf(int leafIndex);
         void Match(int leafIndex);
+        void bussKernelizationP1();
+        void bussKernelizationP2();
+        void bussKernelizationP1(int root, int recursiveStackDepth, bool & foundSolution);
         void FindCover(int root, int recursiveStackDepth, bool & foundSolution);
         void ReinitializeArrays();
         void PrintData ();
@@ -168,6 +182,7 @@ class VCGPU
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
         long long sizeOfSearchTree;
         int k;
+        int kPrime;
         int fullpathcount, depthOfSearchTree, remainingedges;
         std::vector<float> finishedLeavesPerLevel;
         std::vector<float> totalLeavesPerLevel;
@@ -176,6 +191,7 @@ class VCGPU
         std::vector<int2> searchtree;
         std::vector<int> solution;
         std::vector<int> dynamcverts;
+        int sizeOfKernelSolution;
         int numofdynamcverts;
         int numoftreeverts;
         int uncoverededges;
@@ -189,7 +205,7 @@ class VCGPU
         int *dnumberofdynamicallyaddedvertices;
 
         int *dsolution;
-
+        int *dsizeofkernelsolution;
         int numberofdynamicallyaddedvertices;
         int numberofdynamicallyaddedverticesLB, numberofdynamicallyaddedverticesUB;
         int *active_frontier_status;
