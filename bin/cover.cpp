@@ -441,6 +441,8 @@ int main(int argc, char **argv)
 				try
 				{
 					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
+					cout << '\n' << "Press a key to continue...\n";
+					cin.get();
 					if (!solutionCantExist){
 						vc.matcher.initialMatching(match);
 						initscr ();
@@ -455,7 +457,7 @@ int main(int argc, char **argv)
 						endwin();
 						
 						if (foundSolution){
-							for (int i = 0; i < vc.sizeOfKernelSolution+vc.numoftreeverts+vc.numofdynamcverts; ++i)
+							for (int i = 0; i < vc.solutionSize; ++i)
 								printf("%d ",vc.solution[i]);					
 						} else {
 							vc.CallDrawSearchTree(stn);
