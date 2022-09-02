@@ -87,16 +87,25 @@ VCGPU::VCGPU(const Graph &_graph,
             printf("|G'(E)| (%d) <= k (%d) * k' (%d) = %d, a solution may exist\n",remainingedges, k, kPrime, k*kPrime);
         }
     }
-    depthOfSearchTree = kPrime/2;
+    kPrimeBFS = kPrime/2;
+    kPrimeDFS = kPrime/2;
     if (solutionCantExist){
         return;
     }
+    // TODO Optimize of BFS tree for as much parallelism as possible 
+    //for (int tentatitiveDepthOfSearchTree = ){
+    //    sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(tentatitiveDepthOfSearchTree);
+    //}
+
+    // For now, assign half to a BFS phase and half to DFS phase
+    depthOfSearchTree = kPrimeBFS/2;
+
     finishedLeavesPerLevel.resize(depthOfSearchTree+1);
     totalLeavesPerLevel.resize(depthOfSearchTree+1);
     sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(depthOfSearchTree);
     printf("SIZE OF SEARCH TREE %lld\n", sizeOfSearchTree);
     bfssearchtree.resize(sizeOfSearchTree);
-    dfssearchtree.resize(3*kPrime);
+    dfssearchtree.resize(3*kPrimeDFS);
 
 
     // Wrong since numEdges < neighbors (up to double the num edges, in and out)
@@ -105,7 +114,7 @@ VCGPU::VCGPU(const Graph &_graph,
         cudaMalloc(&dedges, sizeof(mtc::Edge)*graph.nrEdges) != cudaSuccess || 
         cudaMalloc(&dlength, sizeof(int)*graph.nrVertices) != cudaSuccess || 
         cudaMalloc(&dbfssearchtree, sizeof(int2)*sizeOfSearchTree) != cudaSuccess || 
-        cudaMalloc(&ddfssearchtree, sizeof(int2)*3*kPrime) != cudaSuccess || 
+        cudaMalloc(&ddfssearchtree, sizeof(int2)*3*kPrimeDFS) != cudaSuccess || 
         cudaMalloc(&duncoverededges, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
@@ -464,6 +473,15 @@ void VCGPU::FindCover(int root,
     int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, depthOfLeaf, dbackwardlinkedlist, dlength, recursiveStackDepth);
     //int4 newLeaves = numberCompletedPathsTest(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
     cudaDeviceSynchronize();
+    if (!fullpathcount){
+        // No paths of length 4 were found
+        // Check if red/blue vertices exist
+        // if not, then further tree growth
+        // is impossible, check for sol'n
+        EvaluateLeafBFS(root, recursiveStackDepth, foundSolution);
+    }
+
+
     cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*(depthOfSearchTree), cudaMemcpyDeviceToHost);
 
     curs_set (0);
@@ -629,7 +647,13 @@ void VCGPU::PopulateBFSTree(int root,
     //int4 newLeaves = numberCompletedPathsTest(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
     cudaDeviceSynchronize();
     cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*(depthOfSearchTree), cudaMemcpyDeviceToHost);
-
+    //if (!fullpathcount){
+        // No paths of length 4 were found
+        // Check if red/blue vertices exist
+        // if not, then further tree growth
+        // is impossible, check for sol'n
+    //    EvaluateLeafBFS(root, recursiveStackDepth, foundSolution);
+    //}
     curs_set (0);
     for(int i = 0; i <= depthOfSearchTree; ++i){
         mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
@@ -645,6 +669,15 @@ void VCGPU::PopulateBFSTree(int root,
         PopulateBFSTree(newLeaves.z, recursiveStackDepth+1, foundSolution);
         ++newLeaves.z;
     }
+
+    cudaDeviceSynchronize();
+    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*(depthOfSearchTree), cudaMemcpyDeviceToHost);
+
+    curs_set (0);
+    for(int i = 0; i <= depthOfSearchTree; ++i){
+        mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
+    }
+    refresh ();
 
     //PrintData (); 
     // Wipe away my pendant nodes from shared list
@@ -970,6 +1003,69 @@ __global__ void PopulateSearchTreeTest(int nrVertices,
     dbfssearchtree[levelOffset + 1] = make_int2(levelOffset + 1, levelOffset + 1);
     dbfssearchtree[levelOffset + 2] = make_int2(levelOffset + 2, levelOffset + 2);   
 }
+
+void VCGPU::EvaluateLeafBFS(int root, int recursiveStackDepth, bool & foundSolution){
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(duncoverededges),  0, size_t(1));
+    cudaDeviceSynchronize();
+    int blocksPerGrid = (graph.nrEdges + threadsPerBlock - 1)/threadsPerBlock;
+    int depthOfLeaf = ceil(logf(2*root + 1) / logf(3)) - 1;
+
+    EvaluateSingleLeafNode<<<blocksPerGrid, threadsPerBlock, (sizeOfKernelSolution + 2*(depthOfLeaf+1))*sizeof(int)>>>(
+                                                                                        graph.nrEdges,
+                                                                                        root,
+                                                                                        depthOfLeaf,
+                                                                                        sizeOfKernelSolution,
+                                                                                        dsolution,
+                                                                                        dedges, 
+                                                                                        dbfssearchtree,
+                                                                                        dnumberofdynamicallyaddedvertices,
+                                                                                        ddynamicallyaddedvertices,
+                                                                                        duncoverededges);
+    cudaMemcpy(&uncoverededges, duncoverededges, sizeof(int)*1, cudaMemcpyDeviceToHost);
+    if (uncoverededges){
+        #ifndef NDEBUG
+        printf("leaf index %d is not a solution :  %d edges are uncovered\n", root, uncoverededges);
+        #endif
+    } else {   
+        printf("leaf index %d is a solution :  %d edges are uncovered\n", root, uncoverededges);
+        FillSolutionArray<<<1,1>>>(root,
+                            dsolution,
+                            sizeOfKernelSolution,
+                            dbfssearchtree,
+                            dnumberofdynamicallyaddedvertices,
+                            ddynamicallyaddedvertices);
+
+        cudaMemcpy(&numofdynamcverts, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
+        numoftreeverts = 2*(depthOfLeaf+1);
+        solutionSize = sizeOfKernelSolution+numoftreeverts+numofdynamcverts;
+        cudaMemcpy(solution.data(), dsolution, sizeof(int)*solutionSize, cudaMemcpyDeviceToHost);
+        foundSolution = true;
+        cudaDeviceSynchronize();
+        checkLastErrorCUDA(__FILE__, __LINE__);    
+        cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
+        cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
+        cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
+        cudaMemcpy(&bfssearchtree[0], dbfssearchtree, sizeof(int2)*bfssearchtree.size(), cudaMemcpyDeviceToHost);
+        cudaMemcpy(&numofdynamcverts, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
+        cudaMemcpy(&dynamcverts[0], ddynamicallyaddedvertices, sizeof(int)*numofdynamcverts, cudaMemcpyDeviceToHost);
+
+        Gviz.DrawInputGraphColored(graph,
+                                root,
+                                bfssearchtree,
+                                numofdynamcverts,
+                                dynamcverts,
+                                dmtch,
+                                dfll,
+                                dbll,
+                                root);
+        Gviz.DrawSearchTree(sizeOfSearchTree,
+                        &bfssearchtree[0],
+                        root);  
+
+        return;
+    }
+}
+
 
 // Each thread will take an edge.  Each thread will loop through the answer
 // until it finds either vertex a or b of an edge.

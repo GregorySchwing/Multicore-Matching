@@ -193,7 +193,9 @@ class VCGPU
         void bussKernelizationP2();
         void bussKernelizationP1(int root, int recursiveStackDepth, bool & foundSolution);
         void FindCover(int root, int recursiveStackDepth, bool & foundSolution);
-        void PopulateBFSTree(int root, int recursiveStackDepth);
+        void EvaluateLeafBFS(int root, int recursiveStackDepth, bool & foundSolution);
+
+        void PopulateBFSTree(int root, int recursiveStackDepth, bool & foundSolution);
         void ReinitializeArrays();
         void PrintData ();
         void CopyMatchingBackToHost(std::vector<int> & match);
@@ -202,6 +204,9 @@ class VCGPU
         long long sizeOfSearchTree;
         int k;
         int kPrime;
+        int kPrimeBFS;
+        int kPrimeDFS;
+
         int fullpathcount, depthOfSearchTree, remainingedges;
         std::vector<float> finishedLeavesPerLevel;
         std::vector<float> totalLeavesPerLevel;
