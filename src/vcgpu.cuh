@@ -61,7 +61,7 @@ __global__ void ReduceEdgeStatusArray(int nrNeighbors,
 __global__ void SetEdges(const int nrVertices,
                         int * dedgestatus,
                         int * ddegrees,
-                        int2 *dsearchtree);
+                        int2 *dbfssearchtree);
 
 __global__ void PopulateSearchTree(int nrVertices, 
                                     int sizeOfSearchTree,
@@ -72,7 +72,7 @@ __global__ void PopulateSearchTree(int nrVertices,
                                     int *dbackwardlinkedlist, 
                                     int *dlength, 
                                     int *dfullpathcount,
-                                    int2* dsearchtree);
+                                    int2* dbfssearchtree);
 
 __global__ void PopulateSearchTreeTest(int nrVertices, 
                                     int sizeOfSearchTree,
@@ -83,7 +83,7 @@ __global__ void PopulateSearchTreeTest(int nrVertices,
                                     int *dbackwardlinkedlist, 
                                     int *dlength, 
                                     int *dfullpathcount,
-                                    int2* dsearchtree,
+                                    int2* dbfssearchtree,
                                     int fullpathcount);
 
 __global__ void CalculateNumberOfLeafNodes(
@@ -96,7 +96,7 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
                                     int sizeOfKernelSolution,
                                     int * dsolution,
                                     mtc::Edge * dedges, 
-                                    int2 * dsearchtree,
+                                    int2 * dbfssearchtree,
                                     int * dnumberofdynamicallyaddedvertices,
                                     int * ddynamicallyaddedvertices,
                                     int * uncoverededges);
@@ -134,7 +134,7 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
 __global__ void FillSolutionArray(int leafIndex,
                                 int * dsolution,
                                 int sizeOfKernelSolution,
-                                int2 * dsearchtree,
+                                int2 * dbfssearchtree,
                                 int * dnumberofdynamicallyaddedvertices,
                                 int * ddynamicallyaddedvertices);
 
@@ -174,6 +174,13 @@ class VCGPU
                                 int *dlength,
                                 int recursiveStackDepth);
 
+
+        int4 numberCompletedPathsTestP2(int nrVertices, 
+                                int leafIndex,
+                                int *dbackwardlinkedlist, 
+                                int *dlength,
+                                int recursiveStackDepth);
+
         void GetLengthStatistics(int nrVertices, 
                                 int threadsPerBlock, 
                                 int *dbackwardlinkedlist, 
@@ -186,6 +193,7 @@ class VCGPU
         void bussKernelizationP2();
         void bussKernelizationP1(int root, int recursiveStackDepth, bool & foundSolution);
         void FindCover(int root, int recursiveStackDepth, bool & foundSolution);
+        void PopulateBFSTree(int root, int recursiveStackDepth);
         void ReinitializeArrays();
         void PrintData ();
         void CopyMatchingBackToHost(std::vector<int> & match);
@@ -199,7 +207,8 @@ class VCGPU
         std::vector<float> totalLeavesPerLevel;
         std::vector<int> edgestatus;
         std::vector<int> newdegrees;
-        std::vector<int2> searchtree;
+        std::vector<int2> bfssearchtree;
+        std::vector<int2> dfssearchtree;
         std::vector<int> solution;
         int solutionSize;
         std::vector<int> dynamcverts;
@@ -210,7 +219,7 @@ class VCGPU
         int * duncoverededges;
         // VC arrays
         int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves, *dremainingedges;
-        int2 *dsearchtree;
+        int2 *dbfssearchtree, *ddfssearchtree;
         // Indicates the dyn added verts in each recursion stack
         int *ddynamicallyaddedvertices_csr;
         int *ddynamicallyaddedvertices;

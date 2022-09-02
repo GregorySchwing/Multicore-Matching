@@ -469,7 +469,7 @@ int main(int argc, char **argv)
 	std::vector<int> lengthOfPath(graph.nrVertices);
 	std::vector<int> degrees(graph.nrVertices);
 	std::vector<int> edgestatus(graph.nrEdges);
-	std::vector<int2> searchtree(graph.nrEdges);
+	std::vector<int2> bfssearchtree(graph.nrEdges);
 	//Perform all desired greedy matchings.
 	for (set<int>::const_iterator i = matchTypes.begin(); i != matchTypes.end(); ++i)
 	{
@@ -531,7 +531,7 @@ int main(int argc, char **argv)
 					 matcher->initialMatching(match);
 					//broken for gpu, need to create device mem
 					matcher->performMatching(&match[0], t1, t2, &fll[0], &bll[0], &lengthOfPath[0],
-											 &searchtree[0], &lengthOfPath[0], 0, 0, 0);
+											 &bfssearchtree[0], &lengthOfPath[0], 0, 0, 0);
 
 					delete matcher;
 				}

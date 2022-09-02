@@ -30,7 +30,7 @@ class GraphViz {
         GraphViz();
         void DrawInputGraphColored(const mtc::Graph &_graph, 
                                     int leafIndex,
-                                    std::vector<int2> & searchtree,
+                                    std::vector<int2> & bfssearchtree,
 									int UBDyn,
 									std::vector<int> & dynamicallyaddedvertices,
 									thrust::device_vector<int> & dmatch,
@@ -54,7 +54,7 @@ class GraphViz {
 
 		std::string subgraph1 = "linearforest";
 	    std::string subgraph2 = "fullgraph";
-	    std::string subgraph3 = "searchtree";
+	    std::string subgraph3 = "bfssearchtree";
 
         DotWriter::Subgraph * linearforestgraph;
         DotWriter::Subgraph * fullgraph;
@@ -70,7 +70,7 @@ class GraphViz {
 
         void createColoredInputGraphViz(thrust::host_vector<int> & match, 
                     int leafIndex,
-                    std::vector<int2> & searchtree,
+                    std::vector<int2> & bfssearchtree,
 					int UBDyn,
 					std::vector<int> & dynamicallyaddedvertices,
 					const mtc::Graph & g,
@@ -79,7 +79,7 @@ class GraphViz {
 
         void createColoredInputGraphViz(int * match, 
                             int leafIndex,
-                            std::vector<int2> & searchtree,
+                            std::vector<int2> & bfssearchtree,
                             int UBDyn,
                             std::vector<int> & dynamicallyaddedvertices,
                             const mtc::Graph & g,
