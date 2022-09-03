@@ -1376,6 +1376,14 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
 
 // Makes sense for BFS
 // For DFS use Recursive Backtracking
+__global__ void GetRedBlueCount(int nrNodes,
+							int *match,
+                            int *redbluecount){
+    
+}
+
+// Makes sense for BFS
+// For DFS use Recursive Backtracking
 __global__ void GetFrontierStatus(int nrNodes,
 							int *active_frontier_status){
 

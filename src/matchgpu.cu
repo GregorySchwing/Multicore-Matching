@@ -1121,6 +1121,11 @@ __global__ void gIndicatePendants(int *match, int *dlength, int *forwardlinkedli
 	bool isPendant = true;
 	const int nf = forwardlinkedlist[i];
 	const int nb = backwardlinkedlist[i];
+
+	// Only heads/tails should be checked for pendantness.
+	if (nf != i || nb != i) return;
+
+
 	for (int j = indices.x; j < indices.y; ++j)
 	{
 		const int ni = tex1Dfetch(neighboursTexture, j);
@@ -1131,8 +1136,9 @@ __global__ void gIndicatePendants(int *match, int *dlength, int *forwardlinkedli
 			isPendant = false;
 	}
 	// This vertex has no neighbors which are unmatched.
-	if (isPendant)
+	if (isPendant){
 		match[i] = 3;
+	}
 }
 
 __global__ void gSetSearchTreeVertices(int leafIndex, int *match, int2 *bfssearchtree, const int depthOfLeaf)
