@@ -65,7 +65,7 @@ __global__ void SetEdges(const int nrVertices,
 
 __global__ void PopulateSearchTree(int nrVertices, 
                                     int sizeOfSearchTree,
-                                    int depthOfSearchTree,
+                                    int depthOfBFSSearchTree,
                                     int leafIndex,
                                     float * dfinishedLeavesPerLevel,
                                     int *dforwardlinkedlist, 
@@ -76,7 +76,7 @@ __global__ void PopulateSearchTree(int nrVertices,
 
 __global__ void PopulateSearchTreeTest(int nrVertices, 
                                     int sizeOfSearchTree,
-                                    int depthOfSearchTree,
+                                    int depthOfBFSSearchTree,
                                     int leafIndex,
                                     float * dfinishedLeavesPerLevel,
                                     int *dforwardlinkedlist, 
@@ -196,6 +196,10 @@ class VCGPU
         void EvaluateLeafBFS(int root, int recursiveStackDepth, bool & foundSolution);
 
         void PopulateBFSTree(int root, int recursiveStackDepth, bool & foundSolution);
+        void PopulateDFSTree(int leafIndexOfBFSTree,
+                            int leafIndexOfDFSTree,
+                            int recursiveStackDepth,
+                            bool & foundSolution);
         void ReinitializeArrays();
         void PrintData ();
         void CopyMatchingBackToHost(std::vector<int> & match);
@@ -207,7 +211,7 @@ class VCGPU
         int kPrimeBFS;
         int kPrimeDFS;
 
-        int fullpathcount, depthOfSearchTree, remainingedges;
+        int fullpathcount, depthOfBFSSearchTree, depthOfDFSSearchTree, remainingedges;
         std::vector<float> finishedLeavesPerLevel;
         std::vector<float> totalLeavesPerLevel;
         std::vector<int> edgestatus;

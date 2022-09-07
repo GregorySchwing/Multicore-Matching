@@ -98,11 +98,11 @@ VCGPU::VCGPU(const Graph &_graph,
     //}
 
     // For now, assign half to a BFS phase and half to DFS phase
-    depthOfSearchTree = kPrimeBFS/2;
+    depthOfBFSSearchTree = kPrimeBFS/2;
 
-    finishedLeavesPerLevel.resize(depthOfSearchTree+1);
-    totalLeavesPerLevel.resize(depthOfSearchTree+1);
-    sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(depthOfSearchTree);
+    finishedLeavesPerLevel.resize(depthOfBFSSearchTree+1);
+    totalLeavesPerLevel.resize(depthOfBFSSearchTree+1);
+    sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(depthOfBFSSearchTree);
     printf("SIZE OF SEARCH TREE %lld\n", sizeOfSearchTree);
     bfssearchtree.resize(sizeOfSearchTree);
     dfssearchtree.resize(3*kPrimeDFS);
@@ -120,9 +120,9 @@ VCGPU::VCGPU(const Graph &_graph,
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dremainingedges, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumberofdynamicallyaddedvertices, sizeof(int)*1) != cudaSuccess || 
-        cudaMalloc(&ddynamicallyaddedvertices_csr, sizeof(int)*(depthOfSearchTree+1)) != cudaSuccess || 
+        cudaMalloc(&ddynamicallyaddedvertices_csr, sizeof(int)*(depthOfBFSSearchTree+1)) != cudaSuccess || 
         cudaMalloc(&ddynamicallyaddedvertices, sizeof(int)*(kPrime)) != cudaSuccess ||        
-        cudaMalloc(&dfinishedLeavesPerLevel, sizeof(float)*(depthOfSearchTree+1)) != cudaSuccess)
+        cudaMalloc(&dfinishedLeavesPerLevel, sizeof(float)*(depthOfBFSSearchTree+1)) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
 		throw exception();
@@ -222,7 +222,7 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     PopulateSearchTree<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
                                                             sizeOfSearchTree, 
-                                                            depthOfSearchTree,
+                                                            depthOfBFSSearchTree,
                                                             leafIndex,
                                                             dfinishedLeavesPerLevel,
                                                             dforwardlinkedlist,
@@ -279,7 +279,7 @@ int4 VCGPU::numberCompletedPathsTest(int nrVertices,
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     PopulateSearchTreeTest<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
                                                             sizeOfSearchTree, 
-                                                            depthOfSearchTree,
+                                                            depthOfBFSSearchTree,
                                                             leafIndex,
                                                             dfinishedLeavesPerLevel,
                                                             dforwardlinkedlist,
@@ -307,25 +307,6 @@ int4 VCGPU::numberCompletedPathsTestP2(int nrVertices,
                         int *dlength,
                         int recursiveStackDepth){
 
-    fullpathcount = 1+rand()%20;
-
-    //cudaMemcpy(&dfullpathcount[0], &fullpathcount, sizeof(int)*1, cudaMemcpyHostToDevice);
-
-	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
-    PopulateSearchTreeTest<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
-                                                            sizeOfSearchTree, 
-                                                            depthOfSearchTree,
-                                                            leafIndex,
-                                                            dfinishedLeavesPerLevel,
-                                                            dforwardlinkedlist,
-                                                            dbackwardlinkedlist, 
-                                                            dlength,
-                                                            dfullpathcount,
-                                                            dbfssearchtree,
-                                                            fullpathcount);
-
-    cudaMemcpy(&fullpathcount, &dfullpathcount[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
-    //cudaMemcpy(&numberofdynamicallyaddedvertices, &dnumberofdynamicallyaddedvertices[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
 
     int4 myActiveLeaves = CalculateLeafOffsets(leafIndex,
                                                 fullpathcount);
@@ -434,16 +415,16 @@ void VCGPU::FindCover(int root,
 
     #ifndef NDEBUG
     printf("Called FindCover li %d rl %d \n", root, recursiveStackDepth);
-    printf("depthOfLeaf %d depthOfSearchTree %d\n",  depthOfLeaf, depthOfSearchTree);
+    printf("depthOfLeaf %d depthOfBFSSearchTree %d\n",  depthOfLeaf, depthOfBFSSearchTree);
     #endif    
-    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*depthOfSearchTree, cudaMemcpyDeviceToHost);
+    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*depthOfBFSSearchTree, cudaMemcpyDeviceToHost);
 
     curs_set (0);
-    for(int i = 0; i <= depthOfSearchTree; ++i){
+    for(int i = 0; i <= depthOfBFSSearchTree; ++i){
         mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
     }
     refresh ();
-    if (depthOfLeaf > depthOfSearchTree){
+    if (depthOfLeaf > depthOfBFSSearchTree){
         return;
     }
 
@@ -482,10 +463,10 @@ void VCGPU::FindCover(int root,
     }
 
 
-    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*(depthOfSearchTree), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*(depthOfBFSSearchTree), cudaMemcpyDeviceToHost);
 
     curs_set (0);
-    for(int i = 0; i <= depthOfSearchTree; ++i){
+    for(int i = 0; i <= depthOfBFSSearchTree; ++i){
         mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
     }
     refresh ();
@@ -607,16 +588,16 @@ void VCGPU::PopulateBFSTree(int root,
 
     #ifndef NDEBUG
     printf("Called PopulateBFSTree li %d rl %d \n", root, recursiveStackDepth);
-    printf("depthOfLeaf %d depthOfSearchTree %d\n",  depthOfLeaf, depthOfSearchTree);
+    printf("depthOfLeaf %d depthOfBFSSearchTree %d\n",  depthOfLeaf, depthOfBFSSearchTree);
     #endif    
-    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*depthOfSearchTree, cudaMemcpyDeviceToHost);
+    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*depthOfBFSSearchTree, cudaMemcpyDeviceToHost);
 
     curs_set (0);
-    for(int i = 0; i <= depthOfSearchTree; ++i){
+    for(int i = 0; i <= depthOfBFSSearchTree; ++i){
         mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
     }
     refresh ();
-    if (depthOfLeaf > depthOfSearchTree){
+    if (depthOfLeaf > depthOfBFSSearchTree){
         return;
     }
 
@@ -646,7 +627,7 @@ void VCGPU::PopulateBFSTree(int root,
     int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, depthOfLeaf, dbackwardlinkedlist, dlength, recursiveStackDepth);
     //int4 newLeaves = numberCompletedPathsTest(graph.nrVertices, root, dbackwardlinkedlist, dlength, recursiveStackDepth);
     cudaDeviceSynchronize();
-    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*(depthOfSearchTree), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*(depthOfBFSSearchTree), cudaMemcpyDeviceToHost);
     //if (!fullpathcount){
         // No paths of length 4 were found
         // Check if red/blue vertices exist
@@ -655,7 +636,7 @@ void VCGPU::PopulateBFSTree(int root,
     //    EvaluateLeafBFS(root, recursiveStackDepth, foundSolution);
     //}
     curs_set (0);
-    for(int i = 0; i <= depthOfSearchTree; ++i){
+    for(int i = 0; i <= depthOfBFSSearchTree; ++i){
         mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
     }
     refresh ();
@@ -671,10 +652,10 @@ void VCGPU::PopulateBFSTree(int root,
     }
 
     cudaDeviceSynchronize();
-    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*(depthOfSearchTree), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*(depthOfBFSSearchTree), cudaMemcpyDeviceToHost);
 
     curs_set (0);
-    for(int i = 0; i <= depthOfSearchTree; ++i){
+    for(int i = 0; i <= depthOfBFSSearchTree; ++i){
         mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
     }
     refresh ();
@@ -686,6 +667,86 @@ void VCGPU::PopulateBFSTree(int root,
                                               ddynamicallyaddedvertices_csr, 
                                               ddynamicallyaddedvertices);
 
+}
+
+void VCGPU::PopulateDFSTree(const int leafIndexOfBFSTree,
+                            int leafIndexOfDFSTree,
+                            int recursiveStackDepth,
+                            bool & foundSolution){
+
+	int blocksPerGrid = (graph.nrEdges + threadsPerBlock - 1)/threadsPerBlock;
+
+
+    #ifndef NDEBUG
+    printf("Called PopulateDFSTree li %d rl %d \n", leafIndexOfBFSTree, recursiveStackDepth);
+    printf("depthOfLeaf %d depthOfDFSSearchTree %d\n",  depthOfLeaf, depthOfDFSSearchTree);
+    #endif    
+    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*depthOfDFSSearchTree, cudaMemcpyDeviceToHost);
+
+    curs_set (0);
+    for(int i = 0; i <= depthOfDFSSearchTree; ++i){
+        mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
+    }
+    refresh ();
+    if (depthOfLeaf > depthOfDFSSearchTree){
+        return;
+    }
+
+    // If you want to check the quality of each match, uncomment
+    // Else, the only noticable changes will be in the recursion stack 
+    // and the device search tree.
+    //std::vector<int> match;
+    //matcher.initialMatching(match);
+
+
+
+    ReinitializeArrays();
+    cudaDeviceSynchronize();
+
+    // Test algebra, comment Match(root)
+    Match(leafIndexOfBFSTree);
+    cudaDeviceSynchronize();
+
+    //matcher.copyMatchingBackToHost(match);
+    // Need to pass device pointer to LOP
+    // Test algebra, use Test
+    // Might have an error if 1 single path found.
+    cudaMemcpy(&numberofdynamicallyaddedvertices, &dnumberofdynamicallyaddedvertices[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
+    //int4 newLeaves = numberCompletedPaths(graph.nrVertices, root, depthOfLeaf, dbackwardlinkedlist, dlength, recursiveStackDepth);
+    cudaDeviceSynchronize();
+    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*(depthOfDFSSearchTree), cudaMemcpyDeviceToHost);
+
+    curs_set (0);
+    for(int i = 0; i <= depthOfDFSSearchTree; ++i){
+        mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
+    }
+    refresh ();
+
+    while(newLeaves.x < newLeaves.y && newLeaves.x < sizeOfSearchTree){
+        PopulateBFSTree(newLeaves.x, recursiveStackDepth+1, foundSolution);
+        ++newLeaves.x;
+    }
+    depthOfLeaf = ceil(logf(2*newLeaves.z + 1) / logf(3)) - 1;
+    while(newLeaves.z < newLeaves.w && newLeaves.z < sizeOfSearchTree){
+        PopulateBFSTree(newLeaves.z, recursiveStackDepth+1, foundSolution);
+        ++newLeaves.z;
+    }
+
+    cudaDeviceSynchronize();
+    cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*(depthOfDFSSearchTree), cudaMemcpyDeviceToHost);
+
+    curs_set (0);
+    for(int i = 0; i <= depthOfDFSSearchTree; ++i){
+        mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
+    }
+    refresh ();
+
+    //PrintData (); 
+    // Wipe away my pendant nodes from shared list
+    eraseDynVertsOfRecursionLevel<<<1, threadsPerBlock>>>(recursiveStackDepth,
+                                              dnumberofdynamicallyaddedvertices, 
+                                              ddynamicallyaddedvertices_csr, 
+                                              ddynamicallyaddedvertices);
 }
 
 
@@ -848,7 +909,7 @@ __global__ void eraseDynVertsOfRecursionLevel(int recursiveStackDepth,
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void PopulateSearchTree(int nrVertices, 
                                     int sizeOfSearchTree,
-                                    int depthOfSearchTree,
+                                    int depthOfBFSSearchTree,
                                     int leafIndex,
                                     float * dfinishedLeavesPerLevel,
                                     int *dforwardlinkedlist, 
@@ -932,7 +993,7 @@ __global__ void PopulateSearchTree(int nrVertices,
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void PopulateSearchTreeTest(int nrVertices, 
                                     int sizeOfSearchTree,
-                                    int depthOfSearchTree,
+                                    int depthOfBFSSearchTree,
                                     int leafIndex,
                                     float * dfinishedLeavesPerLevel,
                                     int *dforwardlinkedlist, 
@@ -1232,7 +1293,7 @@ __global__ void FillSolutionArray(int leafIndex,
 __global__ void EvaluateLeafNodesV2(int nrEdges,
                                     mtc::Edge * dedges, 
                                     int sizeOfSearchTree,
-                                    int depthOfSearchTree,
+                                    int depthOfDFSSearchTree,
                                     int2 * dbfssearchtree){
     extern __shared__ int soln[];
     const int leafIndex = blockIdx.x;
@@ -1245,7 +1306,7 @@ __global__ void EvaluateLeafNodesV2(int nrEdges,
     int warpID = threadIdx.x / warpSize;
     // Load solution into shared memory
     // Need depthOfSearch minus 1 to exclude root
-    for (int numberOfLevelsToAscend = threadIdx.x; numberOfLevelsToAscend < depthOfSearchTree-1; numberOfLevelsToAscend += blockDim.x){
+    for (int numberOfLevelsToAscend = threadIdx.x; numberOfLevelsToAscend < depthOfDFSSearchTree-1; numberOfLevelsToAscend += blockDim.x){
         thisThreadsSearchTreeNode = leafIndex / pow (3.0, numberOfLevelsToAscend);
         nodeEntry = dbfssearchtree[thisThreadsSearchTreeNode];
         soln[2*numberOfLevelsToAscend] = nodeEntry.x;
@@ -1255,7 +1316,7 @@ __global__ void EvaluateLeafNodesV2(int nrEdges,
     for (int e = 0; e < nrEdges; e++){
         Edge & edge = dedges[e];
         for (int vertexInAnswer = threadIdx.x; 
-                    vertexInAnswer < 2*(depthOfSearchTree-1); 
+                    vertexInAnswer < 2*(depthOfDFSSearchTree-1); 
                     vertexInAnswer += blockDim.x){
             covered |= edge.x == soln[vertexInAnswer] || edge.y == soln[vertexInAnswer];
         }
