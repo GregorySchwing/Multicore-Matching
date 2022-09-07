@@ -86,6 +86,14 @@ __global__ void PopulateSearchTreeTest(int nrVertices,
                                     int2* dbfssearchtree,
                                     int fullpathcount);
 
+__global__ void EnqueuePaths(int nrVertices, 
+                            int capacityOfQueue,
+                            int *dforwardlinkedlist, 
+                            int *dbackwardlinkedlist, 
+                            int *dlength, 
+                            int *denqueuedpathcount,
+                            int4* ddfspathqueue);
+
 __global__ void CalculateNumberOfLeafNodes(
                                         int * dfullpathcount,
                                         int * dnumleaves);
@@ -174,6 +182,11 @@ class VCGPU
                                 int *dlength,
                                 int recursiveStackDepth);
 
+        int4 numberCompletedPathsP2(int nrVertices, 
+                        int leafIndex,
+                        int *dbackwardlinkedlist, 
+                        int *dlength,
+                        int recursiveStackDepth);
 
         int4 numberCompletedPathsTestP2(int nrVertices, 
                                 int leafIndex,
@@ -229,6 +242,12 @@ class VCGPU
         // VC arrays
         int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves, *dremainingedges;
         int2 *dbfssearchtree, *ddfssearchtree;
+
+        // Queue for dfs tree growth.  
+        // In memory optimization, it may be better
+        // to store the 3 leaves logically in one int4 path.
+        int4 *ddfspathqueue;
+        int * denqueuedpathcount;
         // Indicates the dyn added verts in each recursion stack
         int *ddynamicallyaddedvertices_csr;
         int *ddynamicallyaddedvertices;

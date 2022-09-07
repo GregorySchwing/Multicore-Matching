@@ -115,6 +115,7 @@ VCGPU::VCGPU(const Graph &_graph,
         cudaMalloc(&dlength, sizeof(int)*graph.nrVertices) != cudaSuccess || 
         cudaMalloc(&dbfssearchtree, sizeof(int2)*sizeOfSearchTree) != cudaSuccess || 
         cudaMalloc(&ddfssearchtree, sizeof(int2)*3*kPrimeDFS) != cudaSuccess || 
+        cudaMalloc(&ddfspathqueue, sizeof(int4)*kPrimeDFS) != cudaSuccess || 
         cudaMalloc(&duncoverededges, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
@@ -169,6 +170,7 @@ VCGPU::~VCGPU(){
         cudaFree(dedges);
         cudaFree(dlength);
         cudaFree(dbfssearchtree);
+        cudaFree(ddfspathqueue);
         cudaFree(duncoverededges);
         cudaFree(dfullpathcount);
         cudaFree(dnumleaves);
@@ -316,6 +318,24 @@ int4 VCGPU::numberCompletedPathsTestP2(int nrVertices,
     return myActiveLeaves;
 }
 
+int4 VCGPU::numberCompletedPathsP2(int nrVertices, 
+                        int leafIndex,
+                        int *dbackwardlinkedlist, 
+                        int *dlength,
+                        int recursiveStackDepth){
+
+	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
+    // Enqueue a number of paths, currently k'' = k'-BFSTreedepth, in ddfspathqueue
+    // Transfer from queue to ddfssearchtree
+
+
+    int4 myActiveLeaves = CalculateLeafOffsets(leafIndex,
+                                                fullpathcount);
+
+
+    //printf("My active leaves %d %d %d %d\n", myActiveLeaves.x, myActiveLeaves.y, myActiveLeaves.z, myActiveLeaves.w);
+    return myActiveLeaves;
+}
 // Initial kernelization before search tree is built
 void VCGPU::bussKernelizationP1(){
     cudaMemcpy(ddegrees, graph.degrees.data(), sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
@@ -688,9 +708,9 @@ void VCGPU::PopulateDFSTree(const int leafIndexOfBFSTree,
         mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
     }
     refresh ();
-    if (depthOfLeaf > depthOfDFSSearchTree){
-        return;
-    }
+//    if (depthOfLeaf > depthOfDFSSearchTree){
+//        return;
+//    }
 
     // If you want to check the quality of each match, uncomment
     // Else, the only noticable changes will be in the recursion stack 
@@ -721,7 +741,7 @@ void VCGPU::PopulateDFSTree(const int leafIndexOfBFSTree,
         mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
     }
     refresh ();
-
+    /*
     while(newLeaves.x < newLeaves.y && newLeaves.x < sizeOfSearchTree){
         PopulateBFSTree(newLeaves.x, recursiveStackDepth+1, foundSolution);
         ++newLeaves.x;
@@ -731,7 +751,7 @@ void VCGPU::PopulateDFSTree(const int leafIndexOfBFSTree,
         PopulateBFSTree(newLeaves.z, recursiveStackDepth+1, foundSolution);
         ++newLeaves.z;
     }
-
+    */
     cudaDeviceSynchronize();
     cudaMemcpy(&finishedLeavesPerLevel[1], &dfinishedLeavesPerLevel[1], sizeof(float)*(depthOfDFSSearchTree), cudaMemcpyDeviceToHost);
 
@@ -989,7 +1009,6 @@ __global__ void PopulateSearchTree(int nrVertices,
     dbfssearchtree[levelOffset + 2] = make_int2(second, fourth);   
 }
 
-
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void PopulateSearchTreeTest(int nrVertices, 
                                     int sizeOfSearchTree,
@@ -1125,6 +1144,88 @@ void VCGPU::EvaluateLeafBFS(int root, int recursiveStackDepth, bool & foundSolut
 
         return;
     }
+}
+
+
+// Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
+__global__ void EnqueuePaths(int nrVertices, 
+                            int capacityOfQueue,
+                            int *dforwardlinkedlist, 
+                            int *dbackwardlinkedlist, 
+                            int *dlength, 
+                            int *denqueuedpathcount,
+                            int4* ddfspathqueue){
+	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+	// If not a head to a path of length 4, return (leaving the headindex == -1)
+    if (threadID >= nrVertices || 
+        dlength[threadID] != 3 || 
+        dbackwardlinkedlist[threadID] != threadID) 
+            return;
+
+    int first = threadID;
+    int second = dforwardlinkedlist[first];
+    int third = dforwardlinkedlist[second];
+    int fourth = dforwardlinkedlist[third];
+/*
+    int leavesToProcess = atomicAdd(&dfullpathcount[0], 1) + 1;
+    // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
+    // r = 3, a = 1, solve for n given s_n = leavesToProcess ∈ [1,m/4]
+    // where m = number of vertices.
+    // s_n = (1-r^(n+1))/(1-r)
+    // s_n * (1-3) = -2*s_n = (1-r^(n+1))
+    //     = -2*s_n - 1 = -3^(n+1)
+    //     =  2*s_n + 1  =  3^(n+1)
+    //     =  log(2*s_n + 1) = n+1*log(3)
+    //     =  log(2*s_n + 1)/log(3) = n + 1
+    //     =  log(2*s_n + 1)/log(3) - 1 = n
+    // n is the number of terms in the closed form solution.
+    // Alternatively, n is the number of levels in the search tree.
+    int n = ceil(logf(2*leavesToProcess + 1) / logf(3));
+    //float nf = logf(2*leavesToProcess + 1) / logf(3);
+    int arbitraryParameter = 3*((3*leafIndex)+1);
+    // At high powers, the error of transendental powf causes bugs.
+    //int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, n-1) - 3)/6;
+
+    // Discrete calculation without trancendentals
+    int leftMostLeafIndexOfIncompleteLevel = (2*arbitraryParameter+3);
+    int multiplicand = 1;
+    for (int i = 1; i < n; ++i)
+        multiplicand*=3;
+    leftMostLeafIndexOfIncompleteLevel*=multiplicand;
+    leftMostLeafIndexOfIncompleteLevel-=3;
+    leftMostLeafIndexOfIncompleteLevel/=6;
+
+    int treeSizeNotIncludingThisLevel = (1.0 - multiplicand)/(1.0 - 3.0); 
+    // At high powers, the error of transendental powf causes bugs. 
+    //int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, ((n+1)-1)))/(1.0 - 3.0);  
+    // Test from root for now, this code can have an arbitrary root though
+    //leafIndex = global_active_leaves[globalIndex];
+//    leafIndex = 0;
+    // Closed form solution of recurrence relation shown in comment above method
+    // Subtract 1 because reasons???
+    int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
+    //int internalLeafIndex = leavesToProcess - treeSizeNotIncludingThisLevel;
+    int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
+
+    if (sizeOfSearchTree <= levelOffset ||
+        sizeOfSearchTree <= (levelOffset + 1) ||
+        sizeOfSearchTree <= (levelOffset +2)||
+        levelOffset< 0 ||
+        (levelOffset+1) < 0 ||
+        (levelOffset + 2)< 0){
+            atomicSub(&dfullpathcount[0], 1);
+            //printf("child %d exceeded srch tree depth\n", levelOffset);
+            return;
+    }
+    // Add to device pointer of level
+    int depthOfLeaf = floor(logf(2*levelOffset + 1) / logf(3));
+    //printf("leafIndex %d atomicAdd(&dfinishedLeavesPerLevel[%d], 3) newleaves %d - %d\n", leafIndex, depthOfLeaf,levelOffset, levelOffset + 2); 
+    atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf], 3.0); 
+    // Test from root for now, this code can have an arbitrary root though
+    dbfssearchtree[levelOffset + 0] = make_int2(first, third);
+    dbfssearchtree[levelOffset + 1] = make_int2(second, third);
+    dbfssearchtree[levelOffset + 2] = make_int2(second, fourth);   
+    */
 }
 
 
