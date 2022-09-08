@@ -155,6 +155,9 @@ __device__ void SetEdges(   int vertexToInclude,
 __host__ __device__  int4 CalculateLeafOffsets(  int leafIndex,
                                                 int fullpathcount);
 
+__host__ __device__  int4 CalculateLeafOffsetsDFS(  int leafIndex,
+                                                int fullpathcount);
+
 class VCGPU
 {
 
@@ -214,6 +217,7 @@ class VCGPU
                             int recursiveStackDepth,
                             bool & foundSolution);
         void ReinitializeArrays();
+        void ReinitializeDFSQueue();
         void PrintData ();
         void CopyMatchingBackToHost(std::vector<int> & match);
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
@@ -248,6 +252,8 @@ class VCGPU
         // to store the 3 leaves logically in one int4 path.
         int4 *ddfspathqueue;
         int * denqueuedpathcount;
+        // capacityOfQueue = k'' = k'-BFSTreedepth; could experiment with diff values 
+        int capacityOfQueue;
         // Indicates the dyn added verts in each recursion stack
         int *ddynamicallyaddedvertices_csr;
         int *ddynamicallyaddedvertices;

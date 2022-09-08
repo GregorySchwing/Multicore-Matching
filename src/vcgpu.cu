@@ -118,6 +118,7 @@ VCGPU::VCGPU(const Graph &_graph,
         cudaMalloc(&ddfspathqueue, sizeof(int4)*kPrimeDFS) != cudaSuccess || 
         cudaMalloc(&duncoverededges, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dfullpathcount, sizeof(int)*1) != cudaSuccess || 
+        cudaMalloc(&denqueuedpathcount, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumleaves, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dremainingedges, sizeof(int)*1) != cudaSuccess || 
         cudaMalloc(&dnumberofdynamicallyaddedvertices, sizeof(int)*1) != cudaSuccess || 
@@ -134,6 +135,8 @@ VCGPU::VCGPU(const Graph &_graph,
     edgestatus.resize(graph.neighbours.size());
     newdegrees.resize(graph.nrVertices);
     dynamcverts.resize(graph.nrVertices);
+
+    capacityOfQueue = kPrimeDFS;
 
     cudaMemcpy(dedges, &graph.edges[0], sizeof(mtc::Edge)*graph.nrEdges, cudaMemcpyHostToDevice);
 
@@ -173,6 +176,7 @@ VCGPU::~VCGPU(){
         cudaFree(ddfspathqueue);
         cudaFree(duncoverededges);
         cudaFree(dfullpathcount);
+        cudaFree(denqueuedpathcount);
         cudaFree(dnumleaves);
         cudaFree(dremainingedges);
         cudaFree(dnumberofdynamicallyaddedvertices);
@@ -327,9 +331,18 @@ int4 VCGPU::numberCompletedPathsP2(int nrVertices,
 	int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     // Enqueue a number of paths, currently k'' = k'-BFSTreedepth, in ddfspathqueue
     // Transfer from queue to ddfssearchtree
+    EnqueuePaths<<<blocksPerGrid, threadsPerBlock>>>(
+                                                    nrVertices,
+                                                    capacityOfQueue,
+                                                    dforwardlinkedlist,
+                                                    dbackwardlinkedlist, 
+                                                    dlength,
+                                                    denqueuedpathcount,
+                                                    ddfspathqueue);
 
 
-    int4 myActiveLeaves = CalculateLeafOffsets(leafIndex,
+
+    int4 myActiveLeaves = CalculateLeafOffsetsDFS(leafIndex,
                                                 fullpathcount);
 
 
@@ -878,6 +891,13 @@ void VCGPU::ReinitializeArrays(){
 
 }
 
+
+void VCGPU::ReinitializeDFSQueue(){
+    // Not strictly neccessary since we jut overwrite.
+    // cuMemsetD32(reinterpret_cast<CUdeviceptr>(ddfspathqueue),  0, size_t(4*kPrimeDFS));
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(denqueuedpathcount),  0, size_t(1));
+}
+
 __global__ void ReduceEdgeStatusArray(int nrNeighbors,
 							int *dedgestatus,
                             int* dremainingedges){
@@ -1162,67 +1182,30 @@ __global__ void EnqueuePaths(int nrVertices,
         dbackwardlinkedlist[threadID] != threadID) 
             return;
 
-    int first = threadID;
-    int second = dforwardlinkedlist[first];
-    int third = dforwardlinkedlist[second];
-    int fourth = dforwardlinkedlist[third];
-/*
-    int leavesToProcess = atomicAdd(&dfullpathcount[0], 1) + 1;
-    // https://en.wikipedia.org/wiki/Geometric_series#Closed-form_formula
-    // r = 3, a = 1, solve for n given s_n = leavesToProcess ∈ [1,m/4]
-    // where m = number of vertices.
-    // s_n = (1-r^(n+1))/(1-r)
-    // s_n * (1-3) = -2*s_n = (1-r^(n+1))
-    //     = -2*s_n - 1 = -3^(n+1)
-    //     =  2*s_n + 1  =  3^(n+1)
-    //     =  log(2*s_n + 1) = n+1*log(3)
-    //     =  log(2*s_n + 1)/log(3) = n + 1
-    //     =  log(2*s_n + 1)/log(3) - 1 = n
-    // n is the number of terms in the closed form solution.
-    // Alternatively, n is the number of levels in the search tree.
-    int n = ceil(logf(2*leavesToProcess + 1) / logf(3));
-    //float nf = logf(2*leavesToProcess + 1) / logf(3);
-    int arbitraryParameter = 3*((3*leafIndex)+1);
-    // At high powers, the error of transendental powf causes bugs.
-    //int leftMostLeafIndexOfIncompleteLevel = ((2*arbitraryParameter+3)*powf(3.0, n-1) - 3)/6;
+    if (denqueuedpathcount[0] >= capacityOfQueue)
+        return;
 
-    // Discrete calculation without trancendentals
-    int leftMostLeafIndexOfIncompleteLevel = (2*arbitraryParameter+3);
-    int multiplicand = 1;
-    for (int i = 1; i < n; ++i)
-        multiplicand*=3;
-    leftMostLeafIndexOfIncompleteLevel*=multiplicand;
-    leftMostLeafIndexOfIncompleteLevel-=3;
-    leftMostLeafIndexOfIncompleteLevel/=6;
+    int pathIndex = atomicAdd(&denqueuedpathcount[0], 1);
 
-    int treeSizeNotIncludingThisLevel = (1.0 - multiplicand)/(1.0 - 3.0); 
-    // At high powers, the error of transendental powf causes bugs. 
-    //int treeSizeNotIncludingThisLevel = (1.0 - powf(3.0, ((n+1)-1)))/(1.0 - 3.0);  
-    // Test from root for now, this code can have an arbitrary root though
-    //leafIndex = global_active_leaves[globalIndex];
-//    leafIndex = 0;
-    // Closed form solution of recurrence relation shown in comment above method
-    // Subtract 1 because reasons???
-    int internalLeafIndex = leavesToProcess - 1 - treeSizeNotIncludingThisLevel;
-    //int internalLeafIndex = leavesToProcess - treeSizeNotIncludingThisLevel;
-    int levelOffset = leftMostLeafIndexOfIncompleteLevel + 3*internalLeafIndex;
-
-    if (sizeOfSearchTree <= levelOffset ||
-        sizeOfSearchTree <= (levelOffset + 1) ||
-        sizeOfSearchTree <= (levelOffset +2)||
-        levelOffset< 0 ||
-        (levelOffset+1) < 0 ||
-        (levelOffset + 2)< 0){
-            atomicSub(&dfullpathcount[0], 1);
-            //printf("child %d exceeded srch tree depth\n", levelOffset);
-            return;
+    if (pathIndex < capacityOfQueue){
+        int first = threadID;
+        int second = dforwardlinkedlist[first];
+        int third = dforwardlinkedlist[second];
+        int fourth = dforwardlinkedlist[third];
+        dlength[threadID] = 0;
+        ddfspathqueue[pathIndex] = make_int4(first, second, third, fourth);
+    } else {
+        atomicSub(&denqueuedpathcount[0], 1);
+        //printf("path %d exceeded queue sizeh\n", threadID);
+        return;
     }
+/*
     // Add to device pointer of level
     int depthOfLeaf = floor(logf(2*levelOffset + 1) / logf(3));
     //printf("leafIndex %d atomicAdd(&dfinishedLeavesPerLevel[%d], 3) newleaves %d - %d\n", leafIndex, depthOfLeaf,levelOffset, levelOffset + 2); 
     atomicAdd(&dfinishedLeavesPerLevel[depthOfLeaf], 3.0); 
     // Test from root for now, this code can have an arbitrary root though
-    dbfssearchtree[levelOffset + 0] = make_int2(first, third);
+    dbfssearchtree[levelOffset + 0] = 
     dbfssearchtree[levelOffset + 1] = make_int2(second, third);
     dbfssearchtree[levelOffset + 2] = make_int2(second, fourth);   
     */
@@ -1846,6 +1829,11 @@ int4 CalculateLeafOffsets(              int leafIndex,
                      levelOffset + 3,
                      clb,
                      cub);
+}
+
+int4 CalculateLeafOffsetsDFS(int leafIndex,
+                             int fullpathcount){
+
 }
 
 void VCGPU::CopyMatchingBackToHost(std::vector<int> & match){
