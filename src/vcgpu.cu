@@ -407,7 +407,7 @@ void VCGPU::FindCover(int root,
 
 //    printf("\033[A\33[2K\rCalling Find Cover from %d, level depth of leaf %d\n", root, depthOfLeaf);
     numoftreeverts = 2*(depthOfLeaf);
-    if (sizeOfKernelSolution+numoftreeverts+numofdynamcverts < k) {
+    if (sizeOfKernelSolution+numoftreeverts+dnumberofdynamicallyaddedvertices < k) {
         ReinitializeArrays();
         cudaDeviceSynchronize();
         // TODO - Need to set the pendant vertices also.
@@ -462,12 +462,12 @@ void VCGPU::FindCover(int root,
                                     dnumberofdynamicallyaddedvertices,
                                     ddynamicallyaddedvertices);
 
-                cudaMemcpy(&numofdynamcverts, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
+                cudaMemcpy(&dnumberofdynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
                 
 
                 numoftreeverts = 2*(depthOfLeaf);
-                printf("sizeOfKernelSolution %d numoftreeverts %d numofdynamcverts %d\n", sizeOfKernelSolution,numoftreeverts,numofdynamcverts);
-                solutionSize = sizeOfKernelSolution+numoftreeverts+numofdynamcverts;
+                printf("sizeOfKernelSolution %d numoftreeverts %d dnumberofdynamicallyaddedvertices %d\n", sizeOfKernelSolution,numoftreeverts,dnumberofdynamicallyaddedvertices);
+                solutionSize = sizeOfKernelSolution+numoftreeverts+dnumberofdynamicallyaddedvertices;
                 cudaMemcpy(solution.data(), dsolution, sizeof(int)*solutionSize, cudaMemcpyDeviceToHost);
 
                 foundSolution = true;
@@ -477,13 +477,13 @@ void VCGPU::FindCover(int root,
                 cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
                 cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
                 cudaMemcpy(&searchtree[0], dsearchtree, sizeof(int2)*searchtree.size(), cudaMemcpyDeviceToHost);
-                cudaMemcpy(&numofdynamcverts, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
-                cudaMemcpy(&dynamcverts[0], ddynamicallyaddedvertices, sizeof(int)*numofdynamcverts, cudaMemcpyDeviceToHost);
+                cudaMemcpy(&dnumberofdynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
+                cudaMemcpy(&dynamcverts[0], ddynamicallyaddedvertices, sizeof(int)*dnumberofdynamicallyaddedvertices, cudaMemcpyDeviceToHost);
 
                 Gviz.DrawInputGraphColored(graph,
                                         root,
                                         searchtree,
-                                        numofdynamcverts,
+                                        dnumberofdynamicallyaddedvertices,
                                         dynamcverts,
                                         dmtch,
                                         dfll,
@@ -502,13 +502,13 @@ void VCGPU::FindCover(int root,
         cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
         cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
         cudaMemcpy(&searchtree[0], dsearchtree, sizeof(int2)*searchtree.size(), cudaMemcpyDeviceToHost);
-        cudaMemcpy(&numofdynamcverts, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
-        cudaMemcpy(&dynamcverts[0], ddynamicallyaddedvertices, sizeof(int)*numofdynamcverts, cudaMemcpyDeviceToHost);
+        cudaMemcpy(&dnumberofdynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
+        cudaMemcpy(&dynamcverts[0], ddynamicallyaddedvertices, sizeof(int)*dnumberofdynamicallyaddedvertices, cudaMemcpyDeviceToHost);
 
         Gviz.DrawInputGraphColored(graph,
                                 root,
                                 searchtree,
-                                numofdynamcverts,
+                                dnumberofdynamicallyaddedvertices,
                                 dynamcverts,
                                 dmtch,
                                 dfll,
@@ -536,7 +536,7 @@ void VCGPU::FindCover(int root,
                                               dnumberofdynamicallyaddedvertices, 
                                               ddynamicallyaddedvertices_csr, 
                                               ddynamicallyaddedvertices);
-    cudaMemcpy(&numofdynamcverts, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
+    cudaMemcpy(&dnumberofdynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
 
 }
 
@@ -592,7 +592,7 @@ void VCGPU::PrintData (){
     printf("%d\n", remainingedges);
     printf("\n");
     printf("Dyn Verts\n");
-    for (int i = 0; i < numofdynamcverts; ++i){
+    for (int i = 0; i < dnumberofdynamicallyaddedvertices; ++i){
         printf("%d ", dynamcverts[i]);
     }
 
@@ -610,7 +610,7 @@ void VCGPU::Match(int leafIndex){
     cudaEventRecord(t0, 0);
     cudaEventSynchronize(t0);
 
-    matcher.performMatching(dmatch, t1, t2, dforwardlinkedlist, dbackwardlinkedlist, dlength, dsearchtree, ddynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeOfKernelSolution, leafIndex);
+    matcher.performMatching(dmatch, t1, t2, dforwardlinkedlist, dbackwardlinkedlist, dlength, dsearchtree, ddynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeOfKernelSolution, dsolution, leafIndex);
     
     cudaEventElapsedTime(&time1, t1, t2);
     cudaEventRecord(t3, 0);
