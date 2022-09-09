@@ -218,9 +218,12 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
                                                             dfullpathcount,
                                                             dsearchtree);
     // Dont bother with looking for pendants if I'm out of space.
-    if (numberofdynamicallyaddedvertices<kPrime){
+    int numoftreeverts = 2*(depthOfLeaf);
+    if (sizeOfKernelSolution+numoftreeverts+numberofdynamicallyaddedvertices <= k){
         DetectAndSetPendantPathsCase3<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
-                                                            kPrime,
+                                                            sizeOfKernelSolution,
+                                                            numoftreeverts,
+                                                            k,
                                                             dmatch,
                                                             dforwardlinkedlist,
                                                             dbackwardlinkedlist,
@@ -229,7 +232,9 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
                                                             dnumberofdynamicallyaddedvertices,
                                                             ddynamicallyaddedvertices);
         DetectAndSetPendantPathsCase4<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
-                                                            kPrime,
+                                                            sizeOfKernelSolution,
+                                                            numoftreeverts,
+                                                            k,
                                                             dmatch,
                                                             dforwardlinkedlist,
                                                             dbackwardlinkedlist,
@@ -408,7 +413,7 @@ void VCGPU::FindCover(int root,
 
 //    printf("\033[A\33[2K\rCalling Find Cover from %d, level depth of leaf %d\n", root, depthOfLeaf);
     numoftreeverts = 2*(depthOfLeaf);
-    if (sizeOfKernelSolution+numoftreeverts+numberofdynamicallyaddedvertices < k) {
+    if (sizeOfKernelSolution+numoftreeverts+numberofdynamicallyaddedvertices <= k) {
         ReinitializeArrays();
         cudaDeviceSynchronize();
         // TODO - Need to set the pendant vertices also.
@@ -533,7 +538,7 @@ void VCGPU::FindCover(int root,
         }
     }
     // This has to happen, so for leaf nodes which dont enter this if condition
-    //if (sizeOfKernelSolution+numoftreeverts+numberofdynamicallyaddedvertices < k)
+    //if (sizeOfKernelSolution+numoftreeverts+numberofdynamicallyaddedvertices <= k)
     // the CSR entry for this recursionDepth isn't 0, which corrupts the memory.
     // Create CSR entry for dynamically added verts
     cudaMemcpy(&ddynamicallyaddedvertices_csr[recursiveStackDepth], dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToDevice);
@@ -1080,7 +1085,9 @@ __global__ void EvaluateLeafNodesV2(int nrEdges,
 */
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
-                                                int kPrime,
+                                                int sizeOfKernelSolution,
+                                                int numoftreeverts,
+                                                int k,
                                                 int *match, 
                                                 int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
@@ -1114,7 +1121,7 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
     }
 
     if (match[first] == 3 || match[second] == 3){
-        if (dynamicIndex < kPrime){
+        if (sizeOfKernelSolution+numoftreeverts+dnumberofdynamicallyaddedvertices[0] <= k){
             if (match[first] == 3){
                 ddynamicallyaddedvertices[dynamicIndex] = first;
             } else if (match[second] == 3){
@@ -1137,8 +1144,9 @@ __global__ void PrintCSR(int recursiveStackDepth,
 
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void DetectAndSetPendantPathsCase3(int nrVertices, 
-                                              int kPrime,
-                                                int *match, 
+                                                int sizeOfKernelSolution,
+                                                int numoftreeverts,
+                                                int k,                                                int *match, 
                                                 int *dforwardlinkedlist, 
                                                 int *dbackwardlinkedlist, 
                                                 int * dedgestatus,
@@ -1171,7 +1179,7 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
     }
 
     if (match[first] == 3 || match[third] == 3){
-        if (dynamicIndex < kPrime){
+        if (sizeOfKernelSolution+numoftreeverts+dnumberofdynamicallyaddedvertices[0] <= k){
             if (match[first] == 3){
                 ddynamicallyaddedvertices[dynamicIndex] = first;
             } else if (match[third] == 3){
