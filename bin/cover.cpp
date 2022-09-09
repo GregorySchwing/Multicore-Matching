@@ -445,7 +445,7 @@ int main(int argc, char **argv)
 					cin.get();
 					if (!solutionCantExist){
 						vc.matcher.initialMatching(match);
-						//initscr ();
+						initscr ();
 						vc.FindCover(0, 1, foundSolution);
 						if (foundSolution){
 							printf("Found a solution.\n");
@@ -454,7 +454,7 @@ int main(int argc, char **argv)
 						}
 						cout << '\n' << "Press a key to continue...\n";
 						cin.get();
-						//endwin();
+						endwin();
 						
 						if (foundSolution){
 							for (int i = 0; i < vc.solutionSize; ++i)
