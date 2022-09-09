@@ -96,7 +96,7 @@ VCGPU::VCGPU(const Graph &_graph,
     sizeOfSearchTree = CalculateSpaceForDesiredNumberOfLevels(depthOfSearchTree);
     printf("SIZE OF SEARCH TREE %lld\n", sizeOfSearchTree);
     searchtree.resize(sizeOfSearchTree);
-
+    numberofdynamicallyaddedvertices = 0;
     // Wrong since numEdges < neighbors (up to double the num edges, in and out)
     //cudaMalloc(&dedgestatus, sizeof(int)*graph.nrEdges) != cudaSuccess || 
     if (cudaMalloc(&dedgestatus, sizeof(int)*graph.neighbours.size()) != cudaSuccess || 
@@ -241,6 +241,7 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
     // Create CSR entry for dynamically added verts
     cudaMemcpy(&ddynamicallyaddedvertices_csr[recursiveStackDepth], dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToDevice);
 
+    PrintCSR<<<1,1>>>(recursiveStackDepth, ddynamicallyaddedvertices_csr);
 
     cudaMemcpy(&fullpathcount, &dfullpathcount[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
     //cudaMemcpy(&numberofdynamicallyaddedvertices, &dnumberofdynamicallyaddedvertices[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
@@ -395,9 +396,9 @@ void VCGPU::FindCover(int root,
         mvprintw (i, 4, "Depth %d %f Complete %f/%f\n", i, finishedLeavesPerLevel[i]/totalLeavesPerLevel[i], finishedLeavesPerLevel[i], totalLeavesPerLevel[i]);
     }
     refresh ();
-    if (depthOfLeaf > depthOfSearchTree){
-        return;
-    }
+    //if (depthOfLeaf > depthOfSearchTree){
+    //    return;
+    //}
 
     // If you want to check the quality of each match, uncomment
     // Else, the only noticable changes will be in the recursion stack 
@@ -407,13 +408,14 @@ void VCGPU::FindCover(int root,
 
 //    printf("\033[A\33[2K\rCalling Find Cover from %d, level depth of leaf %d\n", root, depthOfLeaf);
     numoftreeverts = 2*(depthOfLeaf);
-    if (sizeOfKernelSolution+numoftreeverts+dnumberofdynamicallyaddedvertices < k) {
+    if (sizeOfKernelSolution+numoftreeverts+numberofdynamicallyaddedvertices < k) {
         ReinitializeArrays();
         cudaDeviceSynchronize();
         // TODO - Need to set the pendant vertices also.
         SetEdgesOfLeaf(root);
 
         // Test algebra, comment Match(root)
+        PrintCSR<<<1,1>>>(recursiveStackDepth, ddynamicallyaddedvertices_csr);
         Match(root);
         cudaDeviceSynchronize();
 
@@ -462,12 +464,12 @@ void VCGPU::FindCover(int root,
                                     dnumberofdynamicallyaddedvertices,
                                     ddynamicallyaddedvertices);
 
-                cudaMemcpy(&dnumberofdynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
+                cudaMemcpy(&numberofdynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
                 
 
                 numoftreeverts = 2*(depthOfLeaf);
-                printf("sizeOfKernelSolution %d numoftreeverts %d dnumberofdynamicallyaddedvertices %d\n", sizeOfKernelSolution,numoftreeverts,dnumberofdynamicallyaddedvertices);
-                solutionSize = sizeOfKernelSolution+numoftreeverts+dnumberofdynamicallyaddedvertices;
+                printf("sizeOfKernelSolution %d numoftreeverts %d numberofdynamicallyaddedvertices %d\n", sizeOfKernelSolution,numoftreeverts,numberofdynamicallyaddedvertices);
+                solutionSize = sizeOfKernelSolution+numoftreeverts+numberofdynamicallyaddedvertices;
                 cudaMemcpy(solution.data(), dsolution, sizeof(int)*solutionSize, cudaMemcpyDeviceToHost);
 
                 foundSolution = true;
@@ -477,13 +479,13 @@ void VCGPU::FindCover(int root,
                 cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
                 cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
                 cudaMemcpy(&searchtree[0], dsearchtree, sizeof(int2)*searchtree.size(), cudaMemcpyDeviceToHost);
-                cudaMemcpy(&dnumberofdynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
-                cudaMemcpy(&dynamcverts[0], ddynamicallyaddedvertices, sizeof(int)*dnumberofdynamicallyaddedvertices, cudaMemcpyDeviceToHost);
+                cudaMemcpy(&numberofdynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
+                cudaMemcpy(&dynamcverts[0], ddynamicallyaddedvertices, sizeof(int)*numberofdynamicallyaddedvertices, cudaMemcpyDeviceToHost);
 
                 Gviz.DrawInputGraphColored(graph,
                                         root,
                                         searchtree,
-                                        dnumberofdynamicallyaddedvertices,
+                                        numberofdynamicallyaddedvertices,
                                         dynamcverts,
                                         dmtch,
                                         dfll,
@@ -502,13 +504,13 @@ void VCGPU::FindCover(int root,
         cudaMemcpy(&edgestatus[0], dedgestatus, sizeof(int)*graph.neighbours.size(), cudaMemcpyDeviceToHost);
         cudaMemcpy(&newdegrees[0], ddegrees, sizeof(int)*graph.nrVertices, cudaMemcpyDeviceToHost);
         cudaMemcpy(&searchtree[0], dsearchtree, sizeof(int2)*searchtree.size(), cudaMemcpyDeviceToHost);
-        cudaMemcpy(&dnumberofdynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
-        cudaMemcpy(&dynamcverts[0], ddynamicallyaddedvertices, sizeof(int)*dnumberofdynamicallyaddedvertices, cudaMemcpyDeviceToHost);
+        cudaMemcpy(&numberofdynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
+        cudaMemcpy(&dynamcverts[0], ddynamicallyaddedvertices, sizeof(int)*numberofdynamicallyaddedvertices, cudaMemcpyDeviceToHost);
 
         Gviz.DrawInputGraphColored(graph,
                                 root,
                                 searchtree,
-                                dnumberofdynamicallyaddedvertices,
+                                numberofdynamicallyaddedvertices,
                                 dynamcverts,
                                 dmtch,
                                 dfll,
@@ -530,13 +532,17 @@ void VCGPU::FindCover(int root,
             ++newLeaves.z;
         }
     }
-    //PrintData (); 
+    // This has to happen, so for leaf nodes which dont enter this if condition
+    //if (sizeOfKernelSolution+numoftreeverts+numberofdynamicallyaddedvertices < k)
+    // the CSR entry for this recursionDepth isn't 0, which corrupts the memory.
+    // Create CSR entry for dynamically added verts
+    cudaMemcpy(&ddynamicallyaddedvertices_csr[recursiveStackDepth], dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToDevice);
     // Wipe away my pendant nodes from shared list
     eraseDynVertsOfRecursionLevel<<<1, threadsPerBlock>>>(recursiveStackDepth,
                                               dnumberofdynamicallyaddedvertices, 
                                               ddynamicallyaddedvertices_csr, 
                                               ddynamicallyaddedvertices);
-    cudaMemcpy(&dnumberofdynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
+    cudaMemcpy(&numberofdynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToHost);
 
 }
 
@@ -592,7 +598,7 @@ void VCGPU::PrintData (){
     printf("%d\n", remainingedges);
     printf("\n");
     printf("Dyn Verts\n");
-    for (int i = 0; i < dnumberofdynamicallyaddedvertices; ++i){
+    for (int i = 0; i < numberofdynamicallyaddedvertices; ++i){
         printf("%d ", dynamcverts[i]);
     }
 
@@ -684,15 +690,21 @@ __global__ void eraseDynVertsOfRecursionLevel(int recursiveStackDepth,
                                               int * ddynamicallyaddedvertices_csr, 
                                               int * ddynamicallyaddedvertices){
 	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
-    int LB = ddynamicallyaddedvertices_csr[recursiveStackDepth];
-    int UB = ddynamicallyaddedvertices_csr[recursiveStackDepth+1];
+    int LB = ddynamicallyaddedvertices_csr[recursiveStackDepth-1];
+    int UB = ddynamicallyaddedvertices_csr[recursiveStackDepth];
     for (int entry = LB + threadID; entry < UB; entry += blockDim.x)
         ddynamicallyaddedvertices[entry] = 0;
 
     __syncthreads();
     if (threadID == 0){
-        dnumberofdynamicallyaddedvertices -= (UB - LB);
-        ddynamicallyaddedvertices_csr[recursiveStackDepth+1] = 0;
+        printf("ddynamicallyaddedvertices_csr: ");
+        for (int i = 0; i < 1+recursiveStackDepth; ++i)
+                printf("%d ", ddynamicallyaddedvertices_csr[i]);
+        printf("\n");
+
+        printf("Stack depth %d Erase %d entried from LB %d to UB %d\n", recursiveStackDepth, (UB - LB),LB,UB);
+        atomicSub(dnumberofdynamicallyaddedvertices, (UB - LB));
+        ddynamicallyaddedvertices_csr[recursiveStackDepth] = 0;
     }
 }
 
@@ -1106,11 +1118,19 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
             } else if (match[second] == 3){
                 ddynamicallyaddedvertices[dynamicIndex] = second;
             }
-            //printf("added pendant %d", dynamicIndex);
+            printf("added pendant %d vertex %d\n", dynamicIndex, ddynamicallyaddedvertices[dynamicIndex]);
         } else {
             atomicSub(&dnumberofdynamicallyaddedvertices[0], 1);
         }
     }
+}
+
+__global__ void PrintCSR(int recursiveStackDepth,
+                         int * ddynamicallyaddedvertices_csr){
+    printf("CSR\n");               
+    for (int i = 0; i <= recursiveStackDepth; ++i)
+        printf(" %d", ddynamicallyaddedvertices_csr[i]);
+        printf("\n");               
 }
 
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
@@ -1155,7 +1175,7 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
             } else if (match[third] == 3){
                 ddynamicallyaddedvertices[dynamicIndex] = third;
             }
-            //printf("added pendant %d", dynamicIndex);
+            printf("added pendant %d vertex %d\n", dynamicIndex, ddynamicallyaddedvertices[dynamicIndex]);
         } else {
             atomicSub(&dnumberofdynamicallyaddedvertices[0], 1);
         }
