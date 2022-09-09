@@ -489,6 +489,8 @@ void VCGPU::FindCover(int root,
 
                 Gviz.DrawInputGraphColored(graph,
                                         root,
+                                        sizeOfKernelSolution,
+                                        solution,
                                         searchtree,
                                         numberofdynamicallyaddedvertices,
                                         dynamcverts,

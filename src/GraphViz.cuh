@@ -30,6 +30,8 @@ class GraphViz {
         GraphViz();
         void DrawInputGraphColored(const mtc::Graph &_graph, 
                                     int leafIndex,
+                                    int kernelSolnSize,
+									std::vector<int> kernelsoln,
                                     std::vector<int2> & searchtree,
 									int UBDyn,
 									std::vector<int> & dynamicallyaddedvertices,
@@ -70,6 +72,8 @@ class GraphViz {
 
         void createColoredInputGraphViz(thrust::host_vector<int> & match, 
                     int leafIndex,
+                    int kernelSolnSize,
+                    std::vector<int> kernelsoln,
                     std::vector<int2> & searchtree,
 					int UBDyn,
 					std::vector<int> & dynamicallyaddedvertices,
@@ -79,6 +83,8 @@ class GraphViz {
 
         void createColoredInputGraphViz(int * match, 
                             int leafIndex,
+                            int kernelSolnSize,
+                            std::vector<int> kernelsoln,
                             std::vector<int2> & searchtree,
                             int UBDyn,
                             std::vector<int> & dynamicallyaddedvertices,

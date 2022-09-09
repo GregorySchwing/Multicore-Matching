@@ -32,6 +32,8 @@ GraphViz::GraphViz(){
 
 void GraphViz::DrawInputGraphColored(const mtc::Graph &_graph, 
 									int leafIndex,
+                                    int kernelSolnSize,
+									std::vector<int> kernelsoln,
 									std::vector<int2> & searchtree,
 									int UBDyn,
 									std::vector<int> & dynamicallyaddedvertices,
@@ -49,7 +51,7 @@ void GraphViz::DrawInputGraphColored(const mtc::Graph &_graph,
     	inputGraph->RemoveSubgraph(fullgraph);	
 		linearforestgraph = inputGraph->AddSubgraph(subgraph1);
     	fullgraph = inputGraph->AddSubgraph(subgraph2);				
-		createColoredInputGraphViz(match, leafIndex, searchtree, UBDyn, dynamicallyaddedvertices, _graph, fll, bll);
+		createColoredInputGraphViz(match, leafIndex, kernelSolnSize, kernelsoln, searchtree, UBDyn, dynamicallyaddedvertices, _graph, fll, bll);
 		inputGraph->WriteToFile("inputGraph_iter_" + SSTR(iter));
 		std::cout << "Wrote graph viz " << "inputGraph_iter_" + SSTR(iter) << std::endl;
 }
@@ -128,6 +130,8 @@ void GraphViz::createSearchTreeGraphViz(int sizeOfSearchTree,
 
 void GraphViz::createColoredInputGraphViz(thrust::host_vector<int> & match, 
 					int leafIndex,
+					int kernelSolnSize,
+					std::vector<int> kernelsoln,
 					std::vector<int2> & searchtree,
 					int UBDyn,
 					std::vector<int> & dynamicallyaddedvertices,
@@ -186,6 +190,10 @@ void GraphViz::createColoredInputGraphViz(thrust::host_vector<int> & match,
 			leafIndexSoln = leafIndexSoln / 3;
 		}
 	}
+	printf("Kernel soln\n");
+    for (int i = 0; i < kernelSolnSize; ++i)
+        printf("%d ", kernelsoln[i]);
+    printf("\n");
 	printf("Tree soln\n");
     for (int i = 0; i < soln.size(); ++i)
         printf("%d ", soln[i]);
@@ -223,12 +231,8 @@ void GraphViz::createColoredInputGraphViz(thrust::host_vector<int> & match,
                 fullgraph->AddEdge(fullGraphNodeMap[node1Name], fullGraphNodeMap[node2Name]); 
             //}
         }
-		if ((std::find(soln.begin(), soln.end(), i)) != soln.end()){
-			fullGraphNodeMap[node1Name]->GetAttributes().SetColor(DotWriter::Color::e(23));
-			fullGraphNodeMap[node1Name]->GetAttributes().SetFillColor(DotWriter::Color::e(23));
-			fullGraphNodeMap[node1Name]->GetAttributes().SetStyle("filled");				
-		}
-		if ((std::find(dynamicallyaddedvertices.begin(), dynamicallyaddedvertices.begin() + UBDyn, i)) != dynamicallyaddedvertices.begin() + UBDyn){
+		// kernel soln is actually the whole soln, so just search that once
+		if ((std::find(kernelsoln.begin(), kernelsoln.end(), i)) != kernelsoln.end()){
 			fullGraphNodeMap[node1Name]->GetAttributes().SetColor(DotWriter::Color::e(23));
 			fullGraphNodeMap[node1Name]->GetAttributes().SetFillColor(DotWriter::Color::e(23));
 			fullGraphNodeMap[node1Name]->GetAttributes().SetStyle("filled");				
@@ -238,6 +242,8 @@ void GraphViz::createColoredInputGraphViz(thrust::host_vector<int> & match,
 
 void GraphViz::createColoredInputGraphViz(int * match, 
 					int leafIndex,
+					int kernelSolnSize,
+					std::vector<int> kernelsoln,
 					std::vector<int2> & searchtree,
 					int UBDyn,
 					std::vector<int> & dynamicallyaddedvertices,
