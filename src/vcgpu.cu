@@ -241,7 +241,7 @@ int4 VCGPU::numberCompletedPaths(int nrVertices,
     // Create CSR entry for dynamically added verts
     cudaMemcpy(&ddynamicallyaddedvertices_csr[recursiveStackDepth], dnumberofdynamicallyaddedvertices, sizeof(int)*1, cudaMemcpyDeviceToDevice);
 
-    PrintCSR<<<1,1>>>(recursiveStackDepth, ddynamicallyaddedvertices_csr);
+    //PrintCSR<<<1,1>>>(recursiveStackDepth, ddynamicallyaddedvertices_csr);
 
     cudaMemcpy(&fullpathcount, &dfullpathcount[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
     //cudaMemcpy(&numberofdynamicallyaddedvertices, &dnumberofdynamicallyaddedvertices[0], sizeof(int)*1, cudaMemcpyDeviceToHost);
@@ -415,7 +415,7 @@ void VCGPU::FindCover(int root,
         SetEdgesOfLeaf(root);
 
         // Test algebra, comment Match(root)
-        PrintCSR<<<1,1>>>(recursiveStackDepth, ddynamicallyaddedvertices_csr);
+        //PrintCSR<<<1,1>>>(recursiveStackDepth, ddynamicallyaddedvertices_csr);
         Match(root);
         cudaDeviceSynchronize();
 
@@ -697,12 +697,14 @@ __global__ void eraseDynVertsOfRecursionLevel(int recursiveStackDepth,
 
     __syncthreads();
     if (threadID == 0){
+        /*
         printf("ddynamicallyaddedvertices_csr: ");
         for (int i = 0; i < 1+recursiveStackDepth; ++i)
                 printf("%d ", ddynamicallyaddedvertices_csr[i]);
         printf("\n");
 
         printf("Stack depth %d Erase %d entried from LB %d to UB %d\n", recursiveStackDepth, (UB - LB),LB,UB);
+        */
         atomicSub(dnumberofdynamicallyaddedvertices, (UB - LB));
         ddynamicallyaddedvertices_csr[recursiveStackDepth] = 0;
     }
@@ -1118,7 +1120,7 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
             } else if (match[second] == 3){
                 ddynamicallyaddedvertices[dynamicIndex] = second;
             }
-            printf("added pendant %d vertex %d\n", dynamicIndex, ddynamicallyaddedvertices[dynamicIndex]);
+            //printf("added pendant %d vertex %d\n", dynamicIndex, ddynamicallyaddedvertices[dynamicIndex]);
         } else {
             atomicSub(&dnumberofdynamicallyaddedvertices[0], 1);
         }
@@ -1175,7 +1177,7 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
             } else if (match[third] == 3){
                 ddynamicallyaddedvertices[dynamicIndex] = third;
             }
-            printf("added pendant %d vertex %d\n", dynamicIndex, ddynamicallyaddedvertices[dynamicIndex]);
+            //printf("added pendant %d vertex %d\n", dynamicIndex, ddynamicallyaddedvertices[dynamicIndex]);
         } else {
             atomicSub(&dnumberofdynamicallyaddedvertices[0], 1);
         }

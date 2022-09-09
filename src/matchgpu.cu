@@ -1160,7 +1160,7 @@ __global__ void gSetDynamicVertices(int leafIndex, int *match, int *dynamicallyA
 	if (i >= nrDynamicallyAddedVertices) return;
 
 	match[dynamicallyAddedVertices[i]] = 3;
-	printf("thread %d >= %d is %s setting pendant vert %d \n", i, nrDynamicallyAddedVertices, i >= nrDynamicallyAddedVertices ? "true" : "false", dynamicallyAddedVertices[i] );
+	//printf("thread %d >= %d is %s setting pendant vert %d \n", i, nrDynamicallyAddedVertices, i >= nrDynamicallyAddedVertices ? "true" : "false", dynamicallyAddedVertices[i] );
 }
  
 
@@ -1683,10 +1683,10 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 		cudaDeviceSynchronize();
 		checkLastErrorCUDA(__FILE__, __LINE__);
 		if (sizeOfKernelSolution > 0){
-			printf("sizeOfKernelSolution : %d\n", sizeOfKernelSolution);
+			//printf("sizeOfKernelSolution : %d\n", sizeOfKernelSolution);
 
 			int blocksPerGridKer = (sizeOfKernelSolution + threadsPerBlock - 1)/threadsPerBlock;
-						printf("blocksPerGridKer : %d\n", blocksPerGridKer);
+			//			printf("blocksPerGridKer : %d\n", blocksPerGridKer);
 
 			gSetDynamicVertices<<<blocksPerGridKer, threadsPerBlock>>>(leafIndex, match, kernelSolution, sizeOfKernelSolution);
 		}
