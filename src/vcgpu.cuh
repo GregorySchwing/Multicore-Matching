@@ -111,7 +111,12 @@ __global__ void CalculateDegrees(
                         int * dedgestatus,
                         int * ddegrees);
 
+__global__ void PrintCSR(int recursiveStackDepth,
+                                                int *ddynamicallyaddedvertices_csr);
+
 __global__ void DetectAndSetPendantPathsCase3(int nrVertices, 
+                                                int sizeOfKernelSolution,
+                                                int numoftreeverts,
                                                 int k,
                                                 int *match, 
                                                 int *dforwardlinkedlist, 
@@ -122,6 +127,8 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
                                                 int *ddynamicallyaddedvertices);
 
 __global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
+                                                int sizeOfKernelSolution,
+                                                int numoftreeverts,
                                                 int k,
                                                 int *match, 
                                                 int *dforwardlinkedlist, 

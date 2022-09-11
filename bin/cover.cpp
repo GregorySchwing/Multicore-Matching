@@ -446,7 +446,7 @@ int main(int argc, char **argv)
 					if (!solutionCantExist){
 						vc.matcher.initialMatching(match);
 						initscr ();
-						vc.FindCover(0, 0, foundSolution);
+						vc.FindCover(0, 1, foundSolution);
 						if (foundSolution){
 							printf("Found a solution.\n");
 						} else {
