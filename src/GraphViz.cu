@@ -32,7 +32,7 @@ GraphViz::GraphViz(){
 
 void GraphViz::DrawInputGraphColored(const mtc::Graph &_graph, 
 									int leafIndex,
-									std::vector<int2> & bfssearchtree,
+									std::vector<int2> & searchtree,
 									int UBDyn,
 									std::vector<int> & dynamicallyaddedvertices,
 									thrust::device_vector<int> & dmatch,
@@ -49,7 +49,7 @@ void GraphViz::DrawInputGraphColored(const mtc::Graph &_graph,
     	inputGraph->RemoveSubgraph(fullgraph);	
 		linearforestgraph = inputGraph->AddSubgraph(subgraph1);
     	fullgraph = inputGraph->AddSubgraph(subgraph2);				
-		createColoredInputGraphViz(match, leafIndex, bfssearchtree, UBDyn, dynamicallyaddedvertices, _graph, fll, bll);
+		createColoredInputGraphViz(match, leafIndex, searchtree, UBDyn, dynamicallyaddedvertices, _graph, fll, bll);
 		inputGraph->WriteToFile("inputGraph_iter_" + SSTR(iter));
 		std::cout << "Wrote graph viz " << "inputGraph_iter_" + SSTR(iter) << std::endl;
 }
@@ -128,7 +128,7 @@ void GraphViz::createSearchTreeGraphViz(int sizeOfSearchTree,
 
 void GraphViz::createColoredInputGraphViz(thrust::host_vector<int> & match, 
 					int leafIndex,
-					std::vector<int2> & bfssearchtree,
+					std::vector<int2> & searchtree,
 					int UBDyn,
 					std::vector<int> & dynamicallyaddedvertices,
 					const mtc::Graph & g,
@@ -176,7 +176,7 @@ void GraphViz::createColoredInputGraphViz(thrust::host_vector<int> & match,
 	int leafIndexSoln = leafIndex;
 	int2 nodeEntry;
 	while(leafIndexSoln != 0){
-		nodeEntry = bfssearchtree[leafIndexSoln];
+		nodeEntry = searchtree[leafIndexSoln];
 		soln.push_back(nodeEntry.x);
 		soln.push_back(nodeEntry.y);
 		if(leafIndexSoln % 3 == 0){
@@ -238,7 +238,7 @@ void GraphViz::createColoredInputGraphViz(thrust::host_vector<int> & match,
 
 void GraphViz::createColoredInputGraphViz(int * match, 
 					int leafIndex,
-					std::vector<int2> & bfssearchtree,
+					std::vector<int2> & searchtree,
 					int UBDyn,
 					std::vector<int> & dynamicallyaddedvertices,
 					const mtc::Graph & g,

@@ -33,7 +33,7 @@ class GraphMatchingTBB : public GraphMatching
 		GraphMatchingTBB(const Graph &, const unsigned int &);
 		~GraphMatchingTBB();
 		
-		virtual void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dbfssearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int sizeOfKernelSolution, int leafIndex) const = 0;
+		virtual void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int sizeOfKernelSolution, int leafIndex) const = 0;
 
 	protected:
 		const uint selectBarrier;
@@ -46,7 +46,7 @@ class GraphMatchingTBBRandom : public GraphMatchingTBB
 		GraphMatchingTBBRandom(const Graph &, const unsigned int &);
 		~GraphMatchingTBBRandom();
 		
-		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dbfssearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int sizeOfKernelSolution, int leafIndex) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int sizeOfKernelSolution, int leafIndex) const;
 };
 
 class GraphMatchingTBBWeighted : public GraphMatchingTBB
@@ -55,7 +55,7 @@ class GraphMatchingTBBWeighted : public GraphMatchingTBB
 		GraphMatchingTBBWeighted(const Graph &, const unsigned int &);
 		~GraphMatchingTBBWeighted();
 		
-		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dbfssearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int sizeOfKernelSolution, int leafIndex) const;
+		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dforwardlinkedlist,  int * dbackwardlinkedlist, int * dlength, int2 * dsearchtree, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int sizeOfKernelSolution, int leafIndex) const;
 };
 
 };

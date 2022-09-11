@@ -61,38 +61,30 @@ __global__ void ReduceEdgeStatusArray(int nrNeighbors,
 __global__ void SetEdges(const int nrVertices,
                         int * dedgestatus,
                         int * ddegrees,
-                        int2 *dbfssearchtree);
+                        int2 *dsearchtree);
 
 __global__ void PopulateSearchTree(int nrVertices, 
                                     int sizeOfSearchTree,
-                                    int depthOfBFSSearchTree,
+                                    int depthOfSearchTree,
                                     int leafIndex,
                                     float * dfinishedLeavesPerLevel,
                                     int *dforwardlinkedlist, 
                                     int *dbackwardlinkedlist, 
                                     int *dlength, 
                                     int *dfullpathcount,
-                                    int2* dbfssearchtree);
+                                    int2* dsearchtree);
 
 __global__ void PopulateSearchTreeTest(int nrVertices, 
                                     int sizeOfSearchTree,
-                                    int depthOfBFSSearchTree,
+                                    int depthOfSearchTree,
                                     int leafIndex,
                                     float * dfinishedLeavesPerLevel,
                                     int *dforwardlinkedlist, 
                                     int *dbackwardlinkedlist, 
                                     int *dlength, 
                                     int *dfullpathcount,
-                                    int2* dbfssearchtree,
+                                    int2* dsearchtree,
                                     int fullpathcount);
-
-__global__ void EnqueuePaths(int nrVertices, 
-                            int capacityOfQueue,
-                            int *dforwardlinkedlist, 
-                            int *dbackwardlinkedlist, 
-                            int *dlength, 
-                            int *denqueuedpathcount,
-                            int4* ddfspathqueue);
 
 __global__ void CalculateNumberOfLeafNodes(
                                         int * dfullpathcount,
@@ -104,7 +96,7 @@ __global__ void EvaluateSingleLeafNode(int nrEdges,
                                     int sizeOfKernelSolution,
                                     int * dsolution,
                                     mtc::Edge * dedges, 
-                                    int2 * dbfssearchtree,
+                                    int2 * dsearchtree,
                                     int * dnumberofdynamicallyaddedvertices,
                                     int * ddynamicallyaddedvertices,
                                     int * uncoverededges);
@@ -142,7 +134,7 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
 __global__ void FillSolutionArray(int leafIndex,
                                 int * dsolution,
                                 int sizeOfKernelSolution,
-                                int2 * dbfssearchtree,
+                                int2 * dsearchtree,
                                 int * dnumberofdynamicallyaddedvertices,
                                 int * ddynamicallyaddedvertices);
 
@@ -153,9 +145,6 @@ __device__ void SetEdges(   int vertexToInclude,
                             int * dedgestatus);
 
 __host__ __device__  int4 CalculateLeafOffsets(  int leafIndex,
-                                                int fullpathcount);
-
-__host__ __device__  int4 CalculateLeafOffsetsDFS(  int leafIndex,
                                                 int fullpathcount);
 
 class VCGPU
@@ -185,18 +174,6 @@ class VCGPU
                                 int *dlength,
                                 int recursiveStackDepth);
 
-        int4 numberCompletedPathsP2(int nrVertices, 
-                        int leafIndex,
-                        int *dbackwardlinkedlist, 
-                        int *dlength,
-                        int recursiveStackDepth);
-
-        int4 numberCompletedPathsTestP2(int nrVertices, 
-                                int leafIndex,
-                                int *dbackwardlinkedlist, 
-                                int *dlength,
-                                int recursiveStackDepth);
-
         void GetLengthStatistics(int nrVertices, 
                                 int threadsPerBlock, 
                                 int *dbackwardlinkedlist, 
@@ -209,15 +186,7 @@ class VCGPU
         void bussKernelizationP2();
         void bussKernelizationP1(int root, int recursiveStackDepth, bool & foundSolution);
         void FindCover(int root, int recursiveStackDepth, bool & foundSolution);
-        void EvaluateLeafBFS(int root, int recursiveStackDepth, bool & foundSolution);
-
-        void PopulateBFSTree(int root, int recursiveStackDepth, bool & foundSolution);
-        void PopulateDFSTree(int leafIndexOfBFSTree,
-                            int leafIndexOfDFSTree,
-                            int recursiveStackDepth,
-                            bool & foundSolution);
         void ReinitializeArrays();
-        void ReinitializeDFSQueue();
         void PrintData ();
         void CopyMatchingBackToHost(std::vector<int> & match);
         void GetDeviceVectors(int nrVertices, std::vector<int> & fll, std::vector<int> & bll, std::vector<int> & length);
@@ -225,16 +194,12 @@ class VCGPU
         long long sizeOfSearchTree;
         int k;
         int kPrime;
-        int kPrimeBFS;
-        int kPrimeDFS;
-
-        int fullpathcount, depthOfBFSSearchTree, depthOfDFSSearchTree, remainingedges;
+        int fullpathcount, depthOfSearchTree, remainingedges;
         std::vector<float> finishedLeavesPerLevel;
         std::vector<float> totalLeavesPerLevel;
         std::vector<int> edgestatus;
         std::vector<int> newdegrees;
-        std::vector<int2> bfssearchtree;
-        std::vector<int2> dfssearchtree;
+        std::vector<int2> searchtree;
         std::vector<int> solution;
         int solutionSize;
         std::vector<int> dynamcverts;
@@ -245,15 +210,7 @@ class VCGPU
         int * duncoverededges;
         // VC arrays
         int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves, *dremainingedges;
-        int2 *dbfssearchtree, *ddfssearchtree;
-
-        // Queue for dfs tree growth.  
-        // In memory optimization, it may be better
-        // to store the 3 leaves logically in one int4 path.
-        int4 *ddfspathqueue;
-        int * denqueuedpathcount;
-        // capacityOfQueue = k'' = k'-BFSTreedepth; could experiment with diff values 
-        int capacityOfQueue;
+        int2 *dsearchtree;
         // Indicates the dyn added verts in each recursion stack
         int *ddynamicallyaddedvertices_csr;
         int *ddynamicallyaddedvertices;
