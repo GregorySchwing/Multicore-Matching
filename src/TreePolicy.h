@@ -29,9 +29,15 @@ void Create(int k)
 {
     long long sizeOfTree = CalculateSpaceForDesiredNumberOfLevels(k);
     searchtree.resize(sizeOfTree);
+    if (cudaMalloc(&dsearchtree, sizeof(T)*(2*sizeOfTree)) != cudaSuccess)
+    {
+		std::cerr << "Not enough memory on device!" << std::endl;
+		throw std::exception();
+	}
 }
 
     std::vector<T> searchtree;
+    T * dsearchtree;
     long long CalculateSpaceForDesiredNumberOfLevels(int NumberOfLevels);
 };
 
@@ -58,11 +64,19 @@ void Create(int k)
 {
     rows = new T[k+1];
     columns = new T[4*k];
+    if (cudaMalloc(&drows, sizeof(T)*(k+1)) != cudaSuccess || 
+        cudaMalloc(&dcolumns, sizeof(T)*(4*k)) != cudaSuccess)
+    {
+		std::cerr << "Not enough memory on device!" << std::endl;
+		throw std::exception();
+	}
+    
 }
     
     T * rows;
     T * columns;
-
+    T * drows;
+    T * dcolumns;
 };
 
 #endif
