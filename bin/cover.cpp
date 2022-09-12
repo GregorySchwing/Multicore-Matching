@@ -38,9 +38,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <sstream>
 #include "vcgpu.cuh"
-#include "vcgpu2.cuh"
-#include "Array.h"
-#include "GrowthPolicy.h"
 
 using namespace std;
 //using namespace tbb;
@@ -443,11 +440,6 @@ int main(int argc, char **argv)
 				bool solutionCantExist = false;
 				try
 				{
-					int arr[5] = { 1, 2, 3, 4, 5 };
-					Array<int> a(arr, 5);
-					a.print();
-					// Application code
-					VCGPU2< BalancedGrowth<int> > vc2(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
 					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
 					cout << '\n' << "Press a key to continue...\n";
 					cin.get();
