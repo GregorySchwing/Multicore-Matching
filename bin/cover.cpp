@@ -449,8 +449,10 @@ int main(int argc, char **argv)
 					a.print();
 					// Application code
 					//VCGPU2< BalancedGrowth<int>,  ExplicitTree<int> > vc3(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
-					VCGPU2< BalancedGrowth<int>,  ImplicitTree<int> > vc2(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
-					vc2.DoSomething();
+					VCGPU2< Serial<int>,  struct SerialImplicitTree<int> > vc2(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
+					VCGPU2< Parallel<int>,  struct ParallelImplicitTree<int> > vc3(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
+
+					vc2.FindCover(0, 1, foundSolution);
 					//VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
 					cout << '\n' << "Press a key to continue...\n";
 					cin.get();
