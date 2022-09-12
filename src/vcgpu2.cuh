@@ -50,31 +50,21 @@ class VCGPU2 : public GrowthPolicy, TreePolicy
         template <typename T> void myFunction(T* param1, int param2);
 
         bool & solutionCantExist;
-        long long sizeOfSearchTree;
         int k;
-        int kPrime;
-        int fullpathcount, depthOfSearchTree;
         std::vector<int> solution;
         int solutionSize;
-        std::vector<int> dynamcverts;
-        int sizeOfKernelSolution;
-        int numofdynamcverts;
-        int numoftreeverts;
         int uncoverededges;
         int * duncoverededges;
-        // VC arrays
-        int *dedgestatus, *ddegrees, *dfullpathcount, *dremainingedges;
-
-        // Indicates the dyn added verts in each recursion stack
-        int *ddynamicallyaddedvertices_csr;
-        int *ddynamicallyaddedvertices;
-        int *dnumberofdynamicallyaddedvertices;
-
         int *dsolution;
-        int *dsizeofkernelsolution;
-        int numberofdynamicallyaddedvertices;
-        int numberofdynamicallyaddedverticesLB, numberofdynamicallyaddedverticesUB;
 
+
+        // Replace this with the csr offset v+1 in dynverts in treepolicy
+        //int numberofdynamicallyaddedvertices;
+        // VC arrays
+        // Replace this with the csr offset v+1 in tree
+        //int fullpathcount;
+        // Replace this with the csr offset v+1 in tree in treepolicy
+        //int *dfullpathcount;
         mtc::Edge * dedges;
 
         mtc::GraphMatchingGeneralGPURandom matcher;
@@ -125,14 +115,13 @@ VCGPU2<GrowthPolicy, TreePolicy>::VCGPU2(const Graph &_graph,
   k(_k),
   solutionCantExist(_solutionCantExist)
 {
-  TreePolicy().Create(5);
-
   if (cudaMalloc(&dsolution, sizeof(int)*k) != cudaSuccess)
   {
 		std::cerr << "Not enough memory on device!" << std::endl;
 		throw std::exception();
 	}
   bk = new BussKernelization(_graph, _threadsPerBlock, _barrier, _k, dsolution, _solutionCantExist);
+  TreePolicy().Create(bk->GetKPrime());
 }
 
 template <class GrowthPolicy, class TreePolicy>

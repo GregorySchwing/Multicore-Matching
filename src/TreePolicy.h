@@ -62,21 +62,31 @@ struct ImplicitTree
   
 void Create(int k)
 {
-    rows = new T[k+1];
-    columns = new T[4*k];
-    if (cudaMalloc(&drows, sizeof(T)*(k+1)) != cudaSuccess || 
-        cudaMalloc(&dcolumns, sizeof(T)*(4*k)) != cudaSuccess)
+    hostTreeRows = new T[k+1];
+    hostTreeColumns = new T[4*k];
+    hostDynamicRows = new T[k+1];
+    hostDynamicColumns = new T[k];
+    if (cudaMalloc(&deviceTreeRows, sizeof(T)*(k+1)) != cudaSuccess || 
+        cudaMalloc(&deviceTreeColumns, sizeof(T)*(4*k)) != cudaSuccess || 
+        cudaMalloc(&deviceDynamicRows, sizeof(T)*(k+1)) != cudaSuccess || 
+        cudaMalloc(&deviceDynamicColumns, sizeof(T)*(k)) != cudaSuccess)
     {
 		std::cerr << "Not enough memory on device!" << std::endl;
 		throw std::exception();
 	}
     
 }
-    
-    T * rows;
-    T * columns;
-    T * drows;
-    T * dcolumns;
+ 
+    T * hostTreeRows;
+    T * hostTreeColumns;
+    T * deviceTreeRows;
+    T * deviceTreeColumns;
+
+    T * hostDynamicRows;
+    T * hostDynamicColumns;
+    T * deviceDynamicRows;
+    T * deviceDynamicColumns;
+
 };
 
 #endif

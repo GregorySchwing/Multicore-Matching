@@ -451,13 +451,13 @@ int main(int argc, char **argv)
 					//VCGPU2< BalancedGrowth<int>,  ExplicitTree<int> > vc3(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
 					VCGPU2< BalancedGrowth<int>,  ImplicitTree<int> > vc2(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
 					vc2.DoSomething();
-					VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
+					//VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
 					cout << '\n' << "Press a key to continue...\n";
 					cin.get();
 					if (!solutionCantExist){
-						vc.matcher.initialMatching(match);
+						//vc.matcher.initialMatching(match);
 						initscr ();
-						vc.FindCover(0, 1, foundSolution);
+						//vc.FindCover(0, 1, foundSolution);
 						if (foundSolution){
 							printf("Found a solution.\n");
 						} else {
@@ -466,19 +466,19 @@ int main(int argc, char **argv)
 						cout << '\n' << "Press a key to continue...\n";
 						cin.get();
 						endwin();
-						
+						/*
 						if (foundSolution){
 							for (int i = 0; i < vc.solutionSize; ++i)
 								printf("%d ",vc.solution[i]);					
 						} else {
 							vc.CallDrawSearchTree(stn);
 						}
-						
+						*/
 						printf("If the tree isn't completely generated,\n"); 
 						printf("it is due to dynamically added pendant excede k before\n"); 
 						printf("reaching the leaf nodes.\n");
-						vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);
-						vc.CopyMatchingBackToHost(match);
+						//vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);
+						//vc.CopyMatchingBackToHost(match);
 					}
 				}
 				catch (exception &e)
@@ -516,6 +516,7 @@ int main(int argc, char **argv)
 						return -1;
 					}
 				}
+				/*
 				if (!solutionCantExist){
 					//Determine matching weight and size.
 					double matchingWeight = 0.0;
@@ -535,6 +536,7 @@ int main(int argc, char **argv)
 					totalTimes[k] = time0;
 					matchTimes[k] = time1;		
 				}
+				*/
 			}
 
 			

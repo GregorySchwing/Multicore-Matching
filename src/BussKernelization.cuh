@@ -28,7 +28,8 @@ class BussKernelization
 		~BussKernelization();
         void bussKernelizationP1();
         void bussKernelizationP2();
-
+        int GetKPrime();
+    private:
         int sizeOfKernelSolution;
 
         int *dremainingedges, *dsizeofkernelsolution, *ddegrees, *dsolution;

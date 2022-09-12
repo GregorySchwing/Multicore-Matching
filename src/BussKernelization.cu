@@ -121,3 +121,8 @@ void BussKernelization::bussKernelizationP2(){
     remainingedges/=2;
     printf("Remaining edges after Kernel %d\n", remainingedges);
 }
+
+// Initial kernelization before search tree is built
+int BussKernelization::GetKPrime(){
+    return kPrime;
+}
