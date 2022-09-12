@@ -51,9 +51,7 @@ class VCGPU2 : public GrowthPolicy
         int fullpathcount, depthOfSearchTree, remainingedges;
         std::vector<float> finishedLeavesPerLevel;
         std::vector<float> totalLeavesPerLevel;
-        std::vector<int> edgestatus;
         std::vector<int> newdegrees;
-        std::vector<int2> searchtree;
         std::vector<int> solution;
         int solutionSize;
         std::vector<int> dynamcverts;
