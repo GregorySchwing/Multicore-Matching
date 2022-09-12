@@ -168,11 +168,23 @@ GraphMatchingGeneralGPURandom::GraphMatchingGeneralGPURandom(const Graph &_graph
 		GraphMatchingGPU(_graph, _nrThreads, _selectBarrier)
 {
 	if (cudaMalloc(&drequests, sizeof(int)*graph.nrVertices) != cudaSuccess ||  
-		cudaMalloc(&dsense, sizeof(int)*graph.nrVertices) != cudaSuccess)
+		cudaMalloc(&dsense, sizeof(int)*graph.nrVertices) != cudaSuccess ||      
+		cudaMalloc(&dlength, sizeof(int)*graph.nrVertices) != cudaSuccess || 
+		cudaMalloc(&dmatch, sizeof(int)*graph.nrVertices) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
 		throw exception();
 	}
+	
+	dfll.clear();
+    dfll.resize(graph.nrVertices);
+	thrust::sequence(dfll.begin(),dfll.end(), 0, 1);
+	dforwardlinkedlist = thrust::raw_pointer_cast(&dfll[0]);
+	
+    dbll.clear();
+    dbll.resize(graph.nrVertices);
+	thrust::sequence(dbll.begin(),dbll.end(), 0, 1);
+	dbackwardlinkedlist = thrust::raw_pointer_cast(&dbll[0]);
 }
 
 GraphMatchingGeneralGPURandom::~GraphMatchingGeneralGPURandom()

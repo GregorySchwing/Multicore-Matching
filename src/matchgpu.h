@@ -62,6 +62,9 @@ class GraphMatchingGeneralGPURandom : public GraphMatchingGPU
 		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int * dsearchtreerows, int * dsearchtreecols, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int sizeOfKernelSolution,  int * kernelSolution, int leafIndex) const;
 		int *drequests, *dsense;
 		int *dlength, *dforwardlinkedlist, *dbackwardlinkedlist, *dmatch;
+		// Never directly used, just used for thrust::sequence functionality to avoid a kernel call.
+		thrust::device_vector<int> dfll;
+        thrust::device_vector<int> dbll;
 
 };
 
