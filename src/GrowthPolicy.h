@@ -21,11 +21,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 template <class T>
 struct BalancedGrowth
 {
+/*
 static T* Create()
 {
 return new T;
 }
-
+*/
 template <typename U>
 static void PopulateTree(U* param1, int param2);
 };
