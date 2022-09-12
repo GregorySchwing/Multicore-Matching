@@ -45,7 +45,9 @@ class VCGPU2 : public GrowthPolicy, TreePolicy
               const unsigned int &_barrier, 
               const unsigned int &_k,
               bool &solutionCantExist);
-    void DoSomething();
+    void FindCover(int root,
+                      int recursiveStackDepth,
+                      bool & foundSolution);
 		~VCGPU2();
         template <typename T> void myFunction(T* param1, int param2);
 
@@ -67,7 +69,6 @@ class VCGPU2 : public GrowthPolicy, TreePolicy
         //int *dfullpathcount;
         mtc::Edge * dedges;
 
-        mtc::GraphMatchingGeneralGPURandom matcher;
 
         GraphViz Gviz;
         // Cant get this working
@@ -111,9 +112,10 @@ VCGPU2<GrowthPolicy, TreePolicy>::VCGPU2(const Graph &_graph,
   graph(_graph),
   threadsPerBlock(_threadsPerBlock),
   barrier(_barrier),
-  matcher(_graph, _threadsPerBlock, _barrier),
+  //matcher(_graph, _threadsPerBlock, _barrier),
   k(_k),
-  solutionCantExist(_solutionCantExist)
+  solutionCantExist(_solutionCantExist),
+  GrowthPolicy(_graph, _threadsPerBlock, _barrier, k)
 {
   if (cudaMalloc(&dsolution, sizeof(int)*k) != cudaSuccess)
   {
@@ -125,9 +127,11 @@ VCGPU2<GrowthPolicy, TreePolicy>::VCGPU2(const Graph &_graph,
 }
 
 template <class GrowthPolicy, class TreePolicy>
-void VCGPU2<GrowthPolicy, TreePolicy>::DoSomething()
+void VCGPU2<GrowthPolicy, TreePolicy>::FindCover(int root,
+                      int recursiveStackDepth,
+                      bool & foundSolution)
 {
-  TreePolicy().Create(5);
+  GrowthPolicy::FindCover(root, recursiveStackDepth, foundSolution);
 }
 
 template <class GrowthPolicy, class TreePolicy>
