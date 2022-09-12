@@ -31,6 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "TreePolicy.h"
 
 #include "GraphViz.cuh"
+#include "BussKernelization.cuh"
 
 
 // Library code
@@ -52,10 +53,7 @@ class VCGPU2 : public GrowthPolicy, TreePolicy
         long long sizeOfSearchTree;
         int k;
         int kPrime;
-        int fullpathcount, depthOfSearchTree, remainingedges;
-        std::vector<float> finishedLeavesPerLevel;
-        std::vector<float> totalLeavesPerLevel;
-        std::vector<int> newdegrees;
+        int fullpathcount, depthOfSearchTree;
         std::vector<int> solution;
         int solutionSize;
         std::vector<int> dynamcverts;
@@ -65,8 +63,8 @@ class VCGPU2 : public GrowthPolicy, TreePolicy
         int uncoverededges;
         int * duncoverededges;
         // VC arrays
-        int *dedgestatus, *ddegrees, *dfullpathcount, *dnumleaves, *dremainingedges;
-        int2 *dsearchtree;
+        int *dedgestatus, *ddegrees, *dfullpathcount, *dremainingedges;
+
         // Indicates the dyn added verts in each recursion stack
         int *ddynamicallyaddedvertices_csr;
         int *ddynamicallyaddedvertices;
@@ -76,16 +74,15 @@ class VCGPU2 : public GrowthPolicy, TreePolicy
         int *dsizeofkernelsolution;
         int numberofdynamicallyaddedvertices;
         int numberofdynamicallyaddedverticesLB, numberofdynamicallyaddedverticesUB;
-        int *active_frontier_status;
-        float * dfinishedLeavesPerLevel;
+
         mtc::Edge * dedges;
-
-        int *dlength, *dforwardlinkedlist, *dbackwardlinkedlist, *dmatch;
-
 
         mtc::GraphMatchingGeneralGPURandom matcher;
 
         GraphViz Gviz;
+        // Cant get this working
+        //BussKernelization & bk;
+        BussKernelization * bk;
 	protected:
 		const mtc::Graph &graph;
         const int &threadsPerBlock;
@@ -129,6 +126,13 @@ VCGPU2<GrowthPolicy, TreePolicy>::VCGPU2(const Graph &_graph,
   solutionCantExist(_solutionCantExist)
 {
   TreePolicy().Create(5);
+
+  if (cudaMalloc(&dsolution, sizeof(int)*k) != cudaSuccess)
+  {
+		std::cerr << "Not enough memory on device!" << std::endl;
+		throw std::exception();
+	}
+  bk = new BussKernelization(_graph, _threadsPerBlock, _barrier, _k, dsolution, _solutionCantExist);
 }
 
 template <class GrowthPolicy, class TreePolicy>

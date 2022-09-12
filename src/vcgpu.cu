@@ -1281,7 +1281,7 @@ __global__ void SetEdges(const int leafIndex,
     } 
 }
 
-
+/*
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void BussKernelizationP1Kernel(int nrVertices, 
                                         int k, 
@@ -1292,6 +1292,7 @@ __global__ void BussKernelizationP1Kernel(int nrVertices,
     if (threadID >= nrVertices) return;
     int degree = ddegrees[threadID];
     if (degree <= k) return;
+    printf("Vertex %d's deg %d exceeds k %d\n", threadID, degree, k);
     int solutionIndex = atomicAdd(&dsizeofkernelsolution[0], 1);
     // dsolution = new int[k];
     // Prevent oob
@@ -1312,6 +1313,7 @@ __global__ void BussKernelizationP2Kernel(int sizeOfKernelSolution,
     int remainingedges = atomicSub(&dremainingedges[0], degree);
     //printf("Removed %d's %d edges : edges remaining %d\n", solnVertex, degree/2, remainingedges/2);
 }
+*/
 
 __device__ void SetEdges(   int vertexToInclude,
                             int * dedgestatus){
