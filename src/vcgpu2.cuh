@@ -121,20 +121,20 @@ VCGPU2<GrowthPolicy, TreePolicy>::VCGPU2(const Graph &_graph,
              const unsigned int &_barrier, 
              const unsigned int &_k,
              bool & _solutionCantExist):
-		graph(_graph),
-        threadsPerBlock(_threadsPerBlock),
-        barrier(_barrier),
-		matcher(_graph, _threadsPerBlock, _barrier),
-        k(_k),
-        solutionCantExist(_solutionCantExist)
+  graph(_graph),
+  threadsPerBlock(_threadsPerBlock),
+  barrier(_barrier),
+  matcher(_graph, _threadsPerBlock, _barrier),
+  k(_k),
+  solutionCantExist(_solutionCantExist)
 {
-    TreePolicy().Create();
+  TreePolicy().Create(5);
 }
 
 template <class GrowthPolicy, class TreePolicy>
 void VCGPU2<GrowthPolicy, TreePolicy>::DoSomething()
 {
-  TreePolicy().Create();
+  TreePolicy().Create(5);
 }
 
 template <class GrowthPolicy, class TreePolicy>
