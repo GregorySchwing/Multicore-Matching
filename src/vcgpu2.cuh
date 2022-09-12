@@ -35,8 +35,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 // Library code
-template <class GrowthPolicy, class TreePolicy>
-class VCGPU2 : public GrowthPolicy, TreePolicy
+template <class GrowthPolicy>
+class VCGPU2 : public GrowthPolicy
 {
 
 	public:
@@ -103,8 +103,8 @@ __device__ int dkeepMatching;
 
 
 
-template <class GrowthPolicy, class TreePolicy>
-VCGPU2<GrowthPolicy, TreePolicy>::VCGPU2(const Graph &_graph, 
+template <class GrowthPolicy>
+VCGPU2<GrowthPolicy>::VCGPU2(const Graph &_graph, 
              const int &_threadsPerBlock, 
              const unsigned int &_barrier, 
              const unsigned int &_k,
@@ -123,25 +123,25 @@ VCGPU2<GrowthPolicy, TreePolicy>::VCGPU2(const Graph &_graph,
 		throw std::exception();
 	}
   bk = new BussKernelization(_graph, _threadsPerBlock, _barrier, _k, dsolution, _solutionCantExist);
-  TreePolicy().Create(bk->GetKPrime());
+  //TreePolicy().Create(bk->GetKPrime());
 }
 
-template <class GrowthPolicy, class TreePolicy>
-void VCGPU2<GrowthPolicy, TreePolicy>::FindCover(int root,
+template <class GrowthPolicy>
+void VCGPU2<GrowthPolicy>::FindCover(int root,
                       int recursiveStackDepth,
                       bool & foundSolution)
 {
   GrowthPolicy::FindCover(root, recursiveStackDepth, foundSolution);
 }
 
-template <class GrowthPolicy, class TreePolicy>
-VCGPU2<GrowthPolicy, TreePolicy>::~VCGPU2(){
+template <class GrowthPolicy>
+VCGPU2<GrowthPolicy>::~VCGPU2(){
 
 }
 
-template <class GrowthPolicy, class TreePolicy>
+template <class GrowthPolicy>
 template <typename T>
-void VCGPU2<GrowthPolicy, TreePolicy>::myFunction(T* param1, int param2){
+void VCGPU2<GrowthPolicy>::myFunction(T* param1, int param2){
     kernel_wrapper(param1, param2);
 }
 

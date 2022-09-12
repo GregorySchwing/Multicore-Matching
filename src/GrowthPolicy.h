@@ -33,7 +33,18 @@ Serial(const mtc::Graph &_graph,
               threadsPerBlock(_threadsPerBlock),
               k(_k){
     sizeOfKernelSolution = numoftreeverts = numberofdynamicallyaddedvertices = 0;
-
+    hostTreeRows = new T[k+1];
+    hostTreeColumns = new T[4*k];
+    hostDynamicRows = new T[k+1];
+    hostDynamicColumns = new T[k];
+    if (cudaMalloc(&deviceTreeRows, sizeof(T)*(k+1)) != cudaSuccess || 
+        cudaMalloc(&deviceTreeColumns, sizeof(T)*(4*k)) != cudaSuccess || 
+        cudaMalloc(&deviceDynamicRows, sizeof(T)*(k+1)) != cudaSuccess || 
+        cudaMalloc(&deviceDynamicColumns, sizeof(T)*(k)) != cudaSuccess)
+    {
+		std::cerr << "Not enough memory on device!" << std::endl;
+		throw std::exception();
+	}
 }
 
 void FindCover(int root, int recursiveStackDepth, bool & foundSolution){
@@ -63,6 +74,15 @@ static void PopulateTree(U* param1, int param2);
 		const mtc::Graph &graph;
         const int &threadsPerBlock;
         int sizeOfKernelSolution, numoftreeverts, numberofdynamicallyaddedvertices, k;
+            T * hostTreeRows;
+    T * hostTreeColumns;
+    T * deviceTreeRows;
+    T * deviceTreeColumns;
+
+    T * hostDynamicRows;
+    T * hostDynamicColumns;
+    T * deviceDynamicRows;
+    T * deviceDynamicColumns;
 };
 
 template <class T>
@@ -82,7 +102,18 @@ Parallel(const mtc::Graph &_graph,
     for (int i = 0; i < NUM_STREAMS; ++i) {
         new(&matcher[i]) mtc::GraphMatchingGeneralGPURandom(_graph, _threadsPerBlock, _barrier);
     }
-
+    hostTreeRows = new T[NUM_STREAMS*(k+1)];
+    hostTreeColumns = new T[NUM_STREAMS*(4*k)];
+    hostDynamicRows = new T[NUM_STREAMS*(k+1)];
+    hostDynamicColumns = new T[NUM_STREAMS*k];
+    if (cudaMalloc(&deviceTreeRows, sizeof(T)*(NUM_STREAMS*(k+1))) != cudaSuccess || 
+        cudaMalloc(&deviceTreeColumns, sizeof(T)*(NUM_STREAMS*(4*k))) != cudaSuccess || 
+        cudaMalloc(&deviceDynamicRows, sizeof(T)*(NUM_STREAMS*(k+1))) != cudaSuccess || 
+        cudaMalloc(&deviceDynamicColumns, sizeof(T)*(NUM_STREAMS*k)) != cudaSuccess)
+    {
+		std::cerr << "Not enough memory on device!" << std::endl;
+		throw std::exception();
+	}
 }
     private:
 		const mtc::Graph &graph;
@@ -95,7 +126,15 @@ Parallel(const mtc::Graph &_graph,
         // Make these arrays
         int sizeOfKernelSolution, numoftreeverts, numberofdynamicallyaddedvertices;
         int k;
+    T * hostTreeRows;
+    T * hostTreeColumns;
+    T * deviceTreeRows;
+    T * deviceTreeColumns;
 
+    T * hostDynamicRows;
+    T * hostDynamicColumns;
+    T * deviceDynamicRows;
+    T * deviceDynamicColumns;
 
 void FindCover(){
     printf("Called Parallel FindCover\n");
