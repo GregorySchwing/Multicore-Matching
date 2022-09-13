@@ -36,7 +36,6 @@ Serial(const mtc::Graph &_graph,
               kPrime(_k){
     //cudaMemcpy(dDegrees, graph.degrees.data(), sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
     //bk = new BussKernelization(_graph, _threadsPerBlock, _barrier, _k, solutionCantExist);
-    sizeOfKernelSolution = numoftreeverts = numberofdynamicallyaddedvertices = 0;
     hostTreeRows = new T[k+1];
     hostTreeColumns = new T[4*k];
     hostDynamicRows = new T[k+1];
@@ -76,14 +75,16 @@ void FindCover(int root, int recursiveStackDepth, bool & foundSolution){
 
         return;
     }
-    if (sizeOfKernelSolution+numoftreeverts+numberofdynamicallyaddedvertices <= k) {
-                        printf("<= k\n");
 
+    // Lazy way to do this.
+    cudaMemcpy(&numberofkernelvertices, &deviceKernelRows[recursiveStackDepth], sizeof(T)*1, cudaMemcpyDeviceToHost);
+    cudaMemcpy(&numberoftreevertices, &deviceTreeRows[recursiveStackDepth], sizeof(T)*1, cudaMemcpyDeviceToHost);
+    cudaMemcpy(&numberofdynamicallyaddedvertices, &deviceDynamicRows[recursiveStackDepth], sizeof(T)*1, cudaMemcpyDeviceToHost);
+
+    if (numberofkernelvertices+numberoftreevertices+numberofdynamicallyaddedvertices <= k) {
         Match(root);
     } else {
-                printf("> k\n");
     }
-
 }
 
 
@@ -95,7 +96,10 @@ static void PopulateTree(U* param1, int param2);
         mtc::GraphMatchingGeneralGPURandom matcher;
 		const mtc::Graph &graph;
         const int &threadsPerBlock;
-        int sizeOfKernelSolution, numoftreeverts, numberofdynamicallyaddedvertices;
+
+        int numberofkernelvertices = 0;
+        int numberofdynamicallyaddedvertices = 0;
+        int numberoftreevertices = 0;
         const int k;
         int kPrime;
         T * hostTreeRows;
@@ -167,7 +171,9 @@ Parallel(const mtc::Graph &_graph,
         /// @brief Array of matchers, one for each stream.
         mtc::GraphMatchingGeneralGPURandom * matcher;
         // Make these arrays
-        int sizeOfKernelSolution, numoftreeverts, numberofdynamicallyaddedvertices;
+        int numberofkernelvertices = 0;
+        int numberofdynamicallyaddedvertices = 0;
+        int numberoftreevertices = 0;
         const int k;
         int kPrime;
         T * hostTreeRows;
