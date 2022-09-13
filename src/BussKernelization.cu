@@ -111,8 +111,8 @@ BussKernelization::BussKernelization(const mtc::Graph &_graph,
 
 void BussKernelization::PerformBussKernelization(int nrVertices,
                                                 int threadsPerBlock,
-                                                int k,
-                                                int kPrime,
+                                                const int k,
+                                                int & kPrime,
                                                 int recursiveStackIndex,
                                                 int * ddegrees,
                                                 int * dkernelsolutionrows,
@@ -133,12 +133,12 @@ void BussKernelization::PerformBussKernelization(int nrVertices,
     } else {
         printf("|S| = b (%d) <= k (%d), a solution may exist\n", sizeOfKernelSolution, k);
     }
-    /*
     solutionCantExist = sizeOfKernelSolution > k;
-    kPrime = k - sizeOfKernelSolution;
+    kPrime -= sizeOfKernelSolution;
     if(!solutionCantExist){
         printf("Setting k' = k %d - b %d = %d\n", k, sizeOfKernelSolution, kPrime);
-        bussKernelizationP2();
+        //bussKernelizationP2();
+        int remainingedges = 0;
         solutionCantExist = remainingedges > k*kPrime;
         if(remainingedges > k*kPrime){
             printf("|G'(E)| (%d) > k (%d) * k' (%d) = %d, no solution exists\n",remainingedges, k, kPrime, k*kPrime);
@@ -146,7 +146,6 @@ void BussKernelization::PerformBussKernelization(int nrVertices,
             printf("|G'(E)| (%d) <= k (%d) * k' (%d) = %d, a solution may exist\n",remainingedges, k, kPrime, k*kPrime);
         }
     }
-    */
 }
 
 // Initial kernelization before search tree is built

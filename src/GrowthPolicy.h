@@ -32,7 +32,8 @@ Serial(const mtc::Graph &_graph,
               matcher(_graph, _threadsPerBlock, _barrier),
               graph(_graph),
               threadsPerBlock(_threadsPerBlock),
-              k(_k){
+              k(_k),
+              kPrime(_k){
     //cudaMemcpy(dDegrees, graph.degrees.data(), sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
     //bk = new BussKernelization(_graph, _threadsPerBlock, _barrier, _k, solutionCantExist);
     sizeOfKernelSolution = numoftreeverts = numberofdynamicallyaddedvertices = 0;
@@ -63,8 +64,7 @@ Serial(const mtc::Graph &_graph,
 		throw std::exception();
     }
 
-    BussKernelization::PerformBussKernelization(graph.nrVertices, threadsPerBlock, k, k, 1, matcher.ddegrees, deviceKernelRows, deviceKernelColumns, solutionCantExist);
-
+    BussKernelization::PerformBussKernelization(graph.nrVertices, threadsPerBlock, k, kPrime, 1, matcher.ddegrees, deviceKernelRows, deviceKernelColumns, solutionCantExist);
 }
 
 void FindCover(int root, int recursiveStackDepth, bool & foundSolution){
@@ -93,7 +93,9 @@ static void PopulateTree(U* param1, int param2);
         mtc::GraphMatchingGeneralGPURandom matcher;
 		const mtc::Graph &graph;
         const int &threadsPerBlock;
-        int sizeOfKernelSolution, numoftreeverts, numberofdynamicallyaddedvertices, k;
+        int sizeOfKernelSolution, numoftreeverts, numberofdynamicallyaddedvertices;
+        const int k;
+        int kPrime;
         T * hostTreeRows;
         T * hostTreeColumns;
         T * deviceTreeRows;
@@ -154,7 +156,8 @@ Parallel(const mtc::Graph &_graph,
         mtc::GraphMatchingGeneralGPURandom * matcher;
         // Make these arrays
         int sizeOfKernelSolution, numoftreeverts, numberofdynamicallyaddedvertices;
-        int k;
+        const int k;
+        int kPrime;
         T * hostTreeRows;
         T * hostTreeColumns;
         T * deviceTreeRows;

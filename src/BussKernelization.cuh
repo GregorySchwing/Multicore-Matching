@@ -49,7 +49,7 @@ class BussKernelization
         */
         static void bussKernelizationP1(int nrVertices,
                                 int threadsPerBlock,
-                                int k,
+                                const int k,
                                 int kPrime,
                                 int & sizeOfKernelSolution,
                                 int recursiveStackIndex,
@@ -61,8 +61,8 @@ class BussKernelization
         //int* GetKernelSolution();
         static void PerformBussKernelization(int nrVertices,
                                                         int threadsPerBlock,
-                                                        int k,
-                                                        int kPrime,
+                                                        const int k,
+                                                        int & kPrime,
                                                         int recursiveStackIndex,
                                                         int * ddegrees,
                                                         int * dkernelsolutionrows,
