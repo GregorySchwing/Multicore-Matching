@@ -63,7 +63,7 @@ class BussKernelization
                                         int sizeOfKernelSolution,
                                         int * dDegrees,
                                         int * deviceRemainingEdges,
-                                        int * dkernelsolutionrows,
+                                        int startOfNewKernel,
                                         int * dkernelsolutioncols);
         //int GetKPrime();
         //int* GetKernelSolution();
