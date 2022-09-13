@@ -232,9 +232,7 @@ void Serial<T>::Match(int leafIndex){
     cudaEventRecord(t0, 0);
     cudaEventSynchronize(t0);
     printf("Called Match Serial\n");
-    //matcher.performMatching(dmatch, t1, t2, dsearchtree, ddynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeOfKernelSolution, dsolution, leafIndex);
-    //matcher.performMatching(matcher.dmatch, t1, t2, deviceTreeRows, deviceTreeColumns, deviceDynamicRows, deviceDynamicColumns, sizeOfKernelSolution, bk->GetKernelSolution(), leafIndex);
-
+    matcher.performMatching(matcher.dmatch, t1, t2, numberofkernelvertices, deviceKernelColumns, numberoftreevertices, deviceTreeColumns, numberofdynamicallyaddedvertices, deviceDynamicColumns, leafIndex);
     cudaEventElapsedTime(&time1, t1, t2);
     cudaEventRecord(t3, 0);
     cudaEventSynchronize(t3);

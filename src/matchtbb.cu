@@ -497,7 +497,7 @@ GraphMatchingTBBRandom::~GraphMatchingTBBRandom()
 	
 }
 
-void GraphMatchingTBBRandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dsearchtreerows, int * dsearchtreecols, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int sizeOfKernelSolution, int * kernelSolution, int leafIndex) const
+void GraphMatchingTBBRandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int numberOfKernelCols, int * deviceKernelColumns, int numberOfTreeVertsCols, int * deviceTreeColumns, int numberOfDynamicCols, int * deviceDynamicColumns, int leafIndex) const
 {
 	//This is a random greedy matching algorithm using Intel's Threading Building Blocks library.
 	//Assumes that the order of the vertices has already been randomized.
@@ -566,7 +566,7 @@ GraphMatchingTBBWeighted::~GraphMatchingTBBWeighted()
 	
 }
 
-void GraphMatchingTBBWeighted::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int * dsearchtreerows, int * dsearchtreecols, int * dynamicallyAddedVertices, int * numberOfDynamicallyAddedVertices, int sizeOfKernelSolution, int * kernelSolution, int leafIndex) const
+void GraphMatchingTBBWeighted::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int numberOfKernelCols, int * deviceKernelColumns, int numberOfTreeVertsCols, int * deviceTreeColumns, int numberOfDynamicCols, int * deviceDynamicColumns, int leafIndex) const
 {
 	//This is a weighted greedy matching algorithm using Intel's Threading Building Blocks library.
 	//Assumes that the order of the vertices has already been randomized.
