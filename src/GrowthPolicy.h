@@ -48,7 +48,8 @@ Serial(const mtc::Graph &_graph,
         cudaMalloc(&deviceDynamicRows, sizeof(T)*(k+1)) != cudaSuccess || 
         cudaMalloc(&deviceDynamicColumns, sizeof(T)*(k)) != cudaSuccess || 
         cudaMalloc(&deviceKernelRows, sizeof(T)*(k+1)) != cudaSuccess || 
-        cudaMalloc(&deviceKernelColumns, sizeof(T)*(k)) != cudaSuccess)
+        cudaMalloc(&deviceKernelColumns, sizeof(T)*(k)) != cudaSuccess||
+        cudaMalloc(&deviceRemainingEdges, sizeof(T)) != cudaSuccess)
     {
 		std::cerr << "Not enough memory on device!" << std::endl;
 		throw std::exception();
@@ -59,12 +60,13 @@ Serial(const mtc::Graph &_graph,
         cudaMemset(deviceDynamicRows, 0, sizeof(T)*(k+1)) != cudaSuccess || 
         cudaMemset(deviceDynamicColumns, 0, sizeof(T)*(k)) != cudaSuccess || 
         cudaMemset(deviceKernelRows, 0, sizeof(T)*(k+1)) != cudaSuccess || 
-        cudaMemset(deviceKernelColumns, 0, sizeof(T)*(k)) != cudaSuccess){
+        cudaMemset(deviceKernelColumns, 0, sizeof(T)*(k)) != cudaSuccess ||
+        cudaMemset(deviceRemainingEdges, 0, sizeof(T)) != cudaSuccess){
         std::cerr << "Error clearing memory!" << std::endl;
 		throw std::exception();
     }
 
-    BussKernelization::PerformBussKernelization(graph.nrVertices, threadsPerBlock, k, kPrime, 1, matcher.ddegrees, deviceKernelRows, deviceKernelColumns, solutionCantExist);
+    BussKernelization::PerformBussKernelization(graph.nrVertices, threadsPerBlock, k, kPrime, 1, matcher.ddegrees, deviceKernelRows, deviceKernelColumns, deviceRemainingEdges, solutionCantExist);
 }
 
 void FindCover(int root, int recursiveStackDepth, bool & foundSolution){
@@ -111,6 +113,9 @@ static void PopulateTree(U* param1, int param2);
         T * deviceKernelRows;
         T * deviceKernelColumns;
 
+        T * hostRemainingEdges;
+        T * deviceRemainingEdges;
+
         //BussKernelization * bk;
         bool solutionCantExist;
 
@@ -137,10 +142,13 @@ Parallel(const mtc::Graph &_graph,
     hostTreeColumns = new T[NUM_STREAMS*(4*k)];
     hostDynamicRows = new T[NUM_STREAMS*(k+1)];
     hostDynamicColumns = new T[NUM_STREAMS*k];
+    hostRemainingEdges = new T[NUM_STREAMS];
+
     if (cudaMalloc(&deviceTreeRows, sizeof(T)*(NUM_STREAMS*(k+1))) != cudaSuccess || 
         cudaMalloc(&deviceTreeColumns, sizeof(T)*(NUM_STREAMS*(4*k))) != cudaSuccess || 
         cudaMalloc(&deviceDynamicRows, sizeof(T)*(NUM_STREAMS*(k+1))) != cudaSuccess || 
-        cudaMalloc(&deviceDynamicColumns, sizeof(T)*(NUM_STREAMS*k)) != cudaSuccess)
+        cudaMalloc(&deviceDynamicColumns, sizeof(T)*(NUM_STREAMS*k)) != cudaSuccess ||
+        cudaMalloc(&deviceRemainingEdges, sizeof(T)*(NUM_STREAMS)) != cudaSuccess)
     {
 		std::cerr << "Not enough memory on device!" << std::endl;
 		throw std::exception();
@@ -172,6 +180,9 @@ Parallel(const mtc::Graph &_graph,
         T * hostKernelColumns;
         T * deviceKernelRows;
         T * deviceKernelColumns;
+
+        T * hostRemainingEdges;
+        T * deviceRemainingEdges;
 
 void FindCover(){
     printf("Called Parallel FindCover\n");

@@ -56,18 +56,27 @@ class BussKernelization
                                 int * dDegrees,
                                 int * dKernelSolutionRows,
                                 int * dKernelSolutionCols);
-        static void bussKernelizationP2();
+        static void bussKernelizationP2(int nrVertices,
+                                        int threadsPerBlock,
+                                        int recursiveStackIndex,
+                                        int & remainingEdges,
+                                        int sizeOfKernelSolution,
+                                        int * dDegrees,
+                                        int * deviceRemainingEdges,
+                                        int * dkernelsolutionrows,
+                                        int * dkernelsolutioncols);
         //int GetKPrime();
         //int* GetKernelSolution();
         static void PerformBussKernelization(int nrVertices,
-                                                        int threadsPerBlock,
-                                                        const int k,
-                                                        int & kPrime,
-                                                        int recursiveStackIndex,
-                                                        int * ddegrees,
-                                                        int * dkernelsolutionrows,
-                                                        int * dkernelsolutioncols,
-                                                        bool & solutionCantExist);
+                                                int threadsPerBlock,
+                                                const int k,
+                                                int & kPrime,
+                                                int recursiveStackIndex,
+                                                int * ddegrees,
+                                                int * dkernelsolutionrows,
+                                                int * dkernelsolutioncols,
+                                                int * deviceRemainingEdges,
+                                                bool & solutionCantExist);
                                                         /*
     private:
         int sizeOfKernelSolution;

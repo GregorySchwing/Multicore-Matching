@@ -53,13 +53,33 @@ __global__ void BussKernelizationP1Kernel(int nrVertices,
     dKernelSolutionCols[solutionIndex] = threadID;
 }
 
+__global__ void ReduceDegrees(          int nrVertices,
+                                        int *ddegrees,
+                                        int *dremainingedges){
+    extern __shared__ double temp[];
+    int threadID = threadIdx.x;
+    int vertexID = blockIdx.x * blockDim.x + threadIdx.x;
+    if (threadID >= nrVertices) return;
+
+    // Load degrees into shared memory
+    temp[threadID] = ddegrees[vertexID];
+    // Warp reduce block of degrees
+    for (int d=blockDim.x>>1; d>=1; d>>=1) {
+        __syncthreads();
+        if (threadID<d) temp[threadID] += temp[threadID+d];
+    }
+    // Add block reduced value to global value.
+    if (threadIdx.x == 0) atomicAdd(&dremainingedges[0], temp[threadID]);
+
+}
+
 __global__ void BussKernelizationP2Kernel(int sizeOfKernelSolution,
                                         int *ddegrees,
                                         int *dremainingedges,
-                                        int *dsolution){
+                                        int *dkernelsolution){
 	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
     if (threadID >= sizeOfKernelSolution) return;
-    int solnVertex = dsolution[threadID];
+    int solnVertex = dkernelsolution[threadID];
     int degree = ddegrees[solnVertex];
     int remainingedges = atomicSub(&dremainingedges[0], degree);
     //printf("Removed %d's %d edges : edges remaining %d\n", solnVertex, degree/2, remainingedges/2);
@@ -117,6 +137,7 @@ void BussKernelization::PerformBussKernelization(int nrVertices,
                                                 int * ddegrees,
                                                 int * dkernelsolutionrows,
                                                 int * dkernelsolutioncols,
+                                                int * deviceRemainingEdges,
                                                 bool & solutionCantExist){
     int sizeOfKernelSolution = 0;
     bussKernelizationP1(nrVertices,
@@ -137,8 +158,16 @@ void BussKernelization::PerformBussKernelization(int nrVertices,
     kPrime -= sizeOfKernelSolution;
     if(!solutionCantExist){
         printf("Setting k' = k %d - b %d = %d\n", k, sizeOfKernelSolution, kPrime);
-        //bussKernelizationP2();
         int remainingedges = 0;
+        bussKernelizationP2(nrVertices,
+                            threadsPerBlock, 
+                            recursiveStackIndex,
+                            remainingedges,
+                            sizeOfKernelSolution,
+                            ddegrees,
+                            deviceRemainingEdges,
+                            dkernelsolutionrows,
+                            dkernelsolutioncols);
         solutionCantExist = remainingedges > k*kPrime;
         if(remainingedges > k*kPrime){
             printf("|G'(E)| (%d) > k (%d) * k' (%d) = %d, no solution exists\n",remainingedges, k, kPrime, k*kPrime);
@@ -193,25 +222,38 @@ void BussKernelization::bussKernelizationP1(int nrVertices,
 }
 
 // Initial kernelization before search tree is built
-void BussKernelization::bussKernelizationP2(){
-    /*
-    printf("Remaining edges before Kernel %d\n", graph.nrEdges);
+void BussKernelization::bussKernelizationP2(int nrVertices,
+                                        int threadsPerBlock,
+                                        int recursiveStackIndex,
+                                        int & remainingEdges,
+                                        int sizeOfKernelSolution,
+                                        int * dDegrees,
+                                        int * deviceRemainingEdges,
+                                        int * dkernelsolutionrows,
+                                        int * dkernelsolutioncols)
+{
+    int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
+    ReduceDegrees<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
+                                                      dDegrees,
+                                                      deviceRemainingEdges);
+    cudaMemcpy(&remainingEdges, &deviceRemainingEdges, sizeof(int)*1, cudaMemcpyDeviceToHost);
+    printf("Remaining edges before Kernel %d\n", remainingEdges);
     // Using the indices to calculate degrees requires doubling and then halving
     // Since each edge is counted twice, once in each connecting vertex's indices.x to indices.y
-    remainingedges = 2*graph.nrEdges;
-    cudaMemcpy(dremainingedges, &remainingedges, sizeof(int)*1, cudaMemcpyHostToDevice);
-    int blocksPerGrid = (sizeOfKernelSolution + threadsPerBlock - 1)/threadsPerBlock;
+    //remainingedges = 2*graph.nrEdges;
+    //cudaMemcpy(dremainingedges, &remainingedges, sizeof(int)*1, cudaMemcpyHostToDevice);
+    blocksPerGrid = (sizeOfKernelSolution + threadsPerBlock - 1)/threadsPerBlock;
     //printf("Launching %d blocks for a solution of size %d\n", blocksPerGrid, sizeOfKernelSolution);
     BussKernelizationP2Kernel<<<blocksPerGrid, threadsPerBlock>>>(sizeOfKernelSolution,
-                                                                ddegrees,
-                                                                dremainingedges,
-                                                                dkernelsolution);
-    cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
+                                                                dDegrees,
+                                                                deviceRemainingEdges,
+                                                                &dkernelsolutioncols[dkernelsolutionrows[recursiveStackIndex]]);
+    cudaMemcpy(&remainingEdges, deviceRemainingEdges, sizeof(int)*1, cudaMemcpyDeviceToHost);
     // Using the indices to calculate degrees requires doubling and then halving
     // Since each edge is counted twice, once in each connecting vertex's indices.x to indices.y
-    remainingedges/=2;
-    printf("Remaining edges after Kernel %d\n", remainingedges);
-    */
+    remainingEdges/=2;
+    printf("Remaining edges after Kernel %d\n", remainingEdges);
+    
 }
 
 // Initial kernelization before search tree is built
