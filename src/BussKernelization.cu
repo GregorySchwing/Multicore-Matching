@@ -14,23 +14,43 @@ inline void checkLastErrorCUDA(const char *file, int line)
 }
 
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
-__global__ void BussKernelizationP1Kernel(int nrVertices, 
-                                        int k, 
-                                        int *ddegrees,
-                                        int *dsolution,
-                                        int *dsizeofkernelsolution){
+__global__ void PrintDegrees(int nrVertices, 
+                            int *ddegrees){
 	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
     if (threadID >= nrVertices) return;
     int degree = ddegrees[threadID];
-    if (degree <= k) return;
+    printf("Vertex %d's deg %d\n", threadID, degree);
+}
+
+// Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
+__global__ void PrintRowCols(int k, 
+                            int *ddegrees){
+	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+    if (threadID >= k) return;
+    int degree = ddegrees[threadID];
+    printf("Vertex %d's rc %d\n", threadID, degree);
+}
+
+// Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
+__global__ void BussKernelizationP1Kernel(int nrVertices, 
+                                        int k, 
+                                        int kPrime,
+                                        int recursiveStackIndex, 
+                                        int *ddegrees,
+                                        int *dKernelSolutionRows,
+                                        int *dKernelSolutionCols){
+	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+    if (threadID >= nrVertices) return;
+    int degree = ddegrees[threadID];
+    if (degree <= kPrime) return;
     printf("Vertex %d's deg %d exceeds k %d\n", threadID, degree, k);
-    int solutionIndex = atomicAdd(&dsizeofkernelsolution[0], 1);
+    int solutionIndex = atomicAdd(&dKernelSolutionRows[recursiveStackIndex], 1);
     // dsolution = new int[k];
     // Prevent oob
     if (solutionIndex >= k){
         return;
     }
-    dsolution[solutionIndex] = threadID;
+    dKernelSolutionCols[solutionIndex] = threadID;
 }
 
 __global__ void BussKernelizationP2Kernel(int sizeOfKernelSolution,
@@ -45,23 +65,23 @@ __global__ void BussKernelizationP2Kernel(int sizeOfKernelSolution,
     //printf("Removed %d's %d edges : edges remaining %d\n", solnVertex, degree/2, remainingedges/2);
 }
 
+/*
 BussKernelization::BussKernelization(const mtc::Graph &_graph, 
                                     const int &_threadsPerBlock, 
                                     const unsigned int &_barrier, 
                                     const unsigned int &_k,
-                                    int *_dsolution,
                                     bool &_solutionCantExist):
     graph(_graph),
     threadsPerBlock(_threadsPerBlock),
     barrier(_barrier),
     k(_k),
-    solutionCantExist(_solutionCantExist),
-    dsolution(_dsolution){
+    solutionCantExist(_solutionCantExist){
 
 
-    if (cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess || 
+    if (cudaMalloc(&dkernelsolution, sizeof(int)*k) != cudaSuccess || 
+        cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess || 
         cudaMalloc(&dremainingedges, sizeof(int)*1) != cudaSuccess || 
-        cudaMalloc(&dsizeofkernelsolution, sizeof(int)*1))	
+        cudaMalloc(&dsizeofkernelsolution, sizeof(int)*1) != cudaSuccess)	
     {
 		std::cerr << "Not enough memory on device!" << std::endl;
 		throw std::exception();
@@ -87,23 +107,95 @@ BussKernelization::BussKernelization(const mtc::Graph &_graph,
         }
     }
 }
+*/
+
+void BussKernelization::PerformBussKernelization(int nrVertices,
+                                                int threadsPerBlock,
+                                                int k,
+                                                int kPrime,
+                                                int recursiveStackIndex,
+                                                int * ddegrees,
+                                                int * dkernelsolutionrows,
+                                                int * dkernelsolutioncols,
+                                                bool & solutionCantExist){
+    int sizeOfKernelSolution = 0;
+    bussKernelizationP1(nrVertices,
+                        threadsPerBlock, 
+                        k,
+                        kPrime,
+                        sizeOfKernelSolution,
+                        recursiveStackIndex,
+                        ddegrees,
+                        dkernelsolutionrows,
+                        dkernelsolutioncols);
+    if (sizeOfKernelSolution > k){
+        printf("|S| = b (%d) > k (%d), no solution exists\n", sizeOfKernelSolution, k);
+    } else {
+        printf("|S| = b (%d) <= k (%d), a solution may exist\n", sizeOfKernelSolution, k);
+    }
+    /*
+    solutionCantExist = sizeOfKernelSolution > k;
+    kPrime = k - sizeOfKernelSolution;
+    if(!solutionCantExist){
+        printf("Setting k' = k %d - b %d = %d\n", k, sizeOfKernelSolution, kPrime);
+        bussKernelizationP2();
+        solutionCantExist = remainingedges > k*kPrime;
+        if(remainingedges > k*kPrime){
+            printf("|G'(E)| (%d) > k (%d) * k' (%d) = %d, no solution exists\n",remainingedges, k, kPrime, k*kPrime);
+        } else {
+            printf("|G'(E)| (%d) <= k (%d) * k' (%d) = %d, a solution may exist\n",remainingedges, k, kPrime, k*kPrime);
+        }
+    }
+    */
+}
 
 // Initial kernelization before search tree is built
-void BussKernelization::bussKernelizationP1(){
-    cudaMemcpy(ddegrees, graph.degrees.data(), sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
-    int blocksPerGrid = (graph.nrVertices + threadsPerBlock - 1)/threadsPerBlock;
-    BussKernelizationP1Kernel<<<blocksPerGrid, threadsPerBlock>>>(graph.nrVertices, 
-                                                                k, 
-                                                                ddegrees,
-                                                                dsolution,
-                                                                dsizeofkernelsolution);
-    cudaMemcpy(&sizeOfKernelSolution, dsizeofkernelsolution, sizeof(int)*1, cudaMemcpyDeviceToHost);
+void BussKernelization::bussKernelizationP1(int nrVertices,
+                                            int threadsPerBlock,
+                                            int k,
+                                            int kPrime,
+                                            int & sizeOfKernelSolution,
+                                            int recursiveStackIndex,
+                                            int * dDegrees,
+                                            int * dKernelSolutionRows,
+                                            int * dKernelSolutionCols){
+    // Copy last number of kernel soln vertices 
+    int temp[2];
+    //cudaMemcpy(&dKernelSolutionRows[recursiveStackIndex], &dKernelSolutionRows[recursiveStackIndex-1], sizeof(int)*1, cudaMemcpyDeviceToDevice);
+    int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     
-    //cudaMemcpy(&solution[0], dsolution, sizeof(int)*sizeOfKernelSolution, cudaMemcpyDeviceToHost);
+    PrintDegrees<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, 
+                                                    dDegrees);
+    PrintRowCols<<<blocksPerGrid, threadsPerBlock>>>(
+                                                    k, 
+                                                    &dKernelSolutionRows[recursiveStackIndex-1]);
+    cudaDeviceSynchronize();
+    checkLastErrorCUDA(__FILE__, __LINE__);	
+
+    int test;
+    cudaMemcpy(&test, &dKernelSolutionRows[(recursiveStackIndex-1)], sizeof(int)*1, cudaMemcpyDeviceToHost);
+    PrintRowCols<<<blocksPerGrid, threadsPerBlock>>>(
+                                                    k, 
+                                                    dKernelSolutionCols);
+    cudaDeviceSynchronize();
+    checkLastErrorCUDA(__FILE__, __LINE__);	
+    
+    BussKernelizationP1Kernel<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, 
+                                                                k, 
+                                                                kPrime,
+                                                                recursiveStackIndex,
+                                                                dDegrees,
+                                                                dKernelSolutionRows,
+                                                                dKernelSolutionCols);
+
+    
+    cudaMemcpy(temp, &dKernelSolutionRows[recursiveStackIndex-1], sizeof(int)*2, cudaMemcpyDeviceToHost);
+    sizeOfKernelSolution = temp[1] - temp[0];
 }
 
 // Initial kernelization before search tree is built
 void BussKernelization::bussKernelizationP2(){
+    /*
     printf("Remaining edges before Kernel %d\n", graph.nrEdges);
     // Using the indices to calculate degrees requires doubling and then halving
     // Since each edge is counted twice, once in each connecting vertex's indices.x to indices.y
@@ -114,15 +206,23 @@ void BussKernelization::bussKernelizationP2(){
     BussKernelizationP2Kernel<<<blocksPerGrid, threadsPerBlock>>>(sizeOfKernelSolution,
                                                                 ddegrees,
                                                                 dremainingedges,
-                                                                dsolution);
+                                                                dkernelsolution);
     cudaMemcpy(&remainingedges, dremainingedges, sizeof(int)*1, cudaMemcpyDeviceToHost);
     // Using the indices to calculate degrees requires doubling and then halving
     // Since each edge is counted twice, once in each connecting vertex's indices.x to indices.y
     remainingedges/=2;
     printf("Remaining edges after Kernel %d\n", remainingedges);
+    */
 }
 
 // Initial kernelization before search tree is built
+/*
 int BussKernelization::GetKPrime(){
     return kPrime;
 }
+
+// Initial kernelization before search tree is built
+int* BussKernelization::GetKernelSolution(){
+    return dkernelsolution;
+}
+*/

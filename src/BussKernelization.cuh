@@ -1,3 +1,23 @@
+/*
+Copyright 2022, Gregory Schwing.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+#ifndef BUSS_KERNELIZATION_H
+#define BUSS_KERNELIZATION_H
+
+
 #include <vector>
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -19,20 +39,40 @@ class BussKernelization
 {
 
 	public:
+    /*
 		BussKernelization(const mtc::Graph &_graph, 
                         const int &_threadsPerBlock, 
                         const unsigned int &_barrier, 
                         const unsigned int &_k,
-                        int *_dsolution,
                         bool &solutionCantExist);
 		~BussKernelization();
-        void bussKernelizationP1();
-        void bussKernelizationP2();
-        int GetKPrime();
+        */
+        static void bussKernelizationP1(int nrVertices,
+                                int threadsPerBlock,
+                                int k,
+                                int kPrime,
+                                int & sizeOfKernelSolution,
+                                int recursiveStackIndex,
+                                int * dDegrees,
+                                int * dKernelSolutionRows,
+                                int * dKernelSolutionCols);
+        static void bussKernelizationP2();
+        //int GetKPrime();
+        //int* GetKernelSolution();
+        static void PerformBussKernelization(int nrVertices,
+                                                        int threadsPerBlock,
+                                                        int k,
+                                                        int kPrime,
+                                                        int recursiveStackIndex,
+                                                        int * ddegrees,
+                                                        int * dkernelsolutionrows,
+                                                        int * dkernelsolutioncols,
+                                                        bool & solutionCantExist);
+                                                        /*
     private:
         int sizeOfKernelSolution;
-
-        int *dremainingedges, *dsizeofkernelsolution, *ddegrees, *dsolution;
+        int *dkernelsolution;
+        int *dremainingedges, *dsizeofkernelsolution, *ddegrees;
         bool solutionCantExist;
         int k;
         int kPrime;
@@ -43,5 +83,7 @@ class BussKernelization
         const unsigned int &barrier;
 		//int2 *dneighbourRanges;
 		//int *dneighbours;
-
+    */
 };
+
+#endif

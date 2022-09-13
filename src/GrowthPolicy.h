@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define GROWTH_POLICY_H
 
 #include "graph.h"
+#include "BussKernelization.cuh"
 
 
 template <class T>
@@ -32,19 +33,38 @@ Serial(const mtc::Graph &_graph,
               graph(_graph),
               threadsPerBlock(_threadsPerBlock),
               k(_k){
+    //cudaMemcpy(dDegrees, graph.degrees.data(), sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
+    //bk = new BussKernelization(_graph, _threadsPerBlock, _barrier, _k, solutionCantExist);
     sizeOfKernelSolution = numoftreeverts = numberofdynamicallyaddedvertices = 0;
     hostTreeRows = new T[k+1];
     hostTreeColumns = new T[4*k];
     hostDynamicRows = new T[k+1];
     hostDynamicColumns = new T[k];
+    hostKernelRows = new T[k+1];
+    hostKernelColumns = new T[k];
     if (cudaMalloc(&deviceTreeRows, sizeof(T)*(k+1)) != cudaSuccess || 
         cudaMalloc(&deviceTreeColumns, sizeof(T)*(4*k)) != cudaSuccess || 
         cudaMalloc(&deviceDynamicRows, sizeof(T)*(k+1)) != cudaSuccess || 
-        cudaMalloc(&deviceDynamicColumns, sizeof(T)*(k)) != cudaSuccess)
+        cudaMalloc(&deviceDynamicColumns, sizeof(T)*(k)) != cudaSuccess || 
+        cudaMalloc(&deviceKernelRows, sizeof(T)*(k+1)) != cudaSuccess || 
+        cudaMalloc(&deviceKernelColumns, sizeof(T)*(k)) != cudaSuccess)
     {
 		std::cerr << "Not enough memory on device!" << std::endl;
 		throw std::exception();
 	}
+
+    if (cudaMemset(deviceTreeRows, 0, sizeof(T)*(k+1)) != cudaSuccess || 
+        cudaMemset(deviceTreeColumns, 0, sizeof(T)*(4*k)) != cudaSuccess || 
+        cudaMemset(deviceDynamicRows, 0, sizeof(T)*(k+1)) != cudaSuccess || 
+        cudaMemset(deviceDynamicColumns, 0, sizeof(T)*(k)) != cudaSuccess || 
+        cudaMemset(deviceKernelRows, 0, sizeof(T)*(k+1)) != cudaSuccess || 
+        cudaMemset(deviceKernelColumns, 0, sizeof(T)*(k)) != cudaSuccess){
+        std::cerr << "Error clearing memory!" << std::endl;
+		throw std::exception();
+    }
+
+    BussKernelization::PerformBussKernelization(graph.nrVertices, threadsPerBlock, k, k, 1, matcher.ddegrees, deviceKernelRows, deviceKernelColumns, solutionCantExist);
+
 }
 
 void FindCover(int root, int recursiveStackDepth, bool & foundSolution){
@@ -74,15 +94,24 @@ static void PopulateTree(U* param1, int param2);
 		const mtc::Graph &graph;
         const int &threadsPerBlock;
         int sizeOfKernelSolution, numoftreeverts, numberofdynamicallyaddedvertices, k;
-            T * hostTreeRows;
-    T * hostTreeColumns;
-    T * deviceTreeRows;
-    T * deviceTreeColumns;
+        T * hostTreeRows;
+        T * hostTreeColumns;
+        T * deviceTreeRows;
+        T * deviceTreeColumns;
 
-    T * hostDynamicRows;
-    T * hostDynamicColumns;
-    T * deviceDynamicRows;
-    T * deviceDynamicColumns;
+        T * hostDynamicRows;
+        T * hostDynamicColumns;
+        T * deviceDynamicRows;
+        T * deviceDynamicColumns;
+
+        T * hostKernelRows;
+        T * hostKernelColumns;
+        T * deviceKernelRows;
+        T * deviceKernelColumns;
+
+        //BussKernelization * bk;
+        bool solutionCantExist;
+
 };
 
 template <class T>
@@ -126,15 +155,20 @@ Parallel(const mtc::Graph &_graph,
         // Make these arrays
         int sizeOfKernelSolution, numoftreeverts, numberofdynamicallyaddedvertices;
         int k;
-    T * hostTreeRows;
-    T * hostTreeColumns;
-    T * deviceTreeRows;
-    T * deviceTreeColumns;
+        T * hostTreeRows;
+        T * hostTreeColumns;
+        T * deviceTreeRows;
+        T * deviceTreeColumns;
 
-    T * hostDynamicRows;
-    T * hostDynamicColumns;
-    T * deviceDynamicRows;
-    T * deviceDynamicColumns;
+        T * hostDynamicRows;
+        T * hostDynamicColumns;
+        T * deviceDynamicRows;
+        T * deviceDynamicColumns;
+
+        T * hostKernelRows;
+        T * hostKernelColumns;
+        T * deviceKernelRows;
+        T * deviceKernelColumns;
 
 void FindCover(){
     printf("Called Parallel FindCover\n");
@@ -172,7 +206,8 @@ void Serial<T>::Match(int leafIndex){
     cudaEventSynchronize(t0);
     printf("Called Match Serial\n");
     //matcher.performMatching(dmatch, t1, t2, dsearchtree, ddynamicallyaddedvertices, dnumberofdynamicallyaddedvertices, sizeOfKernelSolution, dsolution, leafIndex);
-    
+    //matcher.performMatching(matcher.dmatch, t1, t2, deviceTreeRows, deviceTreeColumns, deviceDynamicRows, deviceDynamicColumns, sizeOfKernelSolution, bk->GetKernelSolution(), leafIndex);
+
     cudaEventElapsedTime(&time1, t1, t2);
     cudaEventRecord(t3, 0);
     cudaEventSynchronize(t3);

@@ -31,7 +31,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "TreePolicy.h"
 
 #include "GraphViz.cuh"
-#include "BussKernelization.cuh"
 
 
 // Library code
@@ -73,7 +72,6 @@ class VCGPU2 : public GrowthPolicy
         GraphViz Gviz;
         // Cant get this working
         //BussKernelization & bk;
-        BussKernelization * bk;
 	protected:
 		const mtc::Graph &graph;
         const int &threadsPerBlock;
@@ -115,14 +113,14 @@ VCGPU2<GrowthPolicy>::VCGPU2(const Graph &_graph,
   //matcher(_graph, _threadsPerBlock, _barrier),
   k(_k),
   solutionCantExist(_solutionCantExist),
-  GrowthPolicy(_graph, _threadsPerBlock, _barrier, k)
+  GrowthPolicy(_graph, _threadsPerBlock, _barrier, _k)
 {
-  if (cudaMalloc(&dsolution, sizeof(int)*k) != cudaSuccess)
+  if (cudaMalloc(&dsolution, sizeof(int)*_k) != cudaSuccess)
   {
 		std::cerr << "Not enough memory on device!" << std::endl;
 		throw std::exception();
 	}
-  bk = new BussKernelization(_graph, _threadsPerBlock, _barrier, _k, dsolution, _solutionCantExist);
+  //bk = new BussKernelization(_graph, _threadsPerBlock, _barrier, _k, dsolution, _solutionCantExist);
   //TreePolicy().Create(bk->GetKPrime());
 }
 
