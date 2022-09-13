@@ -186,7 +186,6 @@ GraphMatchingGeneralGPURandom::GraphMatchingGeneralGPURandom(const Graph &_graph
     dbll.resize(graph.nrVertices);
 	thrust::sequence(dbll.begin(),dbll.end(), 0, 1);
 	dbackwardlinkedlist = thrust::raw_pointer_cast(&dbll[0]);
-	printf("MEMCPY DDEGREES\n");
     cudaMemcpy(ddegrees, &graph.degrees[0], sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
 }
 

@@ -43,7 +43,7 @@ __global__ void BussKernelizationP1Kernel(int nrVertices,
     if (threadID >= nrVertices) return;
     int degree = ddegrees[threadID];
     if (degree <= kPrime) return;
-    printf("Vertex %d's deg %d exceeds k %d\n", threadID, degree, k);
+    printf("Vertex %d's deg %d exceeds kPrime %d\n", threadID, degree, kPrime);
     int solutionIndex = atomicAdd(&dKernelSolutionRows[recursiveStackIndex], 1);
     // dsolution = new int[k];
     // Prevent oob

@@ -116,7 +116,6 @@ static void PopulateTree(U* param1, int param2);
         T * hostRemainingEdges;
         T * deviceRemainingEdges;
 
-        //BussKernelization * bk;
         bool solutionCantExist;
 
 };
@@ -124,7 +123,7 @@ static void PopulateTree(U* param1, int param2);
 template <class T>
 struct Parallel
 {
-
+// Going to use view to automatically stride each stream.
 // https://stackoverflow.com/questions/4754763/object-array-initialization-without-default-constructor
 Parallel(const mtc::Graph &_graph, 
               const int &_threadsPerBlock, 
@@ -132,7 +131,8 @@ Parallel(const mtc::Graph &_graph,
               int _k):
               graph(_graph),
               threadsPerBlock(_threadsPerBlock),
-              k(_k){
+              k(_k),
+              kPrime(_k){
     raw_memory = operator new[](NUM_STREAMS * sizeof(mtc::GraphMatchingGeneralGPURandom));
     mtc::GraphMatchingGeneralGPURandom *matcher = static_cast<mtc::GraphMatchingGeneralGPURandom *>(raw_memory);
     for (int i = 0; i < NUM_STREAMS; ++i) {
@@ -153,6 +153,10 @@ Parallel(const mtc::Graph &_graph,
 		std::cerr << "Not enough memory on device!" << std::endl;
 		throw std::exception();
 	}
+
+    //for (int i = 0; i < NUM_STREAMS; ++i) {
+        BussKernelization::PerformBussKernelization(graph.nrVertices, threadsPerBlock, k, kPrime, 1, matcher->ddegrees, deviceKernelRows, deviceKernelColumns, deviceRemainingEdges, solutionCantExist);
+    //}
 }
     private:
 		const mtc::Graph &graph;
@@ -183,6 +187,9 @@ Parallel(const mtc::Graph &_graph,
 
         T * hostRemainingEdges;
         T * deviceRemainingEdges;
+
+        bool solutionCantExist;
+
 
 void FindCover(){
     printf("Called Parallel FindCover\n");
