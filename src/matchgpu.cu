@@ -1149,6 +1149,7 @@ __global__ void gIndicatePendants(int *match, int *dlength, int *forwardlinkedli
 		match[i] = 3;
 }
 
+/*
 __global__ void gSetSearchTreeVertices(int leafIndex, int *match, int2 *searchtree, const int depthOfLeaf)
 {
 	//int i = blockIdx.x*blockDim.x + threadIdx.x;
@@ -1165,6 +1166,27 @@ __global__ void gSetSearchTreeVertices(int leafIndex, int *match, int2 *searchtr
 			leafIndex /= 3;
 		}
 	}
+}
+*/
+// trits are a string with alphabet (0,1,2) with length of at least numberOfTreeVertsCols
+// Two threads assigned per path.  Thread x marks vertex a; thread y marks vertex b.
+typedef unsigned char Byte;
+__global__ void gSetSearchTreeVertices(Byte * trits, int numberOfTreeVertsCols, int *match, int *deviceTreeColumns)
+{
+	int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+	if (threadID >= numberOfTreeVertsCols) return;
+	int internalPathVerticesint[3][2] =
+    {
+        {0,2},
+        {1,2},
+        {1,3}
+    };
+	int pathStride = 4;
+	int pathID = threadID / 2;
+	int pathStart = pathID * pathStride;
+	int treeVertex = deviceTreeColumns[pathStart + internalPathVerticesint[trits[pathID]][threadIdx.x%2]];
+    printf("thread %d marking vertex %d\n",threadID,treeVertex);
+	match[treeVertex] = 3;
 }
 
 __global__ void gSetDynamicVertices(int leafIndex, int *match, int *dynamicallyAddedVertices, const int nrDynamicallyAddedVertices)
@@ -1677,14 +1699,13 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 			cerr << "Unable to clear matching on device!" << endl;
 			throw exception();
 		}
-		//Indicate the solution by setting to match == 2 for all vertices in curr soln
-		int depthOfLeaf = ceil(logf(2*leafIndex + 1) / logf(3)) - 1;
-		/* NEED TO REWRITE TO USE CSR
-		if (depthOfLeaf > 0){
-			int blocksPerGridST = (depthOfLeaf + threadsPerBlock - 1)/threadsPerBlock;
-			gSetSearchTreeVertices<<<1, 1>>>(leafIndex, match, dsearchtree, depthOfLeaf);
+		Byte * trits;
+		//Indicate the solution by setting to match == 3 for all vertices in curr soln
+		if (numberOfTreeVertsCols > 0){
+			int blocksPerGridST = (2*numberOfTreeVertsCols + threadsPerBlock - 1)/threadsPerBlock;
+			gSetSearchTreeVertices<<<blocksPerGridST, threadsPerBlock>>>(trits, numberOfTreeVertsCols, match, deviceTreeColumns);
 		}
-		*/
+		
 		cudaDeviceSynchronize();
 		checkLastErrorCUDA(__FILE__, __LINE__);
 		//int numberOfDynamicallyAddedVertices_host;
