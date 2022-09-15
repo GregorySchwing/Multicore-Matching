@@ -111,8 +111,8 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
         printf("new leaves %d\n", newLeaves);
         cpp_int numNewLeaves = TritArrayMaker::large_pow(newLeaves);
         std::cout << "numNewLeaves " << numNewLeaves << std::endl;
-        
-        for (cpp_int leaf = 0; leaf < numNewLeaves; ++leaf){
+        for (cpp_int leaf = 0; leaf < 1; ++leaf){
+        //for (cpp_int leaf = 0; leaf < numNewLeaves; ++leaf){
             std::cout << "Recursively calling FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
             FindCover(leaf, ++recursiveStackDepth, foundSolution);
             std::cout << "Returned recursively called FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
@@ -269,6 +269,8 @@ void Serial<T>::Match(cpp_int leafIndex){
     
     cudaEventRecord(t0, 0);
     cudaEventSynchronize(t0);
+    printf("Called reinitializeArrays Serial\n");
+    matcher.reinitializeArrays()
     printf("Called Match Serial\n");
     matcher.performMatching(matcher.dmatch, t1, t2, numberofkernelvertices, deviceKernelColumns, numberoftreevertices, deviceTreeColumns, numberofdynamicallyaddedvertices, deviceDynamicColumns, leafIndex);
     cudaEventElapsedTime(&time1, t1, t2);

@@ -1202,7 +1202,7 @@ __global__ void gSetSearchTreeVertices(Byte * trits, int numberOfTreeVertsCols, 
 	int treeVertex = deviceTreeColumns[pathStart + pathOffset];
     //printf("thread %d treeVertex %d\n",threadID, pathOffset);
 
-    //printf("thread %d marking vertex %d\n",threadID,treeVertex);
+    printf("thread %d marking vertex %d\n",threadID,treeVertex);
 	match[treeVertex] = 3;
 }
 
