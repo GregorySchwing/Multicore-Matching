@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "graph.h"
 #include "BussKernelization.cuh"
+#include "TritArrayMaker.h"
 
 
 template <class T>
@@ -75,6 +76,8 @@ void FindCover(int root, int recursiveStackDepth, bool & foundSolution){
 
         return;
     }
+
+    TritArrayMaker::create_trits(root);
 
     // Lazy way to do this.
     cudaMemcpy(&numberofkernelvertices, &deviceKernelRows[recursiveStackDepth], sizeof(T)*1, cudaMemcpyDeviceToHost);
