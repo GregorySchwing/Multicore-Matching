@@ -14,25 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef TRIT_ARRAY_MAKER_H
-#define TRIT_ARRAY_MAKER_H
-
-#include<iostream>
-#include <boost/multiprecision/cpp_int.hpp>
-using namespace boost::multiprecision;
-//using namespace std;
-typedef unsigned char Byte;
-
-class TritArrayMaker
-{
-    public:
-        static std::vector<Byte> create_trits(cpp_int x);
-    private:
-        static cpp_int large_fact(int num);
-        static cpp_int large_pow(int num);
-        static void to_trits(Byte *bytes, int n_bytes, 
-                Byte *trits, int n_trits);
-};
+#include "TritArrayMaker.h"
 
 cpp_int TritArrayMaker::large_fact(int num) {
 cpp_int fact = 1;
@@ -110,5 +92,3 @@ std::vector<Byte> TritArrayMaker::create_trits(cpp_int x){
     to_trits(bytes.data(), N_BYTES, trits.data(), N_TRITS);
     return trits;
 }
-
-#endif
