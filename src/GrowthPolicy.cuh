@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "graph.h"
 #include "BussKernelization.cuh"
+#include "TreeBuilder.cuh"
 
 
 template <class T>
@@ -84,10 +85,18 @@ void FindCover(int root, int recursiveStackDepth, bool & foundSolution){
 
     if (numberofkernelvertices+numberoftreevertices+numberofdynamicallyaddedvertices <= k) {
         Match(root);
-        
+        TreeBuilder::PopulateTree(graph.nrVertices,
+                                    threadsPerBlock,
+                                    k,
+                                    deviceTreeRows, 
+                                    deviceTreeColumns, 
+                                    matcher.dforwardlinkedlist, 
+                                    matcher.dbackwardlinkedlist, 
+                                    matcher.dlength);
     } else {
     }
 }
+
 
 
 template <typename U>
