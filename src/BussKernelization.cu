@@ -146,6 +146,11 @@ void BussKernelization::PerformBussKernelization(int nrVertices,
                                                 int * dkernelsolutioncols,
                                                 int * deviceRemainingEdges,
                                                 bool & solutionCantExist){
+	// Should calculate an current degree if interleaving.
+	// If not interleaving this can be commented out.
+	//cuMemsetD32(reinterpret_cast<CUdeviceptr>(ddegrees),  0, size_t(graph.nrVertices));
+	// If interleaving, call a CalcDegreesKernel here.
+
     int sizeOfKernelSolution = 0;
     // Copy last number of kernel soln vertices 
     int lastTwoEntriesInKSR[2];
