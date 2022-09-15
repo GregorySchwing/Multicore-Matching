@@ -85,6 +85,11 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
     cudaMemcpy(&numberofkernelvertices, &deviceKernelRows[recursiveStackDepth], sizeof(T)*1, cudaMemcpyDeviceToHost);
     cudaMemcpy(&numberoftreevertices, &deviceTreeRows[recursiveStackDepth], sizeof(T)*1, cudaMemcpyDeviceToHost);
     cudaMemcpy(&numberofdynamicallyaddedvertices, &deviceDynamicRows[recursiveStackDepth], sizeof(T)*1, cudaMemcpyDeviceToHost);
+    std::cout << "calling FC in leaf " << root << " recursiveStackDepth " << recursiveStackDepth << std::endl
+    << "numberofkernelvertices " << numberofkernelvertices << " numberoftreevertices " << numberoftreevertices << std::endl
+    << "numberofdynamicallyaddedvertices " << numberofdynamicallyaddedvertices << " numberoftreevertices " << numberoftreevertices << std::endl;
+
+
 
     if (numberofkernelvertices+numberoftreevertices+numberofdynamicallyaddedvertices <= k) {
         Match(root);
