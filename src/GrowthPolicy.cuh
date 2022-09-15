@@ -31,7 +31,7 @@ Serial(const mtc::Graph &_graph,
               const int &_threadsPerBlock, 
               const unsigned int &_barrier,
               int _k): 
-              matcher(_graph, _threadsPerBlock, _barrier),
+              matcher(_graph, _threadsPerBlock, _barrier, _k),
               graph(_graph),
               threadsPerBlock(_threadsPerBlock),
               k(_k),
@@ -175,7 +175,7 @@ Parallel(const mtc::Graph &_graph,
     raw_memory = operator new[](NUM_STREAMS * sizeof(mtc::GraphMatchingGeneralGPURandom));
     mtc::GraphMatchingGeneralGPURandom *matcher = static_cast<mtc::GraphMatchingGeneralGPURandom *>(raw_memory);
     for (int i = 0; i < NUM_STREAMS; ++i) {
-        new(&matcher[i]) mtc::GraphMatchingGeneralGPURandom(_graph, _threadsPerBlock, _barrier);
+        new(&matcher[i]) mtc::GraphMatchingGeneralGPURandom(_graph, _threadsPerBlock, _barrier, _k);
     }
     hostTreeRows = new T[NUM_STREAMS*(k+1)];
     hostTreeColumns = new T[NUM_STREAMS*(4*k)];

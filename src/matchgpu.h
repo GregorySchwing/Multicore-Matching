@@ -59,7 +59,7 @@ typedef unsigned char Byte;
 class GraphMatchingGeneralGPURandom : public GraphMatchingGPU
 {
 	public:
-		GraphMatchingGeneralGPURandom(const Graph &, const int &, const unsigned int &);
+		GraphMatchingGeneralGPURandom(const Graph &, const int &, const unsigned int &, const unsigned int &);
 		~GraphMatchingGeneralGPURandom();
 		void reinitializeArrays();
 		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int numberOfKernelCols, int * deviceKernelColumns, int numberOfTreeVertsCols, int * deviceTreeColumns, int numberOfDynamicCols, int * deviceDynamicColumns, cpp_int leafIndex) const;

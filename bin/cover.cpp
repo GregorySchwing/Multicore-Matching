@@ -39,7 +39,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include "vcgpu.cuh"
 #include "vcgpu2.cuh"
-#include "Array.h"
 #include "GrowthPolicy.cuh"
 #include "TreePolicy.h"
 
@@ -158,7 +157,7 @@ GraphMatching *getMatcher(const Graph &graph, const int &type, const int &nrThre
 	else if (type ==  7) return new GraphMatchingGPURandomMaximal(graph, nrThreads, barrier);
 	else if (type ==  8) return new GraphMatchingGPUWeighted(graph, nrThreads, barrier);
 	else if (type ==  9) return new GraphMatchingGPUWeightedMaximal(graph, nrThreads, barrier);
-	else if (type == 10) return new GraphMatchingGeneralGPURandom(graph, nrThreads, barrier);
+	else if (type == 10) return new GraphMatchingGeneralGPURandom(graph, nrThreads, barrier, 0);
 	//else if (type == 11) return new GraphMatchingTBBRandom(graph, barrier);
 	//else if (type == 12) return new GraphMatchingTBBWeighted(graph, barrier);
 	else
@@ -444,9 +443,6 @@ int main(int argc, char **argv)
 				bool solutionCantExist = false;
 				try
 				{
-					int arr[5] = { 1, 2, 3, 4, 5 };
-					Array<int> a(arr, 5);
-					a.print();
 					// Application code
 					//VCGPU2< BalancedGrowth<int>,  ExplicitTree<int> > vc3(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
 					VCGPU2< Serial<int> > vc2(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
