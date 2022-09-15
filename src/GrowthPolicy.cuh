@@ -270,7 +270,7 @@ void Serial<T>::Match(cpp_int leafIndex){
     cudaEventRecord(t0, 0);
     cudaEventSynchronize(t0);
     printf("Called reinitializeArrays Serial\n");
-    matcher.reinitializeArrays()
+    matcher.reinitializeArrays();
     printf("Called Match Serial\n");
     matcher.performMatching(matcher.dmatch, t1, t2, numberofkernelvertices, deviceKernelColumns, numberoftreevertices, deviceTreeColumns, numberofdynamicallyaddedvertices, deviceDynamicColumns, leafIndex);
     cudaEventElapsedTime(&time1, t1, t2);
