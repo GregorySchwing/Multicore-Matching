@@ -1175,7 +1175,9 @@ typedef unsigned char Byte;
 __global__ void gSetSearchTreeVertices(Byte * trits, int numberOfTreeVertsCols, int *match, int *deviceTreeColumns)
 {
 	int threadID = blockIdx.x*blockDim.x + threadIdx.x;
-	if (threadID >= numberOfTreeVertsCols) return;
+	if (threadID >= 2*numberOfTreeVertsCols) return;
+    printf("thread %d entered gSetSearchTreeVertices\n",threadID);
+
 	int internalPathVerticesint[3][2] =
     {
         {0,2},
@@ -1185,7 +1187,17 @@ __global__ void gSetSearchTreeVertices(Byte * trits, int numberOfTreeVertsCols, 
 	int pathStride = 4;
 	int pathID = threadID / 2;
 	int pathStart = pathID * pathStride;
-	int treeVertex = deviceTreeColumns[pathStart + internalPathVerticesint[trits[pathID]][threadIdx.x%2]];
+    printf("thread %d pathID %d pathStart %d\n",threadID, pathID, pathStart);
+	int tritVal = trits[(int)pathID];
+    printf("thread %d tritVal %d\n",threadID, tritVal);
+
+//	int treeVertex = deviceTreeColumns[pathStart + internalPathVerticesint[trits[pathID]][threadIdx.x%2]];
+	int pathOffset = internalPathVerticesint[tritVal][threadID%2];
+    printf("thread %d pathOffset %d\n",threadID, pathOffset);
+
+	int treeVertex = deviceTreeColumns[pathStart + pathOffset];
+    printf("thread %d treeVertex %d\n",threadID, pathOffset);
+
     printf("thread %d marking vertex %d\n",threadID,treeVertex);
 	match[treeVertex] = 3;
 }
@@ -1730,6 +1742,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 
 		//Indicate the solution by setting to match == 3 for all vertices in curr soln
 		if (numberOfTreeVertsCols > 0){
+			printf("numberOfTreeVertsCols %d\n", numberOfTreeVertsCols);
 			std::vector<Byte> trits = TritArrayMaker::create_trits(leafIndex);
 			int blocksPerGridST = (2*numberOfTreeVertsCols + threadsPerBlock - 1)/threadsPerBlock;
 			gSetSearchTreeVertices<<<blocksPerGridST, threadsPerBlock>>>(trits.data(), numberOfTreeVertsCols, match, deviceTreeColumns);

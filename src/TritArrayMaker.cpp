@@ -91,5 +91,8 @@ std::vector<Byte> TritArrayMaker::create_trits(cpp_int x){
     //Byte trits [N_TRITS];
     trits.resize(N_TRITS);
     to_trits(bytes.data(), N_BYTES, trits.data(), N_TRITS);
+    for (int j = N_TRITS - 1; j >= 0; j--) {
+        printf("%d", trits[j]);
+    }
     return trits;
 }

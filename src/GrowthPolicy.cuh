@@ -79,15 +79,18 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
 
         return;
     }
-
-
     // Lazy way to do this.
+    // For now, kernel verts are always in rSD 1
+    cudaMemcpy(&deviceKernelRows[recursiveStackDepth], &deviceKernelRows[1], sizeof(T)*1, cudaMemcpyDeviceToDevice);
+    cudaMemcpy(&deviceTreeRows[recursiveStackDepth], &deviceTreeRows[recursiveStackDepth-1], sizeof(T)*1, cudaMemcpyDeviceToDevice);
+    cudaMemcpy(&deviceDynamicRows[recursiveStackDepth], &deviceDynamicRows[recursiveStackDepth-1], sizeof(T)*1, cudaMemcpyDeviceToDevice);
+
     cudaMemcpy(&numberofkernelvertices, &deviceKernelRows[recursiveStackDepth], sizeof(T)*1, cudaMemcpyDeviceToHost);
     cudaMemcpy(&numberoftreevertices, &deviceTreeRows[recursiveStackDepth], sizeof(T)*1, cudaMemcpyDeviceToHost);
     cudaMemcpy(&numberofdynamicallyaddedvertices, &deviceDynamicRows[recursiveStackDepth], sizeof(T)*1, cudaMemcpyDeviceToHost);
     std::cout << "calling FC in leaf " << root << " recursiveStackDepth " << recursiveStackDepth << std::endl
     << "numberofkernelvertices " << numberofkernelvertices << " numberoftreevertices " << numberoftreevertices << std::endl
-    << "numberofdynamicallyaddedvertices " << numberofdynamicallyaddedvertices << " numberoftreevertices " << numberoftreevertices << std::endl;
+    << "numberofdynamicallyaddedvertices " << numberofdynamicallyaddedvertices << std::endl;
 
 
 
@@ -110,9 +113,9 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
         std::cout << "numNewLeaves " << numNewLeaves << std::endl;
         
         for (cpp_int leaf = 0; leaf < numNewLeaves; ++leaf){
-            std::cout << "calling FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
+            std::cout << "Recursively calling FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
             FindCover(leaf, ++recursiveStackDepth, foundSolution);
-            std::cout << "Returned from FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
+            std::cout << "Returned recursively called FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
         }
     } else {
     }
