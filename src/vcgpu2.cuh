@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <memory>
 // RE?
 #include <ncurses.h>
-#include "GrowthPolicy.h"
+#include "GrowthPolicy.cuh"
 #include "TreePolicy.h"
 
 #include "GraphViz.cuh"
