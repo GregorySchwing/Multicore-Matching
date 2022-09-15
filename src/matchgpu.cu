@@ -168,11 +168,13 @@ GraphMatchingGPUWeightedMaximal::~GraphMatchingGPUWeightedMaximal()
 GraphMatchingGeneralGPURandom::GraphMatchingGeneralGPURandom(const Graph &_graph, const int &_nrThreads, const unsigned int &_selectBarrier) :
 		GraphMatchingGPU(_graph, _nrThreads, _selectBarrier)
 {
+	
 	if (cudaMalloc(&drequests, sizeof(int)*graph.nrVertices) != cudaSuccess ||  
 		cudaMalloc(&dsense, sizeof(int)*graph.nrVertices) != cudaSuccess ||      
 		cudaMalloc(&dlength, sizeof(int)*graph.nrVertices) != cudaSuccess || 
 		cudaMalloc(&dmatch, sizeof(int)*graph.nrVertices) != cudaSuccess || 
-		cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess)
+		cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess || 
+		cudaMalloc(&dtrits, sizeof(Byte)*graph.nrVertices) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
 		throw exception();

@@ -54,6 +54,8 @@ class GraphMatchingGPURandom : public GraphMatchingGPU
 
 };
 
+typedef unsigned char Byte;
+
 class GraphMatchingGeneralGPURandom : public GraphMatchingGPU
 {
 	public:
@@ -68,6 +70,8 @@ class GraphMatchingGeneralGPURandom : public GraphMatchingGPU
 		// Never directly used, just used for thrust::sequence functionality to avoid a kernel call.
 		thrust::device_vector<int> dfll;
         thrust::device_vector<int> dbll;
+
+		Byte *dtrits;
 
 };
 
