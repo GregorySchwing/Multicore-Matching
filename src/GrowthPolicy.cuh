@@ -72,7 +72,7 @@ Serial(const mtc::Graph &_graph,
     printf("Returned from Serial's BussKernelization::PerformBussKernelization\n");
 }
 
-void FindCover(int root, int recursiveStackDepth, bool & foundSolution){
+void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
     printf("Called Serial FC\n");
     if (foundSolution){
             printf("Found SOLN\n");
@@ -102,6 +102,13 @@ void FindCover(int root, int recursiveStackDepth, bool & foundSolution){
         int newLeaves = temp[1] - temp[0];
         printf("new leaves %d\n", newLeaves);
         cpp_int numNewLeaves = TritArrayMaker::large_pow(newLeaves);
+        std::cout << "numNewLeaves " << numNewLeaves << std::endl;
+        
+        for (cpp_int leaf = 0; leaf < numNewLeaves; ++leaf){
+            std::cout << "calling FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
+            FindCover(leaf, ++recursiveStackDepth, foundSolution);
+            std::cout << "Returned from FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
+        }
     } else {
     }
 }
@@ -112,7 +119,7 @@ template <typename U>
 static void PopulateTree(U* param1, int param2);
 
     private:
-        void Match(int leafIndex);
+        void Match(cpp_int leafIndex);
         mtc::GraphMatchingGeneralGPURandom matcher;
 		const mtc::Graph &graph;
         const int &threadsPerBlock;
@@ -242,7 +249,7 @@ void Serial<T>::PopulateTree(U* param1, int param2){
 }
 
 template <class T>
-void Serial<T>::Match(int leafIndex){
+void Serial<T>::Match(cpp_int leafIndex){
     //Initialise timers.
     cudaEvent_t t0, t1, t2, t3;
     float time0, time1;
