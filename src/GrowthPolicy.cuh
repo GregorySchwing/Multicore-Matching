@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "graph.h"
 #include "BussKernelization.cuh"
 #include "TreeBuilder.cuh"
+#include "TritArrayMaker.h"
 
 
 template <class T>
@@ -87,14 +88,20 @@ void FindCover(int root, int recursiveStackDepth, bool & foundSolution){
 
     if (numberofkernelvertices+numberoftreevertices+numberofdynamicallyaddedvertices <= k) {
         Match(root);
+        cudaMemcpy(&deviceTreeRows[recursiveStackDepth], &deviceTreeRows[recursiveStackDepth-1], sizeof(T)*1, cudaMemcpyDeviceToDevice);
         TreeBuilder::PopulateTree(graph.nrVertices,
                                     threadsPerBlock,
                                     k,
-                                    deviceTreeRows, 
+                                    &deviceTreeRows[recursiveStackDepth], 
                                     deviceTreeColumns, 
                                     matcher.dforwardlinkedlist, 
                                     matcher.dbackwardlinkedlist, 
                                     matcher.dlength);
+        T temp[2];
+        cudaMemcpy(temp, &deviceTreeRows[recursiveStackDepth-1], sizeof(T)*2, cudaMemcpyDeviceToHost);
+        int newLeaves = temp[1] - temp[0];
+        printf("new leaves %d\n", newLeaves);
+        cpp_int numNewLeaves = TritArrayMaker::large_pow(newLeaves);
     } else {
     }
 }

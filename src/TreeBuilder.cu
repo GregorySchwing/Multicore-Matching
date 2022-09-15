@@ -47,7 +47,7 @@ const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
     int third = dforwardlinkedlist[second];
     int fourth = dforwardlinkedlist[third];
 
-    printf("threadID %d wrote %d %d %d %d\n", threadID, first, second, third, fourth);
+    //printf("threadID %d wrote %d %d %d %d\n", threadID, first, second, third, fourth);
 
     // Test from root for now, this code can have an arbitrary root though
     deviceTreeColumns[4*pathIndex + 0] = first;

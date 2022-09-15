@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "graph.h"
 #include "matchcpu.h"
+#include "TritArrayMaker.h"
 
 // For generalized MM heads & tails
 #include<thrust/device_vector.h>

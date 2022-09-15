@@ -24,7 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
 
-#include "TritArrayMaker.h"
 
 #include <sstream>
 #define SSTR( x ) static_cast< std::ostringstream & >( \
@@ -1728,10 +1727,10 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 			throw exception();
 		}
 
-		std::vector<Byte> trits = TritArrayMaker::create_trits(leafIndex);
 
 		//Indicate the solution by setting to match == 3 for all vertices in curr soln
 		if (numberOfTreeVertsCols > 0){
+			std::vector<Byte> trits = TritArrayMaker::create_trits(leafIndex);
 			int blocksPerGridST = (2*numberOfTreeVertsCols + threadsPerBlock - 1)/threadsPerBlock;
 			gSetSearchTreeVertices<<<blocksPerGridST, threadsPerBlock>>>(trits.data(), numberOfTreeVertsCols, match, deviceTreeColumns);
 		}
