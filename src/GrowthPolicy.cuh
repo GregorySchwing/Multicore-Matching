@@ -65,8 +65,10 @@ Serial(const mtc::Graph &_graph,
         std::cerr << "Error clearing memory!" << std::endl;
 		throw std::exception();
     }
+    printf("Calling Serial's BussKernelization::PerformBussKernelization\n");
 
     BussKernelization::PerformBussKernelization(graph.nrVertices, threadsPerBlock, k, kPrime, 1, matcher.ddegrees, deviceKernelRows, deviceKernelColumns, deviceRemainingEdges, solutionCantExist);
+    printf("Returned from Serial's BussKernelization::PerformBussKernelization\n");
 }
 
 void FindCover(int root, int recursiveStackDepth, bool & foundSolution){
@@ -170,7 +172,10 @@ Parallel(const mtc::Graph &_graph,
 	}
 
     //for (int i = 0; i < NUM_STREAMS; ++i) {
+        printf("Calling Parallel's BussKernelization::PerformBussKernelization\n");
         BussKernelization::PerformBussKernelization(graph.nrVertices, threadsPerBlock, k, kPrime, 1, matcher->ddegrees, deviceKernelRows, deviceKernelColumns, deviceRemainingEdges, solutionCantExist);
+        printf("Returned from Parallel's BussKernelization::PerformBussKernelization\n");
+
     //}
 }
     private:

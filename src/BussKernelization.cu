@@ -205,6 +205,8 @@ void BussKernelization::bussKernelizationP1(int nrVertices,
                                             int * dKernelSolutionCols){
 
     //cudaMemcpy(&dKernelSolutionRows[recursiveStackIndex], &dKernelSolutionRows[recursiveStackIndex-1], sizeof(int)*1, cudaMemcpyDeviceToDevice);
+    cudaDeviceSynchronize();
+    checkLastErrorCUDA(__FILE__, __LINE__);	
     int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
     BussKernelizationP1Kernel<<<blocksPerGrid, threadsPerBlock>>>(nrVertices, 
                                                                 k, 
@@ -213,6 +215,8 @@ void BussKernelization::bussKernelizationP1(int nrVertices,
                                                                 dDegrees,
                                                                 dKernelSolutionRows,
                                                                 dKernelSolutionCols);
+    cudaDeviceSynchronize();
+    checkLastErrorCUDA(__FILE__, __LINE__);	
 }
 
 // Initial kernelization before search tree is built
@@ -227,7 +231,8 @@ void BussKernelization::bussKernelizationP2(int nrVertices,
                                         int * dkernelsolutioncols)
 {
     int blocksPerGrid = (nrVertices + threadsPerBlock - 1)/threadsPerBlock;
-
+    cudaDeviceSynchronize();
+    checkLastErrorCUDA(__FILE__, __LINE__);	
     ReduceDegrees<<<blocksPerGrid, threadsPerBlock, threadsPerBlock*sizeof(int)>>>(nrVertices,
                                                                                     dDegrees,
                                                                                     deviceRemainingEdges);
@@ -245,6 +250,8 @@ void BussKernelization::bussKernelizationP2(int nrVertices,
                                                                 dDegrees,
                                                                 deviceRemainingEdges,
                                                                 &dkernelsolutioncols[startOfNewKernel]);
+    cudaDeviceSynchronize();
+    checkLastErrorCUDA(__FILE__, __LINE__);	
     cudaMemcpy(&remainingEdges, deviceRemainingEdges, sizeof(int)*1, cudaMemcpyDeviceToHost);
     // Using the indices to calculate degrees requires doubling and then halving
     // Since each edge is counted twice, once in each connecting vertex's indices.x to indices.y

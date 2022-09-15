@@ -40,7 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "vcgpu.cuh"
 #include "vcgpu2.cuh"
 #include "Array.h"
-#include "GrowthPolicy.h"
+#include "GrowthPolicy.cuh"
 #include "TreePolicy.h"
 
 using namespace std;

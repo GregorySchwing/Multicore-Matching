@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
-
+#include <iostream>
 
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void PopulateTreeKernel(int nrVertices, 
@@ -46,6 +46,8 @@ const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
     int second = dforwardlinkedlist[first];
     int third = dforwardlinkedlist[second];
     int fourth = dforwardlinkedlist[third];
+
+    printf("threadID %d wrote %d %d %d %d\n", threadID, first, second, third, fourth);
 
     // Test from root for now, this code can have an arbitrary root though
     deviceTreeColumns[4*pathIndex + 0] = first;
