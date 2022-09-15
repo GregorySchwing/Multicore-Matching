@@ -84,6 +84,7 @@ void FindCover(int root, int recursiveStackDepth, bool & foundSolution){
 
     if (numberofkernelvertices+numberoftreevertices+numberofdynamicallyaddedvertices <= k) {
         Match(root);
+        
     } else {
     }
 }

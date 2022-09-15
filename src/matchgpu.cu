@@ -1641,6 +1641,31 @@ void GraphMatchingGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEv
 	cudaUnbindTexture(neighbourRangesTexture);
 }
 
+void GraphMatchingGeneralGPURandom::reinitializeArrays(){
+    cuMemsetD32(reinterpret_cast<CUdeviceptr>(dlength),  0, size_t(graph.nrVertices));
+	// Should calculate an current degree if interleaving.
+	// If not interleaving this can be commented out.
+	cuMemsetD32(reinterpret_cast<CUdeviceptr>(ddegrees),  0, size_t(graph.nrVertices));
+	// dmatch, dsense, drequest are cleared in the kernel.
+    //cudaMemcpy(ddegrees, &graph.degrees[0], sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
+	// Might be unneccessary
+    dfll.clear();
+    dfll.resize(graph.nrVertices);
+
+	// This can only be done in host code.  All other clears can be called in cuda code.
+	thrust::sequence(dfll.begin(),dfll.end(), 0, 1);
+	dforwardlinkedlist = thrust::raw_pointer_cast(&dfll[0]);
+	
+	// Might be unneccessary
+    dbll.clear();
+    dbll.resize(graph.nrVertices);
+
+	thrust::sequence(dbll.begin(),dbll.end(), 0, 1);
+	dbackwardlinkedlist = thrust::raw_pointer_cast(&dbll[0]);
+
+}
+
+
 void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1, cudaEvent_t &t2, int numberOfKernelCols, int * deviceKernelColumns, int numberOfTreeVertsCols, int * deviceTreeColumns, int numberOfDynamicCols, int * deviceDynamicColumns, cpp_int leafIndex) const
 {
 	//Creates a greedy random matching on the GPU.

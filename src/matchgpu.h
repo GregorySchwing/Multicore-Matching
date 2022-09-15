@@ -58,8 +58,10 @@ class GraphMatchingGeneralGPURandom : public GraphMatchingGPU
 	public:
 		GraphMatchingGeneralGPURandom(const Graph &, const int &, const unsigned int &);
 		~GraphMatchingGeneralGPURandom();
-
+		void reinitializeArrays();
 		void performMatching(int *, cudaEvent_t &, cudaEvent_t &, int numberOfKernelCols, int * deviceKernelColumns, int numberOfTreeVertsCols, int * deviceTreeColumns, int numberOfDynamicCols, int * deviceDynamicColumns, cpp_int leafIndex) const;
+		// dsense should really be folded into the match numbering scheme.
+		// 0 - blue(+); 1 - blue (-); 2 - red (+); 3 - red (-); 4 - soln vertex; 5 - inactive vertex due to pendant edge; 6 >= - matched vertex
 		int *drequests, *dsense;
 		int *dlength, *dforwardlinkedlist, *dbackwardlinkedlist, *dmatch, *ddegrees;
 		// Never directly used, just used for thrust::sequence functionality to avoid a kernel call.
