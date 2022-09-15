@@ -55,6 +55,33 @@ const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
     deviceTreeColumns[4*pathIndex + 2] = third; 
     deviceTreeColumns[4*pathIndex + 3] = fourth;       
 }
+
+
+__global__ void DetectAndSetPendantPathsCase3(int nrVertices, 
+                                                int sizeOfKernelSolution,
+                                                int numoftreeverts,
+                                                int k,
+                                                int *match, 
+                                                int *dforwardlinkedlist, 
+                                                int *dbackwardlinkedlist, 
+                                                int * dedgestatus,
+                                                int *dlength, 
+                                                int *dnumberofdynamicallyaddedvertices,
+                                                int *ddynamicallyaddedvertices);
+
+__global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
+                                                int sizeOfKernelSolution,
+                                                int numoftreeverts,
+                                                int k,
+                                                int *match, 
+                                                int *dforwardlinkedlist, 
+                                                int *dbackwardlinkedlist, 
+                                                int * dedgestatus,
+                                                int *dlength, 
+                                                int *dnumberofdynamicallyaddedvertices,
+                                                int *ddynamicallyaddedvertices);                        
+
+
 void TreeBuilder::PopulateTree(int nrVertices, 
                                 int threadsPerBlock, 
                                 int k, 
