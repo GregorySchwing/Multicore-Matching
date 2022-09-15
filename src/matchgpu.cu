@@ -166,15 +166,17 @@ GraphMatchingGPUWeightedMaximal::~GraphMatchingGPUWeightedMaximal()
 }
 
 GraphMatchingGeneralGPURandom::GraphMatchingGeneralGPURandom(const Graph &_graph, const int &_nrThreads, const unsigned int &_selectBarrier, const unsigned int &_k) :
-		GraphMatchingGPU(_graph, _nrThreads, _selectBarrier)
+		GraphMatchingGPU(_graph, _nrThreads, _selectBarrier), k(_k)
 {
-	
+	cpp_int largestPossibleLeaf = TritArrayMaker::large_pow(k);
+	std::vector<Byte> hostTrits = TritArrayMaker::create_trits(largestPossibleLeaf);
+	std::cout << "Allocating " << hostTrits.size() << "bytes for dtrits" << std::endl; 
 	if (cudaMalloc(&drequests, sizeof(int)*graph.nrVertices) != cudaSuccess ||  
 		cudaMalloc(&dsense, sizeof(int)*graph.nrVertices) != cudaSuccess ||      
 		cudaMalloc(&dlength, sizeof(int)*graph.nrVertices) != cudaSuccess || 
 		cudaMalloc(&dmatch, sizeof(int)*graph.nrVertices) != cudaSuccess || 
 		cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess || 
-		cudaMalloc(&dtrits, sizeof(Byte)*graph.nrVertices) != cudaSuccess)
+		cudaMalloc(&dtrits, sizeof(Byte)*hostTrits.size()) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
 		throw exception();
@@ -1178,7 +1180,7 @@ __global__ void gSetSearchTreeVertices(Byte * trits, int numberOfTreeVertsCols, 
 {
 	int threadID = blockIdx.x*blockDim.x + threadIdx.x;
 	if (threadID >= 2*numberOfTreeVertsCols) return;
-    printf("thread %d entered gSetSearchTreeVertices\n",threadID);
+    //printf("thread %d entered gSetSearchTreeVertices\n",threadID);
 
 	int internalPathVerticesint[3][2] =
     {
@@ -1189,18 +1191,18 @@ __global__ void gSetSearchTreeVertices(Byte * trits, int numberOfTreeVertsCols, 
 	int pathStride = 4;
 	int pathID = threadID / 2;
 	int pathStart = pathID * pathStride;
-    printf("thread %d pathID %d pathStart %d\n",threadID, pathID, pathStart);
+    //printf("thread %d pathID %d pathStart %d\n",threadID, pathID, pathStart);
 	int tritVal = trits[(int)pathID];
-    printf("thread %d tritVal %d\n",threadID, tritVal);
+    //printf("thread %d tritVal %d\n",threadID, tritVal);
 
 //	int treeVertex = deviceTreeColumns[pathStart + internalPathVerticesint[trits[pathID]][threadIdx.x%2]];
 	int pathOffset = internalPathVerticesint[tritVal][threadID%2];
-    printf("thread %d pathOffset %d\n",threadID, pathOffset);
+    //printf("thread %d pathOffset %d\n",threadID, pathOffset);
 
 	int treeVertex = deviceTreeColumns[pathStart + pathOffset];
-    printf("thread %d treeVertex %d\n",threadID, pathOffset);
+    //printf("thread %d treeVertex %d\n",threadID, pathOffset);
 
-    printf("thread %d marking vertex %d\n",threadID,treeVertex);
+    //printf("thread %d marking vertex %d\n",threadID,treeVertex);
 	match[treeVertex] = 3;
 }
 
@@ -1746,8 +1748,9 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 		if (numberOfTreeVertsCols > 0){
 			printf("numberOfTreeVertsCols %d\n", numberOfTreeVertsCols);
 			std::vector<Byte> trits = TritArrayMaker::create_trits(leafIndex);
+			cudaMemcpy(dtrits, trits.data(), sizeof(Byte)*trits.size(), cudaMemcpyHostToDevice);
 			int blocksPerGridST = (2*numberOfTreeVertsCols + threadsPerBlock - 1)/threadsPerBlock;
-			gSetSearchTreeVertices<<<blocksPerGridST, threadsPerBlock>>>(trits.data(), numberOfTreeVertsCols, match, deviceTreeColumns);
+			gSetSearchTreeVertices<<<blocksPerGridST, threadsPerBlock>>>(dtrits, numberOfTreeVertsCols, match, deviceTreeColumns);
 		}
 		
 		cudaDeviceSynchronize();

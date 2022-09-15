@@ -70,7 +70,7 @@ class GraphMatchingGeneralGPURandom : public GraphMatchingGPU
 		// Never directly used, just used for thrust::sequence functionality to avoid a kernel call.
 		thrust::device_vector<int> dfll;
         thrust::device_vector<int> dbll;
-
+		int k;
 		Byte *dtrits;
 
 };
