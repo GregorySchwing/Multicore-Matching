@@ -25,10 +25,12 @@ return fact;
 }
 
 cpp_int TritArrayMaker::large_pow(int num) {
-// If no new paths are found (i.e. num == 0)
-// Terminate, don't launch a path. Hence, return 0.
+// If no new paths are found (i.e. num == 1)
+// Possibly launch a single leaf, 
+// if dynamic or kernel vertices are non-zero.
+// Hence, return 1.
 if (num == 0){
-    cpp_int fact = 0;
+    cpp_int fact = 1;
     return fact;
 }
 cpp_int fact = 3;

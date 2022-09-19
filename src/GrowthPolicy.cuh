@@ -106,19 +106,35 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
                                     matcher.dforwardlinkedlist, 
                                     matcher.dbackwardlinkedlist, 
                                     matcher.dlength);
-        T temp[2];
-        cudaMemcpy(temp, &deviceTreeRows[recursiveStackDepth-1], sizeof(T)*2, cudaMemcpyDeviceToHost);
-        int newLeaves = temp[1] - temp[0];
-        printf("%d - %d = %d new leaves\n", temp[1], temp[0], newLeaves);
-        cpp_int numNewLeaves = TritArrayMaker::large_pow(newLeaves);
+        T tempTree[2];
+        T tempDynamic[2];
+        T tempKernel[2];
+
+        cudaMemcpy(tempTree, &deviceTreeRows[recursiveStackDepth-1], sizeof(T)*2, cudaMemcpyDeviceToHost);
+        cudaMemcpy(tempDynamic, &deviceDynamicRows[recursiveStackDepth-1], sizeof(T)*2, cudaMemcpyDeviceToHost);
+        cudaMemcpy(tempKernel, &deviceTreeRows[recursiveStackDepth-1], sizeof(T)*2, cudaMemcpyDeviceToHost);
+
+        int newTreeLeaves = tempTree[1] - tempTree[0];
+        int newDynamicVertices = tempDynamic[1] - tempDynamic[0];
+        int newKernelVertices = tempKernel[1] - tempKernel[0];
+
+        printf("%d - %d = %d num new tree paths\n", tempTree[1], tempTree[0], newTreeLeaves);
+        printf("%d - %d = %d num newDynamicVertices\n", tempDynamic[1], tempDynamic[0], newDynamicVertices);
+        printf("%d - %d = %d num newKernelVertices\n", tempKernel[1], tempKernel[0], newKernelVertices);
+
+        cpp_int numNewLeaves = TritArrayMaker::large_pow(newTreeLeaves);
         std::cout << "numNewLeaves " << numNewLeaves << std::endl;
         // Need to use numNewLeaves, so we terminate if no new leaves are found
         // TODO: This can prematurely terminate, Add a checker.        
         for (cpp_int leaf = 0; leaf < numNewLeaves; ++leaf){
             std::cout << "Recursively calling FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
-            FindCover(leaf, recursiveStackDepth+1, foundSolution);
+            // If some progress was made on this matching call.
+            // Should be more robust to failure.
+            if (newTreeLeaves + newDynamicVertices + newKernelVertices)
+                FindCover(leaf, recursiveStackDepth+1, foundSolution);
             std::cout << "Returned recursively called FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
         }
+        exit(2);
     }
 }
 
