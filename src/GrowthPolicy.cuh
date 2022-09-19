@@ -112,8 +112,12 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
 
         cudaMemcpy(tempTree, &deviceTreeRows[recursiveStackDepth-1], sizeof(T)*2, cudaMemcpyDeviceToHost);
         cudaMemcpy(tempDynamic, &deviceDynamicRows[recursiveStackDepth-1], sizeof(T)*2, cudaMemcpyDeviceToHost);
-        //cudaMemcpy(tempKernel, &deviceTreeRows[recursiveStackDepth-1], sizeof(T)*2, cudaMemcpyDeviceToHost);
-        cudaMemcpy(tempKernel, &deviceTreeRows[1], sizeof(T)*2, cudaMemcpyDeviceToHost);
+        //cudaMemcpy(tempKernel, &deviceKernelRows[recursiveStackDepth-1], sizeof(T)*2, cudaMemcpyDeviceToHost);
+        cudaMemcpy(tempKernel, &deviceKernelRows[0], sizeof(T)*2, cudaMemcpyDeviceToHost);
+
+        int totalTreeVertices = 2*tempTree[1];
+        int totalDynamicVertices = tempDynamic[1];
+        int totalKernelVertices = tempKernel[1];
 
         int newTreeLeaves = tempTree[1] - tempTree[0];
         int newDynamicVertices = tempDynamic[1] - tempDynamic[0];
@@ -135,8 +139,11 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
             //if (newTreeLeaves + newDynamicVertices + newKernelVertices)
             if (newTreeLeaves + newDynamicVertices)
                 FindCover(leaf, recursiveStackDepth+1, foundSolution);
-            else
-                TreeBuilder::EvaluateLeaf();
+            else if (totalTreeVertices + totalDynamicVertices + newKernelVertices <= k){
+                //TreeBuilder::EvaluateLeaf();
+                std::cout << "Found possible solution in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
+                exit(1);
+            }
             std::cout << "Returned recursively called FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
         }
     }
