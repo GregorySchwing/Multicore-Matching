@@ -141,6 +141,100 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
 }                       
 
 
+// Each thread will take an edge.  Each thread will loop through the answer
+// until it finds either vertex a or b of an edge.
+// if it reaches the end of the answer without terminating, it isn't a solution.
+// Amount of shared memory should be:
+// (numberOfKernelCols+
+// (2*numberOfTreeVertsCols)+
+// numberOfDynamicCols)*sizeof(unsigned int)
+// 
+__global__ void EvaluateLeafKernel(int nrEdges,
+                                    mtc::Edge * dedges, 
+                                    int * uncoverededges,
+                                    Byte * trits, 
+                                    int numberOfKernelCols, 
+                                    int * deviceKernelColumns, 
+                                    int numberOfTreeVertsCols, 
+                                    int * deviceTreeColumns, 
+                                    int numberOfDynamicCols, 
+                                    int * deviceDynamicColumns){
+    extern __shared__ int soln[];
+	const int edgeID = blockIdx.x*blockDim.x + threadIdx.x;
+    if (edgeID >= nrEdges)
+        return;
+
+    // Still not considering triangles..
+	__shared__ int internalPathVerticesint[3][2];
+    if (threadIdx.x == 0){
+        internalPathVerticesint[0][0] = 0;
+        internalPathVerticesint[0][1] = 2;
+        internalPathVerticesint[1][0] = 1;
+        internalPathVerticesint[1][1] = 2;
+        internalPathVerticesint[2][0] = 1;
+        internalPathVerticesint[2][1] = 3;
+    }
+    __syncthreads(); // put warp results in shared mem
+
+
+    int totalSolutionSize = numberOfKernelCols + 
+                            2*numberOfTreeVertsCols + 
+                            numberOfDynamicCols;
+
+    // Load kernel solution into shared memory
+    for(int i = threadIdx.x; i < numberOfKernelCols; i+=blockDim.x){
+        soln[i] = deviceKernelColumns[i];
+    }
+
+	int pathStride = 4;
+
+    // Load tree solution into shared memory
+    for(int threadID = threadIdx.x; threadID < 2*numberOfTreeVertsCols; threadID+=blockDim.x){
+        int pathID = threadID / 2;
+        int pathStart = pathID * pathStride;
+        //printf("thread %d pathID %d pathStart %d\n",threadID, pathID, pathStart);
+        int tritVal = trits[(int)pathID];
+        //printf("thread %d tritVal %d\n",threadID, tritVal);
+
+    //	int treeVertex = deviceTreeColumns[pathStart + internalPathVerticesint[trits[pathID]][threadIdx.x%2]];
+        int pathOffset = internalPathVerticesint[tritVal][threadID%2];
+        //printf("thread %d pathOffset %d\n",threadID, pathOffset);
+
+        int treeVertex = deviceTreeColumns[pathStart + pathOffset];
+        //printf("thread %d treeVertex %d\n",threadID, pathOffset);
+
+        soln[numberOfKernelCols + threadID] = treeVertex;
+       
+    }
+
+    // Load dynamic solution into shared memory
+    for(int i = threadIdx.x; i < numberOfDynamicCols; i+=blockDim.x){
+        soln[numberOfKernelCols + 2*numberOfTreeVertsCols + i] = deviceDynamicColumns[i];
+    }
+
+    __syncthreads(); // put warp results in shared mem
+
+    mtc::Edge & edge = dedges[edgeID];
+    bool covered = false;
+    for (int solutionIndex = 0; solutionIndex < totalSolutionSize; ++solutionIndex){
+        covered |= (edge.x == soln[solutionIndex]);
+        covered |= (edge.y == soln[solutionIndex]);
+    }
+    
+    // Maybe do a warp shuffle and only 1 atomic add per block
+    if (!covered){
+        #ifndef NDEBUG
+        printf("Edge (%d - %d) uncovered\n", edge.x, edge.y);
+        #endif
+        atomicAdd(uncoverededges, 1);
+    } 
+    #ifndef NDEBUG
+    else {
+        printf("Edge (%d - %d) covered\n", edge.x, edge.y);
+    }
+    #endif
+}
+
 void TreeBuilder::PopulateTree(int nrVertices, 
                                 int threadsPerBlock, 
                                 int k, 
@@ -191,9 +285,10 @@ void TreeBuilder::EvaluateLeaf(int nrEdges,
                                 int * deviceDynamicColumns, 
                                 cpp_int leafIndex,
                                 Byte *dtrits){
-
-    //printf("numberOfTreeVertsCols %d\n", numberOfTreeVertsCols);
-    //std::vector<Byte> trits = TritArrayMaker::create_trits(leafIndex);
-    //cudaMemcpy(dtrits, trits.data(), sizeof(Byte)*trits.size(), cudaMemcpyHostToDevice);
+    printf("numberOfKernelCols %d\n", numberOfKernelCols);
+    printf("numberOfTreeVertsCols %d\n", numberOfTreeVertsCols);
+    printf("numberOfDynamicCols %d\n", numberOfDynamicCols);
+    std::vector<Byte> trits = TritArrayMaker::create_trits(leafIndex);
+    cudaMemcpy(dtrits, trits.data(), sizeof(Byte)*trits.size(), cudaMemcpyHostToDevice);
 
 }
