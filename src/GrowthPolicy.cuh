@@ -101,7 +101,10 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
                                     threadsPerBlock,
                                     k,
                                     &deviceTreeRows[recursiveStackDepth], 
-                                    deviceTreeColumns, 
+                                    deviceTreeColumns,
+                                    &deviceDynamicRows[recursiveStackDepth], 
+                                    deviceDynamicColumns, 
+                                    matcher.dmatch, 
                                     matcher.dforwardlinkedlist, 
                                     matcher.dbackwardlinkedlist, 
                                     matcher.dlength);

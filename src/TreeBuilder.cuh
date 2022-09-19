@@ -23,7 +23,10 @@ class TreeBuilder {
                                     int threadsPerBlock,
                                     int k, 
                                     int *deviceTreeRows, 
-                                    int *deviceTreeColumns, 
+                                    int *deviceTreeColumns,
+                                    int *deviceDynamicRows, 
+                                    int *deviceDynamicColumns,
+                                    int *dmatch, 
                                     int *dforwardlinkedlist, 
                                     int *dbackwardlinkedlist, 
                                     int *dlength);

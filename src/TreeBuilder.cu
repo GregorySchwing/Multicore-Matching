@@ -59,12 +59,12 @@ const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
 
 __global__ void DetectAndSetPendantPathsCase3(int nrVertices, 
                                             int k,
+                                            int *deviceDynamicRows,
+                                            int *deviceDynamicColumns,
                                             int *match, 
                                             int *dforwardlinkedlist, 
                                             int *dbackwardlinkedlist, 
-                                            int *dlength, 
-                                            int *deviceDynamicRows,
-                                            int *deviceDynamicColumns){
+                                            int *dlength){
 	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
     int dynamicIndex;
     // If not a head to a path of length 4, return (leaving the headindex == -1)
@@ -100,12 +100,12 @@ __global__ void DetectAndSetPendantPathsCase3(int nrVertices,
 
 __global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
                                             int k,
+                                            int *deviceDynamicRows,
+                                            int *deviceDynamicColumns,
                                             int *match, 
                                             int *dforwardlinkedlist, 
                                             int *dbackwardlinkedlist, 
-                                            int *dlength, 
-                                            int *deviceDynamicRows,
-                                            int *deviceDynamicColumns){
+                                            int *dlength){
 	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
     int dynamicIndex;
 
@@ -146,6 +146,9 @@ void TreeBuilder::PopulateTree(int nrVertices,
                                 int k, 
                                 int *deviceTreeRows, 
                                 int *deviceTreeColumns, 
+                                int *deviceDynamicRows, 
+                                int *deviceDynamicColumns,
+                                int *dmatch,
                                 int *dforwardlinkedlist, 
                                 int *dbackwardlinkedlist, 
                                 int *dlength){
@@ -157,4 +160,22 @@ void TreeBuilder::PopulateTree(int nrVertices,
                                                             dforwardlinkedlist,
                                                             dbackwardlinkedlist, 
                                                             dlength);
+
+    DetectAndSetPendantPathsCase3<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
+                                                        k, 
+                                                        deviceDynamicRows, 
+                                                        deviceDynamicColumns,
+                                                        dmatch,
+                                                        dforwardlinkedlist,
+                                                        dbackwardlinkedlist, 
+                                                        dlength);
+
+    DetectAndSetPendantPathsCase4<<<blocksPerGrid, threadsPerBlock>>>(nrVertices,
+                                                        k, 
+                                                        deviceDynamicRows, 
+                                                        deviceDynamicColumns,
+                                                        dmatch,
+                                                        dforwardlinkedlist,
+                                                        dbackwardlinkedlist, 
+                                                        dlength); 
 }
