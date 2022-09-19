@@ -17,6 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef TREE_BUILDER_H
 #define TREE_BUILDER_H
 
+#include "TritArrayMaker.h"
+#include "graph.h"
+
 class TreeBuilder {
     public:
         static void PopulateTree(int nrVertices, 
@@ -30,6 +33,19 @@ class TreeBuilder {
                                     int *dforwardlinkedlist, 
                                     int *dbackwardlinkedlist, 
                                     int *dlength);
+
+        static void EvaluateLeaf(int nrEdges,
+                                mtc::Edge * dedges, 
+                                int * uncoverededges,
+                                int numberOfKernelCols, 
+                                int * deviceKernelColumns, 
+                                int numberOfTreeVertsCols, 
+                                int * deviceTreeColumns, 
+                                int numberOfDynamicCols, 
+                                int * deviceDynamicColumns, 
+                                cpp_int leafIndex,
+                                Byte *dtrits);
+
 
 };
 

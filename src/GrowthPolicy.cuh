@@ -140,7 +140,16 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
             if (newTreeLeaves + newDynamicVertices)
                 FindCover(leaf, recursiveStackDepth+1, foundSolution);
             else if (totalTreeVertices + totalDynamicVertices + newKernelVertices <= k){
-                //TreeBuilder::EvaluateLeaf();
+                TreeBuilder::EvaluateLeaf(graph.nrEdges,
+                                            dedges,
+                                            totalKernelVertices,
+                                            deviceKernelColumns,
+                                            totalTreeVertices,
+                                            deviceTreeColumns,
+                                            totalDynamicVertices,
+                                            deviceDynamicColumns,
+                                            leaf,
+                                            matcher.dtrits);
                 std::cout << "Found possible solution in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
                 exit(1);
             }

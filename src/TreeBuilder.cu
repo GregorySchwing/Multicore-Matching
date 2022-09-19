@@ -179,3 +179,21 @@ void TreeBuilder::PopulateTree(int nrVertices,
                                                         dbackwardlinkedlist, 
                                                         dlength); 
 }
+
+void TreeBuilder::EvaluateLeaf(int nrEdges,
+                                mtc::Edge * dedges, 
+                                int * uncoverededges,
+                                int numberOfKernelCols, 
+                                int * deviceKernelColumns, 
+                                int numberOfTreeVertsCols, 
+                                int * deviceTreeColumns, 
+                                int numberOfDynamicCols, 
+                                int * deviceDynamicColumns, 
+                                cpp_int leafIndex,
+                                Byte *dtrits){
+
+    //printf("numberOfTreeVertsCols %d\n", numberOfTreeVertsCols);
+    //std::vector<Byte> trits = TritArrayMaker::create_trits(leafIndex);
+    //cudaMemcpy(dtrits, trits.data(), sizeof(Byte)*trits.size(), cudaMemcpyHostToDevice);
+
+}
