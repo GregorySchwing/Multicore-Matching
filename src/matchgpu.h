@@ -72,7 +72,7 @@ class GraphMatchingGeneralGPURandom : public GraphMatchingGPU
         thrust::device_vector<int> dbll;
 		int k;
 		Byte *dtrits;
-
+        mtc::Edge * dedges;
 };
 
 class GraphMatchingGPURandomMaximal : public GraphMatchingGPU

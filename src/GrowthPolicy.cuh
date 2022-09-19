@@ -141,7 +141,8 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
                 FindCover(leaf, recursiveStackDepth+1, foundSolution);
             else if (totalTreeVertices + totalDynamicVertices + newKernelVertices <= k){
                 TreeBuilder::EvaluateLeaf(graph.nrEdges,
-                                            dedges,
+                                            matcher.dedges,
+                                            deviceUncoveredEdges,
                                             totalKernelVertices,
                                             deviceKernelColumns,
                                             totalTreeVertices,
@@ -172,6 +173,10 @@ static void PopulateTree(U* param1, int param2);
         int numberofkernelvertices = 0;
         int numberofdynamicallyaddedvertices = 0;
         int numberoftreevertices = 0;
+        
+        int * hostUncoveredEdges;
+        int * deviceUncoveredEdges;
+
         const int k;
         int kPrime;
         T * hostTreeRows;

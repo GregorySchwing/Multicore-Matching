@@ -66,7 +66,7 @@ class VCGPU2 : public GrowthPolicy
         //int fullpathcount;
         // Replace this with the csr offset v+1 in tree in treepolicy
         //int *dfullpathcount;
-        mtc::Edge * dedges;
+
 
 
         GraphViz Gviz;
