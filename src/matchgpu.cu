@@ -176,6 +176,7 @@ GraphMatchingGeneralGPURandom::GraphMatchingGeneralGPURandom(const Graph &_graph
 		cudaMalloc(&dlength, sizeof(int)*graph.nrVertices) != cudaSuccess || 
 		cudaMalloc(&dmatch, sizeof(int)*graph.nrVertices) != cudaSuccess || 
 		cudaMalloc(&ddegrees, sizeof(int)*graph.nrVertices) != cudaSuccess || 
+		cudaMalloc(&dedges, sizeof(Edge)*graph.nrEdges) != cudaSuccess || 
 		cudaMalloc(&dtrits, sizeof(Byte)*hostTrits.size()) != cudaSuccess)
 	{
 		cerr << "Not enough memory on device!" << endl;
@@ -192,12 +193,19 @@ GraphMatchingGeneralGPURandom::GraphMatchingGeneralGPURandom(const Graph &_graph
 	thrust::sequence(dbll.begin(),dbll.end(), 0, 1);
 	dbackwardlinkedlist = thrust::raw_pointer_cast(&dbll[0]);
     cudaMemcpy(ddegrees, &graph.degrees[0], sizeof(int)*graph.nrVertices, cudaMemcpyHostToDevice);
+    cudaMemcpy(dedges, &graph.edges[0], sizeof(mtc::Edge)*graph.nrEdges, cudaMemcpyHostToDevice);
+
 }
 
 GraphMatchingGeneralGPURandom::~GraphMatchingGeneralGPURandom()
 {
 	cudaFree(drequests);
 	cudaFree(dsense);
+	cudaFree(dlength);
+	cudaFree(dmatch);
+	cudaFree(ddegrees);
+	cudaFree(dedges);
+	cudaFree(dtrits);
 }
 
 //==== Kernel variables ====
