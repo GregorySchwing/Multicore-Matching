@@ -1213,7 +1213,7 @@ __global__ void gSetDynamicVertices(int *match, int *dynamicallyAddedVertices, c
 	if (i >= nrDynamicallyAddedVertices) return;
 
 	match[dynamicallyAddedVertices[i]] = 3;
-	//printf("thread %d >= %d is %s setting pendant vert %d \n", i, nrDynamicallyAddedVertices, i >= nrDynamicallyAddedVertices ? "true" : "false", dynamicallyAddedVertices[i] );
+	printf("thread %d >= %d is %s setting non-tree vert %d \n", i, nrDynamicallyAddedVertices, i >= nrDynamicallyAddedVertices ? "true" : "false", dynamicallyAddedVertices[i] );
 }
  
 

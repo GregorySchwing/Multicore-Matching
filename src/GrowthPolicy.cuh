@@ -114,11 +114,14 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
         printf("new leaves %d\n", newLeaves);
         cpp_int numNewLeaves = TritArrayMaker::large_pow(newLeaves);
         std::cout << "numNewLeaves " << numNewLeaves << std::endl;
-        for (cpp_int leaf = 0; leaf < 1; ++leaf){
-        //for (cpp_int leaf = 0; leaf < numNewLeaves; ++leaf){
-            std::cout << "Recursively calling FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
-            FindCover(leaf, ++recursiveStackDepth, foundSolution);
-            std::cout << "Returned recursively called FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
+        // Need to use numNewLeaves, so we terminate if no new leaves are found
+        // TODO: This can prematurely terminate, Add a checker.        
+        for (cpp_int leaf = 0; leaf < numNewLeaves; ++leaf){
+            if (leaf == 0){
+                std::cout << "Recursively calling FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
+                FindCover(leaf, ++recursiveStackDepth, foundSolution);
+                std::cout << "Returned recursively called FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
+            }
         }
     } else {
     }
