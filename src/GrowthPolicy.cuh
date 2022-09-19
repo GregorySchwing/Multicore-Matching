@@ -111,17 +111,18 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
         T temp[2];
         cudaMemcpy(temp, &deviceTreeRows[recursiveStackDepth-1], sizeof(T)*2, cudaMemcpyDeviceToHost);
         int newLeaves = temp[1] - temp[0];
-        printf("new leaves %d\n", newLeaves);
+        printf("%d - %d = %d new leaves\n", temp[1], temp[0], newLeaves);
         cpp_int numNewLeaves = TritArrayMaker::large_pow(newLeaves);
         std::cout << "numNewLeaves " << numNewLeaves << std::endl;
         // Need to use numNewLeaves, so we terminate if no new leaves are found
         // TODO: This can prematurely terminate, Add a checker.        
         for (cpp_int leaf = 0; leaf < numNewLeaves; ++leaf){
-            if (leaf == 0){
+        //for (cpp_int leaf = 0; leaf < 1; ++leaf){
+            //if (leaf == 0){
                 std::cout << "Recursively calling FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
-                FindCover(leaf, ++recursiveStackDepth, foundSolution);
+                FindCover(leaf, recursiveStackDepth+1, foundSolution);
                 std::cout << "Returned recursively called FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
-            }
+            //}
         }
     } else {
     }
