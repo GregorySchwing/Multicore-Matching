@@ -58,28 +58,87 @@ const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
 
 
 __global__ void DetectAndSetPendantPathsCase3(int nrVertices, 
-                                                int sizeOfKernelSolution,
-                                                int numoftreeverts,
-                                                int k,
-                                                int *match, 
-                                                int *dforwardlinkedlist, 
-                                                int *dbackwardlinkedlist, 
-                                                int * dedgestatus,
-                                                int *dlength, 
-                                                int *dnumberofdynamicallyaddedvertices,
-                                                int *ddynamicallyaddedvertices);
+                                            int k,
+                                            int *match, 
+                                            int *dforwardlinkedlist, 
+                                            int *dbackwardlinkedlist, 
+                                            int *dlength, 
+                                            int *deviceDynamicRows,
+                                            int *deviceDynamicColumns){
+	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+    int dynamicIndex;
+    // If not a head to a path of length 4, return (leaving the headindex == -1)
+    if (threadID >= nrVertices || 
+        dlength[threadID] != 2 || 
+        dbackwardlinkedlist[threadID] != threadID) 
+            return;
+
+    int first = dforwardlinkedlist[threadID];
+    int second = dforwardlinkedlist[first];
+    int third = dforwardlinkedlist[second];
+    // Color == 2 if blue vertex has no unmatched neighbors
+    // This avoids iterating over all degrees, but it is possible
+    // to miss some vertices which could be pendant but are red not blue.
+    if (match[first] == 3){
+        dynamicIndex = atomicAdd(deviceDynamicRows, 1); 
+        // Prevent OOB
+        if (dynamicIndex < k){
+            deviceDynamicColumns[dynamicIndex] = first;
+        } else {
+            atomicSub(deviceDynamicRows, 1);
+        }
+    } else if (match[third] == 3){
+        dynamicIndex = atomicAdd(deviceDynamicRows, 1); 
+        // Prevent OOB
+        if (dynamicIndex < k){
+            deviceDynamicColumns[dynamicIndex] = third;
+        } else {
+            atomicSub(deviceDynamicRows, 1);
+        }
+    }
+}
 
 __global__ void DetectAndSetPendantPathsCase4(int nrVertices, 
-                                                int sizeOfKernelSolution,
-                                                int numoftreeverts,
-                                                int k,
-                                                int *match, 
-                                                int *dforwardlinkedlist, 
-                                                int *dbackwardlinkedlist, 
-                                                int * dedgestatus,
-                                                int *dlength, 
-                                                int *dnumberofdynamicallyaddedvertices,
-                                                int *ddynamicallyaddedvertices);                        
+                                            int k,
+                                            int *match, 
+                                            int *dforwardlinkedlist, 
+                                            int *dbackwardlinkedlist, 
+                                            int *dlength, 
+                                            int *deviceDynamicRows,
+                                            int *deviceDynamicColumns){
+	const int threadID = blockIdx.x*blockDim.x + threadIdx.x;
+    int dynamicIndex;
+
+	// If not a head to a path of length 4, return (leaving the headindex == -1)
+    if (threadID >= nrVertices || 
+        dlength[threadID] != 1 || 
+        dbackwardlinkedlist[threadID] != threadID) 
+            return;
+
+    int first = dforwardlinkedlist[threadID];
+    int second = dforwardlinkedlist[first];
+
+    // Color == 2 if blue vertex has no unmatched neighbors
+    // This avoids iterating over all degrees, but it is possible
+    // to miss some vertices which could be pendant but are red not blue.
+    if (match[first] == 3){
+        dynamicIndex = atomicAdd(deviceDynamicRows, 1); 
+        // Prevent OOB
+        if (dynamicIndex < k){
+            deviceDynamicColumns[dynamicIndex] = first;
+        } else {
+            atomicSub(deviceDynamicRows, 1);
+        }
+    } else if (match[second] == 3){
+        dynamicIndex = atomicAdd(deviceDynamicRows, 1); 
+        // Prevent OOB
+        if (dynamicIndex < k){
+            deviceDynamicColumns[dynamicIndex] = second;
+        } else {
+            atomicSub(deviceDynamicRows, 1);
+        }
+    }
+}                       
 
 
 void TreeBuilder::PopulateTree(int nrVertices, 
