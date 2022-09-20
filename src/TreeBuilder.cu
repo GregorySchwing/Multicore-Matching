@@ -235,13 +235,13 @@ __global__ void EvaluateLeafKernel(int nrEdges,
     // Maybe do a warp shuffle and only 1 atomic add per block
     if (!covered){
         //#ifndef NDEBUG
-        printf("Edge (%d - %d) uncovered\n", edge.x, edge.y);
+        //COMMENT printf("Edge (%d - %d) uncovered\n", edge.x, edge.y);
         //#endif
         atomicAdd(uncoverededges, 1);
     } 
     //#ifndef NDEBUG
     else {
-        printf("Edge (%d - %d) covered\n", edge.x, edge.y);
+        //COMMENT printf("Edge (%d - %d) covered\n", edge.x, edge.y);
     }
     //#endif
 }
@@ -297,14 +297,14 @@ int TreeBuilder::EvaluateLeaf( int threadsPerBlock,
                                 int * deviceDynamicColumns, 
                                 cpp_int leafIndex,
                                 Byte *dtrits){
-    printf("numberOfKernelCols %d\n", numberOfKernelCols);
-    printf("numberOfTreeVertsCols %d\n", numberOfTreeVertsCols);
-    printf("numberOfDynamicCols %d\n", numberOfDynamicCols);
+    //COMMENT printf("numberOfKernelCols %d\n", numberOfKernelCols);
+    //COMMENT printf("numberOfTreeVertsCols %d\n", numberOfTreeVertsCols);
+    //COMMENT printf("numberOfDynamicCols %d\n", numberOfDynamicCols);
     std::vector<Byte> trits = TritArrayMaker::create_trits(leafIndex);
     cudaMemcpy(dtrits, trits.data(), sizeof(Byte)*trits.size(), cudaMemcpyHostToDevice);
     int blocksPerGrid = (nrEdges + threadsPerBlock - 1)/threadsPerBlock;
-    printf("blocksPerGrid %d threadsPerBlock %d\n", blocksPerGrid, threadsPerBlock);
-    printf("nrEdges %d\n", nrEdges);
+    //COMMENT printf("blocksPerGrid %d threadsPerBlock %d\n", blocksPerGrid, threadsPerBlock);
+    //COMMENT printf("nrEdges %d\n", nrEdges);
     cudaDeviceSynchronize();
     checkLastErrorCUDA(__FILE__, __LINE__);
     EvaluateLeafKernel<<<blocksPerGrid, 

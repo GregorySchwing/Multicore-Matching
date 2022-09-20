@@ -87,16 +87,16 @@ std::vector<Byte> TritArrayMaker::create_trits(cpp_int x){
     int N_BYTES = bytes.size();
     // For some reason, N_BYTES is 1 less than the right number on occasion
     int N_TRITS = (N_BYTES*8*2)/3 + 1;
-    printf("N_BYTES %d\n", N_BYTES);
-    printf("N_TRITS %d\n", N_TRITS);
+    //COMMENT printf("N_BYTES %d\n", N_BYTES);
+    //COMMENT printf("N_TRITS %d\n", N_TRITS);
 
 
     // Make a trit buffer.
     //Byte trits [N_TRITS];
     trits.resize(N_TRITS);
     to_trits(bytes.data(), N_BYTES, trits.data(), N_TRITS);
-    for (int j = N_TRITS - 1; j >= 0; j--) {
-        printf("%d", trits[j]);
-    }
+    //COMMENT for (int j = N_TRITS - 1; j >= 0; j--) {
+    //COMMENT     printf("%d", trits[j]);
+    //COMMENT }
     return trits;
 }

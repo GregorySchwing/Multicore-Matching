@@ -1210,7 +1210,7 @@ __global__ void gSetSearchTreeVertices(Byte * trits, int numberOfTreeVertsCols, 
 	int treeVertex = deviceTreeColumns[pathStart + pathOffset];
     //printf("thread %d treeVertex %d\n",threadID, pathOffset);
 
-    printf("thread %d marking vertex %d\n",threadID,treeVertex);
+    //COMMENT printf("thread %d marking vertex %d\n",threadID,treeVertex);
 	match[treeVertex] = 3;
 }
 
@@ -1221,7 +1221,7 @@ __global__ void gSetDynamicVertices(int *match, int *dynamicallyAddedVertices, c
 	if (i >= nrDynamicallyAddedVertices) return;
 
 	match[dynamicallyAddedVertices[i]] = 3;
-	printf("thread %d >= %d is %s setting non-tree vert %d \n", i, nrDynamicallyAddedVertices, i >= nrDynamicallyAddedVertices ? "true" : "false", dynamicallyAddedVertices[i] );
+	//COMMENT printf("thread %d >= %d is %s setting non-tree vert %d \n", i, nrDynamicallyAddedVertices, i >= nrDynamicallyAddedVertices ? "true" : "false", dynamicallyAddedVertices[i] );
 }
  
 
@@ -1754,7 +1754,7 @@ void GraphMatchingGeneralGPURandom::performMatching(int *match, cudaEvent_t &t1,
 
 		//Indicate the solution by setting to match == 3 for all vertices in curr soln
 		if (numberOfTreeVertsCols > 0){
-			printf("numberOfTreeVertsCols %d\n", numberOfTreeVertsCols);
+			//COMMENT printf("numberOfTreeVertsCols %d\n", numberOfTreeVertsCols);
 			std::vector<Byte> trits = TritArrayMaker::create_trits(leafIndex);
 			cudaMemcpy(dtrits, trits.data(), sizeof(Byte)*trits.size(), cudaMemcpyHostToDevice);
 			int blocksPerGridST = (2*numberOfTreeVertsCols + threadsPerBlock - 1)/threadsPerBlock;

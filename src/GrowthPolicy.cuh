@@ -66,16 +66,16 @@ Serial(const mtc::Graph &_graph,
         std::cerr << "Error clearing memory!" << std::endl;
 		throw std::exception();
     }
-    printf("Calling Serial's BussKernelization::PerformBussKernelization\n");
+    //COMMENT printf("Calling Serial's BussKernelization::PerformBussKernelization\n");
 
     BussKernelization::PerformBussKernelization(graph.nrVertices, threadsPerBlock, k, kPrime, 1, matcher.ddegrees, deviceKernelRows, deviceKernelColumns, deviceRemainingEdges, solutionCantExist);
-    printf("Returned from Serial's BussKernelization::PerformBussKernelization\n");
+    //COMMENT printf("Returned from Serial's BussKernelization::PerformBussKernelization\n");
 }
 
 void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
-    printf("Called Serial FC\n");
+    //COMMENT printf("Called Serial FC\n");
     if (foundSolution){
-            printf("Found SOLN\n");
+            //COMMENT printf("Found SOLN\n");
 
         return;
     }
@@ -88,9 +88,9 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
     cudaMemcpy(&numberofkernelvertices, &deviceKernelRows[recursiveStackDepth], sizeof(T)*1, cudaMemcpyDeviceToHost);
     cudaMemcpy(&numberoftreevertices, &deviceTreeRows[recursiveStackDepth], sizeof(T)*1, cudaMemcpyDeviceToHost);
     cudaMemcpy(&numberofdynamicallyaddedvertices, &deviceDynamicRows[recursiveStackDepth], sizeof(T)*1, cudaMemcpyDeviceToHost);
-    std::cout << "calling FC in leaf " << root << " recursiveStackDepth " << recursiveStackDepth << std::endl
-    << "numberofkernelvertices " << numberofkernelvertices << " numberoftreevertices " << numberoftreevertices << std::endl
-    << "numberofdynamicallyaddedvertices " << numberofdynamicallyaddedvertices << std::endl;
+    //COMMENT std::cout << "calling FC in leaf " << root << " recursiveStackDepth " << recursiveStackDepth << std::endl
+    //COMMENT << "numberofkernelvertices " << numberofkernelvertices << " numberoftreevertices " << numberoftreevertices << std::endl
+    //COMMENT << "numberofdynamicallyaddedvertices " << numberofdynamicallyaddedvertices << std::endl;
 
     if (numberofkernelvertices+numberoftreevertices+numberofdynamicallyaddedvertices <= k) {
         Match(root);
@@ -123,16 +123,16 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
         int newDynamicVertices = tempDynamic[1] - tempDynamic[0];
         int newKernelVertices = tempKernel[1] - tempKernel[0];
 
-        printf("%d - %d = %d num new tree paths\n", tempTree[1], tempTree[0], newTreeLeaves);
-        printf("%d - %d = %d num newDynamicVertices\n", tempDynamic[1], tempDynamic[0], newDynamicVertices);
-        printf("%d - %d = %d num newKernelVertices\n", tempKernel[1], tempKernel[0], newKernelVertices);
+        //COMMENT printf("%d - %d = %d num new tree paths\n", tempTree[1], tempTree[0], newTreeLeaves);
+        //COMMENT printf("%d - %d = %d num newDynamicVertices\n", tempDynamic[1], tempDynamic[0], newDynamicVertices);
+        //COMMENT printf("%d - %d = %d num newKernelVertices\n", tempKernel[1], tempKernel[0], newKernelVertices);
 
         cpp_int numNewLeaves = TritArrayMaker::large_pow(newTreeLeaves);
-        std::cout << "numNewLeaves " << numNewLeaves << std::endl;
+        //COMMENT std::cout << "numNewLeaves " << numNewLeaves << std::endl;
         // Need to use numNewLeaves, so we terminate if no new leaves are found
         // TODO: This can prematurely terminate, Add a checker.        
         for (cpp_int leaf = 0; leaf < numNewLeaves; ++leaf){
-            std::cout << "Recursively calling FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
+            //COMMENT std::cout << "Recursively calling FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
             // If some progress was made on this matching call.
             // Should be more robust to failure.
             // If you interleave Buss
@@ -156,11 +156,11 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
                                             deviceDynamicColumns,
                                             leaf,
                                             matcher.dtrits);
-                std::cout << "Found possible solution in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
+                //COMMENT std::cout << "Found possible solution in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
                 std::cout << "Uncovered edges : " << uncoveredEdges << std::endl;
                 foundSolution = uncoveredEdges == 0;
             }
-            std::cout << "Returned recursively called FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
+            //COMMENT std::cout << "Returned recursively called FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
         }
     }
 }
@@ -239,9 +239,9 @@ Parallel(const mtc::Graph &_graph,
 	}
 
     //for (int i = 0; i < NUM_STREAMS; ++i) {
-        printf("Calling Parallel's BussKernelization::PerformBussKernelization\n");
+        //COMMENT printf("Calling Parallel's BussKernelization::PerformBussKernelization\n");
         BussKernelization::PerformBussKernelization(graph.nrVertices, threadsPerBlock, k, kPrime, 1, matcher->ddegrees, deviceKernelRows, deviceKernelColumns, deviceRemainingEdges, solutionCantExist);
-        printf("Returned from Parallel's BussKernelization::PerformBussKernelization\n");
+        //COMMENT printf("Returned from Parallel's BussKernelization::PerformBussKernelization\n");
 
     //}
 }
@@ -314,9 +314,9 @@ void Serial<T>::Match(cpp_int leafIndex){
     
     cudaEventRecord(t0, 0);
     cudaEventSynchronize(t0);
-    printf("Called reinitializeArrays Serial\n");
+    //COMMENT printf("Called reinitializeArrays Serial\n");
     matcher.reinitializeArrays();
-    printf("Called Match Serial\n");
+    //COMMENT printf("Called Match Serial\n");
     matcher.performMatching(matcher.dmatch, t1, t2, numberofkernelvertices, deviceKernelColumns, numberoftreevertices, deviceTreeColumns, numberofdynamicallyaddedvertices, deviceDynamicColumns, leafIndex);
     cudaEventElapsedTime(&time1, t1, t2);
     cudaEventRecord(t3, 0);
