@@ -158,7 +158,7 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
                                             matcher.dtrits);
                 std::cout << "Found possible solution in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
                 std::cout << "Uncovered edges : " << uncoveredEdges << std::endl;
-                exit(1);
+                foundSolution = uncoveredEdges == 0;
             }
             std::cout << "Returned recursively called FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
         }
