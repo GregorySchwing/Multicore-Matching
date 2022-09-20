@@ -34,9 +34,10 @@ class TreeBuilder {
                                     int *dbackwardlinkedlist, 
                                     int *dlength);
 
-        static void EvaluateLeaf(int nrEdges,
+        static int EvaluateLeaf(int threadsPerBlock,
+                                int nrEdges,
                                 mtc::Edge * dedges, 
-                                int * uncoverededges,
+                                int * deviceRemainingEdges,
                                 int numberOfKernelCols, 
                                 int * deviceKernelColumns, 
                                 int numberOfTreeVertsCols, 

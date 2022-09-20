@@ -22,6 +22,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cuda_runtime_api.h>
 #include <iostream>
 
+inline void checkLastErrorCUDA(const char *file, int line)
+{
+  cudaError_t code = cudaGetLastError();
+  if (code != cudaSuccess) {
+    fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+    exit(code);
+  }
+}
+
 // Alternative to sorting the full paths.  The full paths are indicated by a value >= 0.
 __global__ void PopulateTreeKernel(int nrVertices, 
                                 int k, 
@@ -147,7 +156,7 @@ __global__ void DetectAndSetPendantPathsCase4(int nrVertices,
 // Amount of shared memory should be:
 // (numberOfKernelCols+
 // (2*numberOfTreeVertsCols)+
-// numberOfDynamicCols)*sizeof(unsigned int)
+// numberOfDynamicCols)*sizeof(int)
 // 
 __global__ void EvaluateLeafKernel(int nrEdges,
                                     mtc::Edge * dedges, 
@@ -161,8 +170,10 @@ __global__ void EvaluateLeafKernel(int nrEdges,
                                     int * deviceDynamicColumns){
     extern __shared__ int soln[];
 	const int edgeID = blockIdx.x*blockDim.x + threadIdx.x;
+
     if (edgeID >= nrEdges)
         return;
+    //printf("Edge (%d) uncovered\n", edgeID);
 
     // Still not considering triangles..
 	__shared__ int internalPathVerticesint[3][2];
@@ -223,16 +234,16 @@ __global__ void EvaluateLeafKernel(int nrEdges,
     
     // Maybe do a warp shuffle and only 1 atomic add per block
     if (!covered){
-        #ifndef NDEBUG
+        //#ifndef NDEBUG
         printf("Edge (%d - %d) uncovered\n", edge.x, edge.y);
-        #endif
+        //#endif
         atomicAdd(uncoverededges, 1);
     } 
-    #ifndef NDEBUG
+    //#ifndef NDEBUG
     else {
         printf("Edge (%d - %d) covered\n", edge.x, edge.y);
     }
-    #endif
+    //#endif
 }
 
 void TreeBuilder::PopulateTree(int nrVertices, 
@@ -274,9 +285,10 @@ void TreeBuilder::PopulateTree(int nrVertices,
                                                         dlength); 
 }
 
-void TreeBuilder::EvaluateLeaf(int nrEdges,
+int TreeBuilder::EvaluateLeaf( int threadsPerBlock,
+                                int nrEdges,
                                 mtc::Edge * dedges, 
-                                int * uncoverededges,
+                                int * deviceRemainingEdges,
                                 int numberOfKernelCols, 
                                 int * deviceKernelColumns, 
                                 int numberOfTreeVertsCols, 
@@ -290,5 +302,31 @@ void TreeBuilder::EvaluateLeaf(int nrEdges,
     printf("numberOfDynamicCols %d\n", numberOfDynamicCols);
     std::vector<Byte> trits = TritArrayMaker::create_trits(leafIndex);
     cudaMemcpy(dtrits, trits.data(), sizeof(Byte)*trits.size(), cudaMemcpyHostToDevice);
-
+    int blocksPerGrid = (nrEdges + threadsPerBlock - 1)/threadsPerBlock;
+    printf("blocksPerGrid %d threadsPerBlock %d\n", blocksPerGrid, threadsPerBlock);
+    printf("nrEdges %d\n", nrEdges);
+    cudaDeviceSynchronize();
+    checkLastErrorCUDA(__FILE__, __LINE__);
+    EvaluateLeafKernel<<<blocksPerGrid, 
+                        threadsPerBlock, 
+                        (numberOfKernelCols+
+                        (2*numberOfTreeVertsCols)+
+                        numberOfDynamicCols)*sizeof(int)>>>
+                                    (nrEdges,
+                                    dedges, 
+                                    deviceRemainingEdges,
+                                    dtrits, 
+                                    numberOfKernelCols, 
+                                    deviceKernelColumns, 
+                                    numberOfTreeVertsCols, 
+                                    deviceTreeColumns, 
+                                    numberOfDynamicCols, 
+                                    deviceDynamicColumns);
+    cudaDeviceSynchronize();
+    checkLastErrorCUDA(__FILE__, __LINE__);
+    int uncoveredEdges = 0;
+    cudaMemcpy(&uncoveredEdges, deviceRemainingEdges, sizeof(int)*1, cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
+    checkLastErrorCUDA(__FILE__, __LINE__);
+    return uncoveredEdges;
 }

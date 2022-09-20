@@ -140,9 +140,14 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
             if (newTreeLeaves + newDynamicVertices)
                 FindCover(leaf, recursiveStackDepth+1, foundSolution);
             else if (totalTreeVertices + totalDynamicVertices + newKernelVertices <= k){
-                TreeBuilder::EvaluateLeaf(graph.nrEdges,
+                if (cudaMemset(deviceRemainingEdges, 0, sizeof(T)) != cudaSuccess){
+                    std::cerr << "Error clearing memory!" << std::endl;
+                    throw std::exception();
+                }
+                int uncoveredEdges = TreeBuilder::EvaluateLeaf(threadsPerBlock,
+                                            graph.nrEdges,
                                             matcher.dedges,
-                                            deviceUncoveredEdges,
+                                            deviceRemainingEdges,
                                             totalKernelVertices,
                                             deviceKernelColumns,
                                             totalTreeVertices,
@@ -152,6 +157,7 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
                                             leaf,
                                             matcher.dtrits);
                 std::cout << "Found possible solution in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
+                std::cout << "Uncovered edges : " << uncoveredEdges << std::endl;
                 exit(1);
             }
             std::cout << "Returned recursively called FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
@@ -174,9 +180,6 @@ static void PopulateTree(U* param1, int param2);
         int numberofdynamicallyaddedvertices = 0;
         int numberoftreevertices = 0;
         
-        int * hostUncoveredEdges;
-        int * deviceUncoveredEdges;
-
         const int k;
         int kPrime;
         T * hostTreeRows;
