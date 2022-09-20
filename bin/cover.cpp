@@ -41,6 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "vcgpu2.cuh"
 #include "GrowthPolicy.cuh"
 #include "TreePolicy.h"
+#include <chrono>
 
 using namespace std;
 //using namespace tbb;
@@ -448,42 +449,48 @@ int main(int argc, char **argv)
 					VCGPU2< Serial<int> > vc2(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
 					//VCGPU2< Parallel<int> > vc3(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
 					// declaring argument of time()
-					time_t my_time = time(NULL);
-  
-					// ctime() used to give the present time
-					printf("START %s", ctime(&my_time));
-					vc2.FindCover(0, 1, foundSolution);
-					printf("END %s", ctime(&my_time));
+					auto start_time = std::chrono::high_resolution_clock::now();	
+					std::time_t start_time_for_printing = std::chrono::system_clock::to_time_t(start_time);
+					std::cout << "start_time = " << start_time_for_printing << std::endl;
+  					vc2.FindCover(0, 1, foundSolution);
+					auto end_time = std::chrono::high_resolution_clock::now();
+					std::time_t end_time_for_printing = std::chrono::system_clock::to_time_t(end_time);
+					auto time = end_time - start_time;
+					std::cout << "end_time = " << end_time_for_printing << std::endl;
+					std::cout << "total_time = " << time/std::chrono::milliseconds(1) << "ms to run." << std::endl;
+
 					/*
 					//VCGPU vc(graph2, GPUNrThreadsPerBlock, barrier, kArg, solutionCantExist);
 					cout << '\n' << "Press a key to continue...\n";
 					cin.get();
+					*/
 					if (!solutionCantExist){
 						//vc.matcher.initialMatching(match);
-						initscr ();
+						//initscr ();
 						//vc.FindCover(0, 1, foundSolution);
 						if (foundSolution){
 							printf("Found a solution.\n");
 						} else {
 							printf("No solution found.\n");
 						}
+						/*
 						cout << '\n' << "Press a key to continue...\n";
 						cin.get();
 						endwin();
+						
 						if (foundSolution){
 							for (int i = 0; i < vc.solutionSize; ++i)
 								printf("%d ",vc.solution[i]);					
 						} else {
 							vc.CallDrawSearchTree(stn);
 						}
-
+						*/
 						printf("If the tree isn't completely generated,\n"); 
 						printf("it is due to dynamically added pendant excede k before\n"); 
 						printf("reaching the leaf nodes.\n");
 						//vc.GetDeviceVectors(graph.nrVertices, fll, bll, lengthOfPath);
 						//vc.CopyMatchingBackToHost(match);
 					}
-					*/
 				}
 				catch (exception &e)
 				{

@@ -130,7 +130,7 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
         cpp_int numNewLeaves = TritArrayMaker::large_pow(newTreeLeaves);
         //COMMENT std::cout << "numNewLeaves " << numNewLeaves << std::endl;
         // Need to use numNewLeaves, so we terminate if no new leaves are found
-        // TODO: This can prematurely terminate, Add a checker.        
+        // TODO: This can prematurely terminate, Add a checker.  
         for (cpp_int leaf = 0; leaf < numNewLeaves; ++leaf){
             //COMMENT std::cout << "Recursively calling FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
             // If some progress was made on this matching call.
@@ -157,8 +157,12 @@ void FindCover(cpp_int root, int recursiveStackDepth, bool & foundSolution){
                                             leaf,
                                             matcher.dtrits);
                 //COMMENT std::cout << "Found possible solution in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
-                std::cout << "Uncovered edges : " << uncoveredEdges << std::endl;
                 foundSolution = uncoveredEdges == 0;
+                if (!foundSolution){
+
+                    //std::cout << "Matching failed to produce paths between uncovered edges!" << uncoveredEdges << std::endl;
+                    std::cout << "Uncovered edges : " << uncoveredEdges << std::endl;
+                }
             }
             //COMMENT std::cout << "Returned recursively called FC in leaf " << leaf << " recursiveStackDepth " << recursiveStackDepth << std::endl;
         }
